@@ -1,4 +1,4 @@
-// Mada login v3: authenticate then use the fixed data bootstrap.
+// Mada login v4: authenticate, persist session, then reload into the authenticated app runtime.
 (function(){
   const $=id=>document.getElementById(id), btn=$('loginBtn');
   if(!btn)return;
@@ -11,13 +11,18 @@
     try{
       const client=window.MADA_SUPABASE_CLIENT;
       if(!client)throw new Error('تعذر الاتصال بخدمة الحسابات.');
-      const {data,error}=await client.auth.signInWithPassword({email,password});
-      if(error)return msg(error.message==='Invalid login credentials'?'البريد الإلكتروني أو كلمة المرور غير صحيحة.':'تعذر تسجيل الدخول: '+error.message);
-      if(!data?.session)return msg('تم الدخول لكن لم يتم إنشاء جلسة.');
-      if(typeof window.madaStartFixed==='function')await window.madaStartFixed();
-      msg('تم تسجيل الدخول بنجاح.');
-    }catch(e){console.error(e);msg(e?.message||'حدث خطأ غير متوقع.');}
-    finally{btn.disabled=false;btn.textContent='دخول';}
+      let result=await client.auth.signInWithPassword({email,password});
+      if(result.error){
+        return msg(result.error.message==='Invalid login credentials'?'البريد الإلكتروني أو كلمة المرور غير صحيحة.':'تعذر تسجيل الدخول: '+result.error.message);
+      }
+      const {data:{session}}=await client.auth.getSession();
+      if(!session)return msg('لم يتم إنشاء جلسة الدخول.');
+      msg('تم تسجيل الدخول. جاري فتح Mada…');
+      // app.js keeps its own in-memory user variable. Reloading is intentional:
+      // it makes app.js initialize from the persisted Supabase session instead of
+      // leaving the UI on the login screen with a session owned by another handler.
+      setTimeout(()=>location.reload(),150);
+    }catch(e){console.error(e);msg(e?.message||'حدث خطأ غير متوقع.');btn.disabled=false;btn.textContent='دخول';}
   }
   btn.onclick=login;
 })();
