@@ -2,12 +2,79 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
   <title>Mada</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="app"></div>
+  <section id="auth" class="auth-page">
+    <div class="auth-card card">
+      <div class="brand">Mada</div>
+      <p class="muted">شبكة اجتماعية عربية</p>
+      <input id="nameInput" type="text" placeholder="الاسم (للحساب الجديد)">
+      <input id="emailInput" type="email" placeholder="البريد الإلكتروني" autocomplete="email">
+      <input id="passwordInput" type="password" placeholder="كلمة المرور - 6 أحرف على الأقل" autocomplete="current-password">
+      <button id="loginBtn" class="primary wide">دخول / إنشاء حساب</button>
+      <button id="adminLoginBtn" class="admin-action wide">⚙️ دخول الإدارة</button>
+      <button id="themeBtn" class="icon-btn" type="button" aria-label="تغيير المظهر">🌙</button>
+      <div id="authMsg" class="muted"></div>
+    </div>
+  </section>
+
+  <main id="app" hidden>
+    <header class="topbar">
+      <div class="brand">Mada</div>
+      <div class="top-actions">
+        <button id="themeBtn" class="icon-btn" type="button">🌙</button>
+        <button id="notifyBtn" class="icon-btn" type="button">🔔</button>
+        <button id="msgBtn" class="icon-btn" type="button">💬</button>
+        <button id="premiumBtn" class="icon-btn" type="button">💎</button>
+        <button id="profileNav" class="avatar" type="button">م</button>
+      </div>
+    </header>
+
+    <section class="container">
+      <div id="premiumBanner" class="card premium-banner">
+        <b>💎 Mada Premium</b>
+        <span>مزايا إضافية وتجربة أفضل</span>
+        <button id="premiumBannerBtn" class="premium-btn">اشترك الآن</button>
+      </div>
+
+      <div class="card composer">
+        <div class="post-head">
+          <div id="userAvatar" class="avatar">م</div>
+          <div><b>ماذا تريد أن تنشر؟</b></div>
+        </div>
+        <textarea id="postInput" placeholder="اكتب منشورك..." rows="4"></textarea>
+        <input id="imageInput" type="file" accept="image/*" hidden>
+        <div class="composer-actions">
+          <button id="photoBtn" type="button">📷 صورة</button>
+          <button id="createNav" type="button">✍️ كتابة</button>
+          <button id="postBtn" class="primary" type="button">نشر</button>
+        </div>
+      </div>
+
+      <nav class="nav-row">
+        <button id="friendsNav" type="button">👥 الأصدقاء</button>
+        <button id="notifyNav" type="button">🔔 الإشعارات</button>
+        <button id="msgBtn2" type="button" onclick="document.getElementById('msgBtn').click()">💬 الرسائل</button>
+      </nav>
+
+      <section id="feed">
+        <div class="card empty">جاري التحميل…</div>
+      </section>
+    </section>
+  </main>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <button id="closeModal" class="modal-close" type="button">×</button>
+      <h2 id="modalTitle"></h2>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script src="app.js"></script>
