@@ -1,9 +1,0 @@
-/* Mada: hard stop the auth sheet once the app is visible. */
-#app:not([hidden]) ~ #auth,
-body:has(#app:not([hidden])) #auth{
-  display:none!important;
-  visibility:hidden!important;
-  opacity:0!important;
-  pointer-events:none!important;
-}
-#auth[aria-hidden="true"]{display:none!important;visibility:hidden!important;pointer-events:none!important}
