@@ -1,0 +1,12 @@
+/* Authentication bottom sheet */
+#auth.auth-screen{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;background:rgba(9,19,36,.62);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+#auth.auth-screen[hidden]{display:none!important}
+#auth .auth-card{width:min(720px,100%);max-height:90vh;overflow:auto;margin:0;border-radius:28px 28px 0 0;padding:28px 20px 30px;position:relative;box-shadow:0 -12px 45px rgba(12,25,48,.22);text-align:center;animation:madaAuthUp .22s ease-out}
+.auth-sheet-close{position:absolute;left:16px;top:14px;width:42px;height:42px;border:0;background:#eef1f5;color:#111827;border-radius:50%;font-size:28px;line-height:1;z-index:2}
+.auth-secondary{border:0;background:#edf3ff;color:#2567d8;min-height:50px;border-radius:16px;font-weight:900;margin-top:10px}
+#auth .link-btn{display:block;margin:12px auto 0}
+#auth .admin-action{margin-top:12px}
+@keyframes madaAuthUp{from{transform:translateY(35px);opacity:.5}to{transform:translateY(0);opacity:1}}
+body.auth-sheet-open{overflow:hidden}
+@media(max-width:520px){#auth .auth-card{max-height:88vh;border-radius:26px 26px 0 0;padding:24px 16px 28px}.auth-sheet-close{left:12px;top:10px;width:40px;height:40px}}
+body.dark #auth .auth-card{background:#121d30;color:#edf3ff}body.dark .auth-sheet-close{background:#1c2a40;color:#edf3ff}body.dark .auth-secondary{background:#1b3153;color:#8db7ff}
