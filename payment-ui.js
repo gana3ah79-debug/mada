@@ -1,1 +1,80 @@
-(() => { const sb=window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY); const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c])); async function settings(){const {data}=await sb.from('payment_settings').select('*').eq('id',true).single();return data||{premium_price_egp:99,premium_duration_months:1}} async function open(){const s=await settings();showModal('💎 الاشتراك في Mada Premium',`<div class="premium-card"><h3>Premium لمدة ${s.premium_duration_months} شهر</h3><div class="price-box"><strong>${s.premium_price_egp} جنيه مصري</strong></div><p>اختر طريقة التحويل:</p><select id="pmethod" style="width:100%;padding:12px"><option value="cash_wallet">📱 محفظة كاش</option><option value="instapay">🟢 InstaPay</option><option value="bank">🏦 حساب بنكي</option></select><div id="pdetails" class="card" style="margin-top:10px"></div><input id="pref" placeholder="رقم العملية / المرجع" style="width:100%;padding:12px;margin-top:10px"><input id="preceipt" type="file" accept="image/*,application/pdf" style="width:100%;margin-top:10px"><button id="sendPayment" class="premium-btn wide" style="margin-top:10px">إرسال طلب الاشتراك</button><p id="paymentMsg"></p></div>`); const render=()=>{const m=$('pmethod').value;let d='';if(m==='cash_wallet')d=`📱 رقم المحفظة: <b>${esc(s.cash_wallet||'لم يضف المسؤول البيانات بعد')}</b>`;if(m==='instapay')d=`🟢 InstaPay: <b>${esc(s.instapay_address||'لم يضف المسؤول البيانات بعد')}</b>`;if(m==='bank')d=`🏦 البنك: <b>${esc(s.bank_name||'-')}</b><br>اسم الحساب: <b>${esc(s.bank_account_name||'-')}</b><br>رقم الحساب: <b>${esc(s.bank_account_number||'-')}</b><br>IBAN: <b>${esc(s.bank_iban||'-')}</b>`;$('pdetails').innerHTML=d};$('pmethod').onchange=render;render();$('sendPayment').onclick=submit} async function submit(){const s=await settings(),method=$('pmethod').value,ref=$('pref').value.trim(),file=$('preceipt').files?.[0];if(!ref||!file){$('paymentMsg').textContent='اكتب رقم العملية وارفع الإيصال أولاً.';return}if(file.size>5*1024*1024){$('paymentMsg').textContent='حجم الإيصال يجب ألا يتجاوز 5MB.';return}const {data:{user}}=await sb.auth.getUser();if(!user){$('paymentMsg').textContent='سجّل الدخول أولاً.';return}$('sendPayment').disabled=true;$('paymentMsg').textContent='جاري إرسال الطلب…';const ext=(file.name.split('.').pop()||'jpg').toLowerCase(),path=`${user.id}/${crypto.randomUUID()}.${ext}`;const up=await sb.storage.from('payment-receipts').upload(path,file,{contentType:file.type,upsert:false});if(up.error){$('paymentMsg').textContent='تعذر رفع الإيصال.';$('sendPayment').disabled=false;return}const {error}=await sb.from('payment_requests').insert({user_id:user.id,amount_egp:s.premium_price_egp,method,reference:ref,receipt_url:path,status:'pending'});if(error){await sb.storage.from('payment-receipts').remove([path]);$('paymentMsg').textContent='تعذر إرسال الطلب.';$('sendPayment').disabled=false;return}$('paymentMsg').textContent='تم إرسال طلبك. سيتم تفعيله بعد مراجعة الإيصال من الإدارة.';$('sendPayment').textContent='تم إرسال الطلب ✓'} window.addManualPayment=open; const hook=()=>{['premiumBtn','premiumBannerBtn'].forEach(id=>{const e=$(id);if(e)e.onclick=open})};hook(); })();
+(() => {
+  const sb = window.supabase.createClient(window.MADA_SUPABASE_URL, window.MADA_SUPABASE_KEY);
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+
+  async function settings() {
+    const { data } = await sb.from('payment_settings').select('*').eq('id', true).single();
+    return data || { premium_price_egp: 99, premium_duration_months: 1 };
+  }
+
+  function compressReceipt(file, maxSide = 1800, quality = .8) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) return resolve(file);
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => b ? resolve(b) : reject(new Error('تعذر ضغط الإيصال')), 'image/jpeg', quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('تعذر قراءة الإيصال')); };
+      img.src = url;
+    });
+  }
+
+  async function open() {
+    const s = await settings();
+    showModal('💎 الاشتراك في Mada Premium', `<div class="premium-card">
+      <h3>Premium لمدة ${esc(s.premium_duration_months || 1)} شهر</h3>
+      <div class="price-box"><strong>${esc(s.premium_price_egp || 99)} جنيه مصري</strong></div>
+      <p>اختر طريقة التحويل:</p>
+      <select id="pmethod" style="width:100%;padding:12px"><option value="wallet">📱 محفظة كاش</option><option value="instapay">🟢 InstaPay</option><option value="bank">🏦 حساب بنكي</option></select>
+      <div id="pdetails" class="card" style="margin-top:10px"></div>
+      <input id="pref" placeholder="رقم العملية / المرجع" style="width:100%;padding:12px;margin-top:10px">
+      <input id="preceipt" type="file" accept="image/*" style="width:100%;margin-top:10px">
+      <button id="sendPayment" class="premium-btn wide" style="margin-top:10px">إرسال طلب الاشتراك</button><p id="paymentMsg"></p>
+    </div>`);
+
+    const render = () => {
+      const m = $('pmethod').value;
+      let d = '';
+      if (m === 'wallet') d = `📱 رقم المحفظة: <b>${esc(s.cash_wallet || 'لم يضف المسؤول البيانات بعد')}</b>`;
+      if (m === 'instapay') d = `🟢 InstaPay: <b>${esc(s.instapay_address || 'لم يضف المسؤول البيانات بعد')}</b>`;
+      if (m === 'bank') d = `🏦 البنك: <b>${esc(s.bank_name || '-')}</b><br>اسم الحساب: <b>${esc(s.bank_account_name || '-')}</b><br>رقم الحساب: <b>${esc(s.bank_account_number || '-')}</b><br>IBAN: <b>${esc(s.bank_iban || '-')}</b>`;
+      $('pdetails').innerHTML = d;
+    };
+    $('pmethod').onchange = render; render(); $('sendPayment').onclick = submit;
+  }
+
+  async function submit() {
+    const s = await settings(), method = $('pmethod').value, ref = $('pref').value.trim(), file = $('preceipt').files?.[0];
+    if (!ref || !file) { $('paymentMsg').textContent = 'اكتب رقم العملية وارفع الإيصال أولاً.'; return; }
+    if (file.size > 10 * 1024 * 1024) { $('paymentMsg').textContent = 'حجم الصورة الأصلي يجب ألا يتجاوز 10MB.'; return; }
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) { $('paymentMsg').textContent = 'سجّل الدخول أولاً.'; return; }
+
+    const { data: pending } = await sb.from('manual_payment_requests').select('id').eq('user_id', user.id).eq('status', 'pending').limit(1);
+    if (pending?.length) { $('paymentMsg').textContent = 'لديك طلب دفع قيد المراجعة بالفعل.'; return; }
+
+    $('sendPayment').disabled = true; $('paymentMsg').textContent = 'جاري ضغط ورفع الإيصال…';
+    let uploadFile = file;
+    try { uploadFile = await compressReceipt(file); } catch (e) { $('paymentMsg').textContent = e.message; $('sendPayment').disabled = false; return; }
+    const path = `${user.id}/${crypto.randomUUID()}.jpg`;
+    const up = await sb.storage.from('payment-receipts').upload(path, uploadFile, { contentType: 'image/jpeg', upsert: false, cacheControl: '31536000' });
+    if (up.error) { $('paymentMsg').textContent = 'تعذر رفع الإيصال.'; $('sendPayment').disabled = false; return; }
+
+    const { error } = await sb.from('manual_payment_requests').insert({ user_id: user.id, amount_egp: Number(s.premium_price_egp || 99), method, reference: ref, receipt_path: path, status: 'pending' });
+    if (error) { await sb.storage.from('payment-receipts').remove([path]); $('paymentMsg').textContent = 'تعذر إرسال الطلب.'; $('sendPayment').disabled = false; return; }
+    $('paymentMsg').textContent = 'تم إرسال الطلب بنجاح. سيتم تفعيل Premium بعد مراجعة الإيصال من الإدارة.';
+    $('sendPayment').textContent = 'تم إرسال الطلب ✓';
+  }
+
+  window.addManualPayment = open;
+  const hook = () => ['premiumBtn', 'premiumBannerBtn'].forEach(id => { const e = $(id); if (e) e.onclick = open; });
+  hook();
+})();
