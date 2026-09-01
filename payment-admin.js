@@ -1,94 +1,10 @@
-(() => {
-  const sb = window.supabase.createClient(window.MADA_SUPABASE_URL, window.MADA_SUPABASE_KEY);
-  const $ = id => document.getElementById(id);
-  const esc = s => String(s ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
-  const originalTab = window.tab;
-
-  async function loadPaymentSettings() {
-    const { data } = await sb.from('payment_settings').select('*').eq('id', true).single();
-    return data || {};
-  }
-
-  window.tab = async t => {
-    if (t === 'settings') {
-      const s = await loadPaymentSettings();
-      $('content').innerHTML = `<h2>⚙️ إعدادات الدفع</h2><div class="card">
-        <label>📱 محفظة كاش</label><input id="cash" value="${esc(s.cash_wallet || '')}" placeholder="رقم المحفظة">
-        <label>🟢 InstaPay</label><input id="insta" value="${esc(s.instapay_address || '')}" placeholder="عنوان InstaPay">
-        <label>🏦 اسم البنك</label><input id="bank" value="${esc(s.bank_name || '')}" placeholder="اسم البنك">
-        <label>👤 اسم صاحب الحساب</label><input id="holder" value="${esc(s.bank_account_name || '')}" placeholder="اسم صاحب الحساب">
-        <label>🔢 رقم الحساب</label><input id="account" value="${esc(s.bank_account_number || '')}" placeholder="رقم الحساب">
-        <label>IBAN</label><input id="iban" value="${esc(s.bank_iban || '')}" placeholder="IBAN">
-        <label>💰 سعر Premium بالجنيه</label><input id="price" type="number" min="0" step="0.01" value="${s.premium_price_egp ?? 99}">
-        <label>📅 مدة Premium بالشهور</label><input id="months" type="number" min="1" value="${s.premium_duration_months ?? 1}">
-        <button id="savePay" class="primary wide" style="margin-top:12px">💾 حفظ إعدادات الدفع</button><p id="saveMsg"></p>
-      </div>`;
-      $('savePay').onclick = async () => {
-        const { data: { user } } = await sb.auth.getUser();
-        if (!user) return;
-        const payload = {
-          cash_wallet: $('cash').value.trim() || null,
-          instapay_address: $('insta').value.trim() || null,
-          bank_name: $('bank').value.trim() || null,
-          bank_account_name: $('holder').value.trim() || null,
-          bank_account_number: $('account').value.trim() || null,
-          bank_iban: $('iban').value.trim() || null,
-          premium_price_egp: Number($('price').value),
-          premium_duration_months: Number($('months').value),
-          updated_by: user.id,
-          updated_at: new Date().toISOString()
-        };
-        const { error } = await sb.from('payment_settings').update(payload).eq('id', true);
-        $('saveMsg').textContent = error ? 'تعذر الحفظ: ' + error.message : 'تم حفظ إعدادات الدفع بنجاح ✓';
-      };
-      return;
-    }
-
-    if (t === 'payments') {
-      const { data, error } = await sb.from('manual_payment_requests')
-        .select('id,user_id,method,amount_egp,reference,receipt_path,status,admin_note,created_at')
-        .order('created_at', { ascending: false }).limit(100);
-      if (error) {
-        $('content').innerHTML = `<div class="card">تعذر تحميل طلبات الدفع: ${esc(error.message)}</div>`;
-        return;
-      }
-      $('content').innerHTML = `<h2>🧾 طلبات التحويل اليدوي</h2><div class="grid">${(data || []).map(x => `
-        <div class="card">
-          <b>${x.method === 'wallet' ? '📱 محفظة كاش' : x.method === 'instapay' ? '🟢 InstaPay' : '🏦 بنك'}</b>
-          <p>المبلغ: ${esc(x.amount_egp)} جنيه</p><p>المرجع: ${esc(x.reference)}</p>
-          <p>الحالة: <span class="badge">${esc(x.status)}</span></p>
-          <small>${new Date(x.created_at).toLocaleString('ar-EG')}</small>
-          <div class="toolbar">
-            ${x.receipt_path ? `<button onclick="viewReceipt('${encodeURIComponent(x.receipt_path)}')">🧾 عرض الإيصال</button>` : ''}
-            ${x.status === 'pending' ? `<button class="primary" onclick="reviewManual('${x.id}','approve')">✅ قبول وتفعيل Premium</button><button class="danger" onclick="reviewManual('${x.id}','reject')">❌ رفض</button>` : ''}
-          </div>
-        </div>`).join('') || '<div class="card">لا توجد طلبات دفع.</div>'}</div>`;
-      return;
-    }
-    return originalTab(t);
-  };
-
-  window.reviewManual = async (id, action) => {
-    if (action === 'approve') {
-      if (!confirm('تأكيد الإيصال وتفعيل Premium لهذا المستخدم؟')) return;
-      const { data, error } = await sb.rpc('approve_manual_payment_request', { p_request_id: id, p_note: null });
-      if (error) alert('تعذر التفعيل: ' + error.message);
-      else alert(`تم قبول الدفع وتفعيل Premium ✓\nينتهي الاشتراك: ${new Date(data.expires_at).toLocaleDateString('ar-EG')}`);
-    } else {
-      if (!confirm('رفض طلب الدفع؟')) return;
-      const { data: { user } } = await sb.auth.getUser();
-      const { error } = await sb.from('manual_payment_requests').update({
-        status: 'rejected', reviewed_by: user?.id || null, reviewed_at: new Date().toISOString()
-      }).eq('id', id).eq('status', 'pending');
-      if (error) alert('تعذر رفض الطلب: ' + error.message);
-    }
-    window.tab('payments');
-  };
-
-  window.viewReceipt = async encodedPath => {
-    const path = decodeURIComponent(encodedPath);
-    const { data, error } = await sb.storage.from('payment-receipts').createSignedUrl(path, 600);
-    if (error) { alert('تعذر فتح الإيصال'); return; }
-    window.open(data.signedUrl, '_blank', 'noopener');
-  };
+(()=>{
+  const sb=window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));const originalTab=window.tab;
+  async function loadPaymentSettings(){const{data,error}=await sb.from('payment_settings').select('*').eq('id',true).single();if(error)throw error;return data||{}}
+  async function settingsView(){try{const s=await loadPaymentSettings();$('content').innerHTML=`<div class="admin-title"><div><h2>⚙️ مركز الدفع</h2><small>تحكم في الدفع اليدوي والدفع الإلكتروني</small></div><span class="badge">${s.online_payment_enabled?'🟢 الدفع الإلكتروني مفعّل':'⚪ الدفع الإلكتروني متوقف'}</span></div><div class="grid"><div class="premium-card"><h3>💳 الدفع الإلكتروني — Paymob</h3><p>بيانات Secret Key تظل داخل Supabase Edge Functions ولا تظهر في لوحة الإدارة.</p><label style="display:flex;align-items:center;gap:10px;font-weight:900"><input id="onlineEnabled" type="checkbox" ${s.online_payment_enabled?'checked':''}> تفعيل الدفع الإلكتروني</label><label>المزوّد<select id="gatewayProvider"><option value="paymob" ${s.gateway_provider==='paymob'?'selected':''}>Paymob</option></select></label><label>الوضع<select id="gatewayMode"><option value="test" ${s.gateway_mode==='test'?'selected':''}>Test / Sandbox</option><option value="live" ${s.gateway_mode==='live'?'selected':''}>Live / Production</option></select></label><div class="notice">⚠️ التفعيل لن ينجح إلا بعد إضافة مفاتيح Paymob وIntegration ID كـSecrets في Supabase Edge Functions.</div><button id="saveGateway" class="save">💾 حفظ إعدادات الدفع الإلكتروني</button><p id="gatewayMsg"></p></div><div class="premium-card"><h3>🧾 التحويل اليدوي</h3><p>يظل متاحاً حتى لو كان الدفع الإلكتروني متوقفاً.</p><label>📱 محفظة كاش<input id="cash" value="${esc(s.cash_wallet||'')}" placeholder="01xxxxxxxxx"></label><label>🟢 InstaPay<input id="insta" value="${esc(s.instapay_address||'')}" placeholder="instapay@bank"></label><label>🏦 البنك<input id="bank" value="${esc(s.bank_name||'')}" placeholder="اسم البنك"></label><label>👤 صاحب الحساب<input id="holder" value="${esc(s.bank_account_name||'')}" placeholder="اسم صاحب الحساب"></label><label>🔢 رقم الحساب<input id="account" value="${esc(s.bank_account_number||'')}" placeholder="رقم الحساب"></label><label>IBAN<input id="iban" value="${esc(s.bank_iban||'')}" placeholder="IBAN"></label><label>💰 سعر Premium<input id="price" type="number" min="0" step="0.01" value="${s.premium_price_egp??99}"></label><label>📅 المدة بالشهور<input id="months" type="number" min="1" value="${s.premium_duration_months??1}"></label><button id="saveManual" class="save">💾 حفظ بيانات التحويل</button><p id="manualMsg"></p></div></div>`;$('saveGateway').onclick=saveGateway;$('saveManual').onclick=saveManual}catch(e){$('content').innerHTML=`<div class="card">تعذر تحميل إعدادات الدفع: ${esc(e.message)}</div>`}}
+  async function saveGateway(){const{data:{user}}=await sb.auth.getUser();if(!user)return;const payload={online_payment_enabled:$('onlineEnabled').checked,gateway_provider:$('gatewayProvider').value,gateway_mode:$('gatewayMode').value,updated_by:user.id,updated_at:new Date().toISOString()};const{error}=await sb.from('payment_settings').update(payload).eq('id',true);$('gatewayMsg').textContent=error?'تعذر الحفظ: '+error.message:'تم حفظ حالة الدفع الإلكتروني ✓'}
+  async function saveManual(){const{data:{user}}=await sb.auth.getUser();if(!user)return;const payload={cash_wallet:$('cash').value.trim()||null,instapay_address:$('insta').value.trim()||null,bank_name:$('bank').value.trim()||null,bank_account_name:$('holder').value.trim()||null,bank_account_number:$('account').value.trim()||null,bank_iban:$('iban').value.trim()||null,premium_price_egp:Number($('price').value),premium_duration_months:Number($('months').value),updated_by:user.id,updated_at:new Date().toISOString()};const{error}=await sb.from('payment_settings').update(payload).eq('id',true);$('manualMsg').textContent=error?'تعذر الحفظ: '+error.message:'تم حفظ بيانات التحويل ✓'}
+  window.tab=async t=>{if(t==='settings')return settingsView();if(t==='payments'){const{data,error}=await sb.from('manual_payment_requests').select('id,user_id,method,amount_egp,reference,receipt_path,status,admin_note,created_at').order('created_at',{ascending:false}).limit(100);if(error){$('content').innerHTML=`<div class="card">تعذر تحميل طلبات الدفع: ${esc(error.message)}</div>`;return}$('content').innerHTML=`<div class="admin-title"><div><h2>🧾 طلبات الدفع اليدوي</h2><small>مراجعة الإيصالات وتفعيل Premium بعد التحقق</small></div><button class="save" onclick="window.tab('payments')">🔄 تحديث</button></div><div class="grid">${(data||[]).map(x=>`<div class="card"><b>${x.method==='wallet'?'📱 محفظة كاش':x.method==='instapay'?'🟢 InstaPay':'🏦 بنك'}</b><p>المبلغ: <b>${esc(x.amount_egp)} جنيه</b></p><p>المرجع: ${esc(x.reference)}</p><p>الحالة: <span class="badge">${esc(x.status)}</span></p><small>${new Date(x.created_at).toLocaleString('ar-EG')}</small><div class="toolbar">${x.receipt_path?`<button onclick="viewReceipt('${encodeURIComponent(x.receipt_path)}')">🧾 عرض الإيصال</button>`:''}${x.status==='pending'?`<button class="primary" onclick="reviewManual('${x.id}','approve')">✅ قبول وتفعيل Premium</button><button class="danger" onclick="reviewManual('${x.id}','reject')">❌ رفض</button>`:''}</div></div>`).join('')||'<div class="card">لا توجد طلبات دفع.</div>'}</div>`;return}return originalTab(t)};
+  window.reviewManual=async(id,action)=>{if(action==='approve'){if(!confirm('تأكيد الإيصال وتفعيل Premium لهذا المستخدم؟'))return;const{data,error}=await sb.rpc('approve_manual_payment_request',{p_request_id:id,p_note:null});if(error)alert('تعذر التفعيل: '+error.message);else alert(`تم قبول الدفع وتفعيل Premium ✓\nينتهي الاشتراك: ${new Date(data.expires_at).toLocaleDateString('ar-EG')}`)}else{if(!confirm('رفض طلب الدفع؟'))return;const{data:{user}}=await sb.auth.getUser();const{error}=await sb.from('manual_payment_requests').update({status:'rejected',reviewed_by:user?.id||null,reviewed_at:new Date().toISOString()}).eq('id',id).eq('status','pending');if(error)alert('تعذر رفض الطلب: '+error.message)}window.tab('payments')};
+  window.viewReceipt=async encoded=>{const path=decodeURIComponent(encoded);const{data,error}=await sb.storage.from('payment-receipts').createSignedUrl(path,600);if(error){alert('تعذر فتح الإيصال');return}window.open(data.signedUrl,'_blank','noopener')};
 })();
