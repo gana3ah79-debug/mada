@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#1877f2">
+  <title>Mada</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Mada</div>
+    <div class="top-actions"><button aria-label="بحث">⌕</button><button aria-label="رسائل">💬</button><button aria-label="إشعارات">🔔</button></div>
+  </header>
+  <main class="container">
+    <section class="card composer">
+      <div class="composer-row"><div class="avatar">أ</div><input id="postInput" placeholder="بماذا تفكر؟" autocomplete="off"></div>
+      <div class="composer-actions"><button id="photoBtn">🖼️ صورة</button><button id="postBtn" class="primary">نشر</button></div>
+    </section>
+    <section id="feed" class="feed"></section>
+  </main>
+  <nav class="bottom-nav">
+    <button class="active">🏠<span>الرئيسية</span></button><button>👥<span>الأصدقاء</span></button><button id="createNav">➕<span>إنشاء</span></button><button>🔔<span>الإشعارات</span></button><button>👤<span>الملف</span></button>
+  </nav>
+  <input id="imageInput" type="file" accept="image/*" hidden>
+  <script src="app.js"></script>
+</body>
+</html>
