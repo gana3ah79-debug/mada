@@ -1,29 +1,4 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1877f2"><title>Mada</title><link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<div id="auth" class="auth-screen">
-  <div class="auth-card">
-    <div class="auth-logo">Mada</div><h1>مرحبًا بك في Mada</h1><p>تواصل مع أصدقائك وشارك لحظاتك.</p>
-    <input id="nameInput" placeholder="اسمك" autocomplete="name"><input id="emailInput" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="passwordInput" type="password" placeholder="كلمة المرور" autocomplete="current-password">
-    <button id="loginBtn" class="primary wide">دخول / إنشاء حساب</button>
-    <button id="adminLoginBtn" class="admin-link">⚙️ دخول لوحة التحكم</button>
-    <small>نسخة تجريبية: الحساب محفوظ على هذا الجهاز.</small>
-  </div>
-</div>
-<div id="app" hidden>
-<header class="topbar"><div class="brand">Mada</div><div class="top-actions"><button id="premiumBtn" title="Mada Premium">💎</button><button id="searchBtn">⌕</button><button id="msgBtn">💬</button><button id="notifyBtn">🔔</button></div></header>
-<main class="container">
-<section class="stories"><div class="story add-story">＋<span>قصتك</span></div><div class="story">👨<span>أحمد</span></div><div class="story">👩<span>سارة</span></div><div class="story">🧑<span>محمد</span></div></section>
-<section id="premiumBanner" class="premium-banner" hidden><div><b>💎 Mada Premium</b><span>مزايا إضافية وتجربة بدون إعلانات</span></div><button id="premiumBannerBtn">عرض المزايا</button></section>
-<section class="card composer"><div class="composer-row"><div id="userAvatar" class="avatar">أ</div><input id="postInput" placeholder="بماذا تفكر؟" autocomplete="off"></div><div class="composer-actions"><button id="photoBtn">🖼️ صورة</button><button id="postBtn" class="primary">نشر</button></div></section>
-<section id="feed" class="feed"></section>
-</main>
-<nav class="bottom-nav"><button class="active">🏠<span>الرئيسية</span></button><button id="friendsNav">👥<span>الأصدقاء</span></button><button id="createNav">➕<span>إنشاء</span></button><button id="notifyNav">🔔<span>الإشعارات</span></button><button id="profileNav">👤<span>الملف</span></button></nav>
-<input id="imageInput" type="file" accept="image/*" hidden>
-<div id="modal" class="modal" hidden><div class="modal-card"><button id="closeModal" class="close">×</button><h2 id="modalTitle">Mada</h2><div id="modalBody"></div></div></div>
-<script src="app.js"></script>
-</div>
-</body></html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1877f2"><title>Mada</title><link rel="stylesheet" href="styles.css"></head><body>
+<div id="auth" class="auth-screen"><div class="auth-card"><div class="auth-logo">Mada</div><h1>مرحبًا بك في Mada</h1><p>تواصل مع أصدقائك وشارك لحظاتك.</p><input id="nameInput" placeholder="اسمك" autocomplete="name"><input id="emailInput" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="passwordInput" type="password" placeholder="كلمة المرور" autocomplete="new-password"><button id="loginBtn" class="primary wide">دخول / إنشاء حساب</button><button id="adminLoginBtn" class="admin-link">⚙️ دخول لوحة التحكم</button><small id="authMsg">الحسابات والبيانات محفوظة بأمان في Mada.</small></div></div>
+<div id="app" hidden><header class="topbar"><div class="brand">Mada</div><div class="top-actions"><button id="premiumBtn">💎</button><button id="searchBtn">⌕</button><button id="msgBtn">💬</button><button id="notifyBtn">🔔</button></div></header><main class="container"><section class="stories"><div class="story add-story">＋<span>قصتك</span></div><div class="story">👨<span>أحمد</span></div><div class="story">👩<span>سارة</span></div><div class="story">🧑<span>محمد</span></div></section><section id="premiumBanner" class="premium-banner" hidden><div><b>💎 Mada Premium</b><span>مزايا إضافية وتجربة بدون إعلانات</span></div><button id="premiumBannerBtn">عرض المزايا</button></section><section class="card composer"><div class="composer-row"><div id="userAvatar" class="avatar">م</div><input id="postInput" placeholder="بماذا تفكر؟" autocomplete="off"></div><div class="composer-actions"><button id="photoBtn">🖼️ صورة</button><button id="postBtn" class="primary">نشر</button></div></section><section id="feed" class="feed"></section></main><nav class="bottom-nav"><button class="active">🏠<span>الرئيسية</span></button><button id="friendsNav">👥<span>الأصدقاء</span></button><button id="createNav">➕<span>إنشاء</span></button><button id="notifyNav">🔔<span>الإشعارات</span></button><button id="profileNav">👤<span>الملف</span></button></nav><input id="imageInput" type="file" accept="image/*" hidden><div id="modal" class="modal" hidden><div class="modal-card"><button id="closeModal" class="close">×</button><h2 id="modalTitle">Mada</h2><div id="modalBody"></div></div></div></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="app.js"></script></body></html>
