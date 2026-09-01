@@ -35,6 +35,7 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
@@ -70,11 +71,9 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (savedInstanceState == null) {
-            webView.loadUrl(START_URL);
-        } else {
-            webView.restoreState(savedInstanceState);
-        }
+        // Always load the current GitHub Pages version on launch.
+        // This prevents restoring a stale WebView page after a deployment.
+        webView.loadUrl(START_URL + "?v=20260901-7");
     }
 
     @Override
