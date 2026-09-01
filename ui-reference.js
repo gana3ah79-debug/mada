@@ -1,0 +1,31 @@
+(function(){
+  const $=id=>document.getElementById(id);
+  const safe=(fn)=>{try{return typeof fn==='function'?fn():null}catch(e){console.error(e);return null}};
+  const profile=()=>safe(()=>window.ProfileUI?.open?.());
+  const friends=()=>safe(()=>window.Social?.center?.()||window.friendsView?.());
+  const notices=()=>safe(()=>window.notifications?.());
+  const messages=()=>safe(()=>window.messages?.());
+  const compose=()=>{const x=$('postInput');if(x){x.focus();x.scrollIntoView({behavior:'smooth',block:'center'})}};
+  $('profileNav')?.addEventListener('click',profile);
+  $('friendsNav')?.addEventListener('click',friends);
+  $('friendsBottom')?.addEventListener('click',friends);
+  $('notifyNav')?.addEventListener('click',notices);
+  $('notifyBottom')?.addEventListener('click',notices);
+  $('msgBtn')?.addEventListener('click',messages);
+  $('msgBtn2')?.addEventListener('click',messages);
+  $('createBottom')?.addEventListener('click',compose);
+  $('createNav')?.addEventListener('click',compose);
+  $('searchBtn')?.addEventListener('click',friends);
+  $('menuBtn')?.addEventListener('click',()=>showModal('☰ قائمة Mada',`<div class="menu-panel"><button class="menu-item" id="menuProfile">👤 الملف الشخصي</button><button class="menu-item" id="menuFriends">👥 الأصدقاء</button><button class="menu-item" id="menuMessages">💬 الرسائل</button><button class="menu-item" id="menuNotifications">🔔 الإشعارات</button><button class="menu-item" id="menuTheme">🌙 الوضع الداكن</button><button class="menu-item" id="menuAdmin">⚙️ الإدارة</button></div>`));
+  document.addEventListener('click',e=>{
+    const id=e.target.closest('.menu-item')?.id;
+    if(!id)return;
+    if(id==='menuProfile')profile();
+    if(id==='menuFriends')friends();
+    if(id==='menuMessages')messages();
+    if(id==='menuNotifications')notices();
+    if(id==='menuTheme')safe(()=>applyTheme(!document.body.classList.contains('dark')));
+    if(id==='menuAdmin')safe(()=>adminLogin?.());
+  });
+  window.setTimeout(()=>safe(()=>window.ProfileUI?.init?.()),150);
+})();
