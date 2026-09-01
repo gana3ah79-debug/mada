@@ -14,9 +14,7 @@
     const me=typeof user!=='undefined'?user:null;
     if(window.ProfileUI&&window.ProfileUI.open)return window.ProfileUI.open(id||me?.id);
   };
-  const sync=()=>{try{updatePremiumUI()}catch(e){}};
-  sync();
-  setInterval(sync,1500);
+  try{updatePremiumUI()}catch(e){}
   document.addEventListener('DOMContentLoaded',function(){
     document.getElementById('premiumBannerAction')?.addEventListener('click',function(){document.getElementById('premiumBtn')?.click()});
     document.getElementById('premiumBanner')?.addEventListener('click',function(e){if(e.target.closest('.premium-btn'))document.getElementById('premiumBtn')?.click()});
