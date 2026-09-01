@@ -1,28 +1,24 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#1877f2">
-  <title>Mada</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1877f2"><title>Mada</title><link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">Mada</div>
-    <div class="top-actions"><button aria-label="بحث">⌕</button><button aria-label="رسائل">💬</button><button aria-label="إشعارات">🔔</button></div>
-  </header>
-  <main class="container">
-    <section class="card composer">
-      <div class="composer-row"><div class="avatar">أ</div><input id="postInput" placeholder="بماذا تفكر؟" autocomplete="off"></div>
-      <div class="composer-actions"><button id="photoBtn">🖼️ صورة</button><button id="postBtn" class="primary">نشر</button></div>
-    </section>
-    <section id="feed" class="feed"></section>
-  </main>
-  <nav class="bottom-nav">
-    <button class="active">🏠<span>الرئيسية</span></button><button>👥<span>الأصدقاء</span></button><button id="createNav">➕<span>إنشاء</span></button><button>🔔<span>الإشعارات</span></button><button>👤<span>الملف</span></button>
-  </nav>
-  <input id="imageInput" type="file" accept="image/*" hidden>
-  <script src="app.js"></script>
-</body>
-</html>
+<div id="auth" class="auth-screen">
+  <div class="auth-card"><div class="auth-logo">Mada</div><h1>مرحبًا بك في Mada</h1><p>تواصل مع أصدقائك وشارك لحظاتك.</p>
+    <input id="nameInput" placeholder="اسمك" autocomplete="name"><input id="emailInput" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="passwordInput" type="password" placeholder="كلمة المرور" autocomplete="current-password"><button id="loginBtn" class="primary wide">دخول / إنشاء حساب</button><small>نسخة تجريبية: الحساب محفوظ على هذا الجهاز.</small>
+  </div>
+</div>
+<div id="app" hidden>
+<header class="topbar"><div class="brand">Mada</div><div class="top-actions"><button id="searchBtn">⌕</button><button id="msgBtn">💬</button><button id="notifyBtn">🔔</button></div></header>
+<main class="container">
+<section class="stories"><div class="story add-story">＋<span>قصتك</span></div><div class="story">👨<span>أحمد</span></div><div class="story">👩<span>سارة</span></div><div class="story">🧑<span>محمد</span></div></section>
+<section class="card composer"><div class="composer-row"><div id="userAvatar" class="avatar">أ</div><input id="postInput" placeholder="بماذا تفكر؟" autocomplete="off"></div><div class="composer-actions"><button id="photoBtn">🖼️ صورة</button><button id="postBtn" class="primary">نشر</button></div></section>
+<section id="feed" class="feed"></section>
+</main>
+<nav class="bottom-nav"><button class="active">🏠<span>الرئيسية</span></button><button id="friendsNav">👥<span>الأصدقاء</span></button><button id="createNav">➕<span>إنشاء</span></button><button id="notifyNav">🔔<span>الإشعارات</span></button><button id="profileNav">👤<span>الملف</span></button></nav>
+<input id="imageInput" type="file" accept="image/*" hidden>
+<div id="modal" class="modal" hidden><div class="modal-card"><button id="closeModal" class="close">×</button><h2 id="modalTitle">Mada</h2><div id="modalBody"></div></div></div>
+<script src="app.js"></script>
+</div>
+</body></html>
