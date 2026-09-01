@@ -1,46 +1,17 @@
-/* Mada login fix - independent of app.js */
+/* Mada auth sheet: guest-friendly login, signup and password reset. */
 (function(){
-  function show(text, ok){
-    var el=document.getElementById('authMsg');
-    if(!el) return;
-    el.textContent=text||'';
-    el.style.color=ok?'#16803c':'#c62828';
-    el.style.display='block';
-  }
-  function client(){
-    if(!window.supabase || typeof window.supabase.createClient!=='function') throw new Error('مكتبة تسجيل الدخول لم يتم تحميلها. حدّث الصفحة وحاول مرة أخرى.');
-    if(!window.MADA_SUPABASE_URL || !window.MADA_SUPABASE_KEY) throw new Error('إعدادات قاعدة البيانات غير موجودة.');
-    return window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
-  }
-  function install(){
-    var login=document.getElementById('loginBtn');
-    if(!login) return;
-    login.type='button';
-    login.onclick=async function(e){
-      if(e) e.preventDefault();
-      var email=(document.getElementById('emailInput')||{}).value?.trim()||'';
-      var password=(document.getElementById('passwordInput')||{}).value||'';
-      if(!email || !email.includes('@')) return show('اكتب بريدًا إلكترونيًا صحيحًا.');
-      if(password.length<6) return show('كلمة المرور يجب أن تكون 6 أحرف على الأقل.');
-      login.disabled=true; login.textContent='جاري الدخول…'; show('');
-      try{
-        var result=await client().auth.signInWithPassword({email:email,password:password});
-        if(result.error){
-          var m=result.error.message||'';
-          if(/confirm|verified|not confirmed/i.test(m)) show('البريد الإلكتروني غير مؤكد. افتح رسالة التأكيد ثم حاول مرة أخرى.');
-          else if(/invalid login credentials/i.test(m)) show('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
-          else show('تعذر تسجيل الدخول: '+m);
-          return;
-        }
-        if(!result.data || !result.data.session){ show('تم الاتصال لكن لم يتم إنشاء جلسة. تأكد من إعدادات تأكيد البريد في Supabase.'); return; }
-        show('تم تسجيل الدخول بنجاح ✓',true);
-        try{
-          if(typeof window.start==='function') await window.start();
-          else location.href='./';
-        }catch(navErr){ show('تم تسجيل الدخول، لكن تعذر فتح الصفحة: '+(navErr.message||navErr)); }
-      }catch(err){ show('خطأ: '+(err && err.message ? err.message : String(err))); console.error('Mada login error',err); }
-      finally{ login.disabled=false; login.textContent='دخول'; }
-    };
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install); else install();
+  const $=id=>document.getElementById(id), getSb=()=>window.sb||window.MADA_SUPABASE_CLIENT;
+  function show(text,ok=false){const el=$('authMsg');if(!el)return;el.textContent=text||'';el.style.display='block';el.style.color=ok?'#16803c':'#c62828'}
+  function closeAuth(){const a=$('auth');if(!a)return;a.hidden=true;a.style.display='none';document.body.classList.remove('auth-sheet-open')}
+  function openAuth(){const a=$('auth');if(!a)return;a.hidden=false;a.style.display='flex';document.body.classList.add('auth-sheet-open');installClose()}
+  function installClose(){const card=document.querySelector('#auth .auth-card');if(!card)return;let b=card.querySelector('.auth-sheet-close');if(!b){b=document.createElement('button');b.className='auth-sheet-close';b.type='button';b.textContent='×';card.prepend(b)}b.onclick=closeAuth}
+  function loginView(){const card=document.querySelector('#auth .auth-card');if(!card)return;card.innerHTML=`<button class="auth-sheet-close" type="button">×</button><div class="mada-logo large"><span class="logo-mark">M</span><div>MADA</div><small>مدى</small></div><p>تواصل .. شارك .. اكتشف</p><input id="nameInput" type="text" placeholder="الاسم الكامل (اختياري)" autocomplete="name"><input id="emailInput" type="text" placeholder="البريد الإلكتروني أو رقم الهاتف" autocomplete="username"><input id="passwordInput" type="password" placeholder="كلمة المرور" autocomplete="current-password"><button id="loginBtn" class="primary wide" type="button">تسجيل الدخول</button><button id="signupBtn" class="auth-secondary wide" type="button">إنشاء حساب جديد</button><button id="forgotBtn" class="link-btn" type="button">نسيت كلمة السر؟</button><button id="adminLoginBtn" class="admin-action" type="button">⚙️ دخول الإدارة</button><div id="authMsg" class="muted"></div>`;card.querySelector('.auth-sheet-close').onclick=closeAuth;$('loginBtn').onclick=login;$('signupBtn').onclick=signupView;$('forgotBtn').onclick=forgot}
+  function signupView(){const card=document.querySelector('#auth .auth-card');if(!card)return;card.innerHTML=`<button class="auth-sheet-close" type="button">×</button><div class="mada-logo"><div style="font-size:32px;color:#2574df;font-weight:900">MADA</div><small style="color:#17a2e8;font-size:20px">إنشاء حساب جديد</small></div><p>أنشئ حسابك في مدى</p><input id="signupName" type="text" placeholder="الاسم الكامل" autocomplete="name"><input id="signupEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="signupPassword" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" autocomplete="new-password"><button id="signupSubmit" class="primary wide" type="button">إنشاء الحساب</button><button id="backLogin" class="link-btn" type="button">العودة لتسجيل الدخول</button><div id="authMsg" class="muted"></div>`;card.querySelector('.auth-sheet-close').onclick=closeAuth;$('signupSubmit').onclick=signup;$('backLogin').onclick=loginView}
+  async function login(){const sb=getSb(),id=$('emailInput')?.value.trim(),password=$('passwordInput')?.value||'';if(!sb)return show('الخدمة غير متاحة الآن.');if(!id||!password)return show('اكتب البريد/رقم الهاتف وكلمة المرور.');if(!id.includes('@')&&!/^\+?[0-9][0-9\s-]{7,}$/.test(id))return show('اكتب بريدًا إلكترونيًا أو رقم هاتف صحيحًا.');$('loginBtn').disabled=true;$('loginBtn').textContent='جاري الدخول…';try{const c=id.includes('@')?{email:id,password}:{phone:id.replace(/[\s-]/g,''),password};const r=await sb.auth.signInWithPassword(c);if(r.error)return show(r.error.message);show('تم تسجيل الدخول بنجاح ✓',true);setTimeout(()=>location.reload(),250)}catch(e){show('تعذر تسجيل الدخول: '+(e.message||e))}finally{if($('loginBtn')){$('loginBtn').disabled=false;$('loginBtn').textContent='تسجيل الدخول'}}}
+  async function signup(){const sb=getSb(),name=$('signupName')?.value.trim(),email=$('signupEmail')?.value.trim(),password=$('signupPassword')?.value||'';if(!sb)return show('الخدمة غير متاحة الآن.');if(!name||!email||!password)return show('اكتب الاسم والبريد الإلكتروني وكلمة المرور.');if(password.length<6)return show('كلمة المرور يجب أن تكون 6 أحرف على الأقل.');$('signupSubmit').disabled=true;$('signupSubmit').textContent='جاري إنشاء الحساب…';try{const r=await sb.auth.signUp({email,password,options:{data:{display_name:name,username:email.split('@')[0]}}});if(r.error)return show(r.error.message);if(r.data?.session){show('تم إنشاء الحساب وتسجيل الدخول ✓',true);setTimeout(()=>location.reload(),350)}else show('تم إنشاء الحساب. افتح رسالة التأكيد في بريدك الإلكتروني ثم سجّل الدخول.',true)}catch(e){show('تعذر إنشاء الحساب: '+(e.message||e))}finally{if($('signupSubmit')){$('signupSubmit').disabled=false;$('signupSubmit').textContent='إنشاء الحساب'}}}
+  async function forgot(){const sb=getSb(),email=$('emailInput')?.value.trim();if(!sb)return show('الخدمة غير متاحة الآن.');if(!email||!email.includes('@'))return show('اكتب بريدك الإلكتروني أولًا ثم اضغط نسيت كلمة السر.');try{const r=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(r.error)return show(r.error.message);show('تم إرسال رابط إعادة تعيين كلمة السر إلى بريدك الإلكتروني ✓',true)}catch(e){show('تعذر إرسال الرابط: '+(e.message||e))}}
+  function resetView(){openAuth();const card=document.querySelector('#auth .auth-card');card.innerHTML=`<button class="auth-sheet-close" type="button">×</button><div class="mada-logo"><div style="font-size:32px;color:#2574df;font-weight:900">MADA</div><small style="color:#17a2e8;font-size:20px">تغيير كلمة السر</small></div><p>اكتب كلمة سر جديدة لحسابك</p><input id="newPassword" type="password" placeholder="كلمة السر الجديدة (6 أحرف على الأقل)" autocomplete="new-password"><input id="newPassword2" type="password" placeholder="تأكيد كلمة السر" autocomplete="new-password"><button id="savePassword" class="primary wide" type="button">حفظ كلمة السر</button><div id="authMsg" class="muted"></div>`;card.querySelector('.auth-sheet-close').onclick=closeAuth;$('savePassword').onclick=async()=>{const p=$('newPassword').value,p2=$('newPassword2').value;if(p.length<6)return show('كلمة السر يجب أن تكون 6 أحرف على الأقل.');if(p!==p2)return show('كلمتا السر غير متطابقتين.');const r=await getSb().auth.updateUser({password:p});if(r.error)return show(r.error.message);show('تم تغيير كلمة السر بنجاح ✓',true);setTimeout(()=>{closeAuth();location.reload()},600)}}
+  function boot(){const a=$('auth');if(!a)return;installClose();a.addEventListener('click',e=>{if(e.target===a)closeAuth()});const sb=getSb();if(sb?.auth?.onAuthStateChange)sb.auth.onAuthStateChange(e=>{if(e==='PASSWORD_RECOVERY')setTimeout(resetView,50)});new MutationObserver(installClose).observe(a,{childList:true,subtree:true})}
+  window.MadaAuth={open:openAuth,close:closeAuth,loginView,signupView};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
