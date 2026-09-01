@@ -5,14 +5,19 @@
 </head>
 <body>
 <div id="auth" class="auth-screen">
-  <div class="auth-card"><div class="auth-logo">Mada</div><h1>مرحبًا بك في Mada</h1><p>تواصل مع أصدقائك وشارك لحظاتك.</p>
-    <input id="nameInput" placeholder="اسمك" autocomplete="name"><input id="emailInput" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="passwordInput" type="password" placeholder="كلمة المرور" autocomplete="current-password"><button id="loginBtn" class="primary wide">دخول / إنشاء حساب</button><small>نسخة تجريبية: الحساب محفوظ على هذا الجهاز.</small>
+  <div class="auth-card">
+    <div class="auth-logo">Mada</div><h1>مرحبًا بك في Mada</h1><p>تواصل مع أصدقائك وشارك لحظاتك.</p>
+    <input id="nameInput" placeholder="اسمك" autocomplete="name"><input id="emailInput" type="email" placeholder="البريد الإلكتروني" autocomplete="email"><input id="passwordInput" type="password" placeholder="كلمة المرور" autocomplete="current-password">
+    <button id="loginBtn" class="primary wide">دخول / إنشاء حساب</button>
+    <button id="adminLoginBtn" class="admin-link">⚙️ دخول لوحة التحكم</button>
+    <small>نسخة تجريبية: الحساب محفوظ على هذا الجهاز.</small>
   </div>
 </div>
 <div id="app" hidden>
-<header class="topbar"><div class="brand">Mada</div><div class="top-actions"><button id="searchBtn">⌕</button><button id="msgBtn">💬</button><button id="notifyBtn">🔔</button></div></header>
+<header class="topbar"><div class="brand">Mada</div><div class="top-actions"><button id="premiumBtn" title="Mada Premium">💎</button><button id="searchBtn">⌕</button><button id="msgBtn">💬</button><button id="notifyBtn">🔔</button></div></header>
 <main class="container">
 <section class="stories"><div class="story add-story">＋<span>قصتك</span></div><div class="story">👨<span>أحمد</span></div><div class="story">👩<span>سارة</span></div><div class="story">🧑<span>محمد</span></div></section>
+<section id="premiumBanner" class="premium-banner" hidden><div><b>💎 Mada Premium</b><span>مزايا إضافية وتجربة بدون إعلانات</span></div><button id="premiumBannerBtn">عرض المزايا</button></section>
 <section class="card composer"><div class="composer-row"><div id="userAvatar" class="avatar">أ</div><input id="postInput" placeholder="بماذا تفكر؟" autocomplete="off"></div><div class="composer-actions"><button id="photoBtn">🖼️ صورة</button><button id="postBtn" class="primary">نشر</button></div></section>
 <section id="feed" class="feed"></section>
 </main>
