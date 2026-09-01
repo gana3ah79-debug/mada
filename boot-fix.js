@@ -1,4 +1,4 @@
-// Mada boot bridge: explicitly starts the app after all scripts load.
+// Mada boot bridge: start the app after all scripts load and keep boot errors visible.
 (function(){
   function boot(){
     try {
