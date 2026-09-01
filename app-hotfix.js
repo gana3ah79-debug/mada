@@ -8,6 +8,8 @@
     if(p)p.title=active?'Mada Premium مفعل':'اشترك في Mada Premium';
   }
   window.updatePremiumUI=updatePremiumUI;
+  Object.defineProperty(window,'user',{configurable:true,get:function(){return typeof user!=='undefined'?user:null}});
+  Object.defineProperty(window,'sb',{configurable:true,get:function(){return typeof sb!=='undefined'?sb:null}});
   window.openProfile=function(id){
     const me=typeof user!=='undefined'?user:null;
     if(window.ProfileUI&&window.ProfileUI.open)return window.ProfileUI.open(id||me?.id);
