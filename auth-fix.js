@@ -34,7 +34,10 @@
         }
         if(!result.data || !result.data.session){ show('تم الاتصال لكن لم يتم إنشاء جلسة. تأكد من إعدادات تأكيد البريد في Supabase.'); return; }
         show('تم تسجيل الدخول بنجاح ✓',true);
-        setTimeout(function(){location.reload();},300);
+        try{
+          if(typeof window.start==='function') await window.start();
+          else location.href='./';
+        }catch(navErr){ show('تم تسجيل الدخول، لكن تعذر فتح الصفحة: '+(navErr.message||navErr)); }
       }catch(err){ show('خطأ: '+(err && err.message ? err.message : String(err))); console.error('Mada login error',err); }
       finally{ login.disabled=false; login.textContent='دخول'; }
     };
