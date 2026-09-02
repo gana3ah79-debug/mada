@@ -3,7 +3,7 @@
  let installed=false;
  function close(){ $('closeModal')?.click(); }
  function openProfile(id){ if(id && window.ProfileUI?.open) window.ProfileUI.open(id); else if(id && window.openProfile) window.openProfile(id); }
- function loadActionsFix(){if(window.MadaProfileActionsFix)return;const s=document.createElement('script');s.src='profile-actions-fix.js?v=20260902-2';s.onload=()=>window.MadaProfileActionsFix?.wire?.();document.body.appendChild(s)}
+ function loadActionsFix(){if(window.MadaProfileActionsFix)return;const s=document.createElement('script');s.src='profile-actions-fix.js?v=20260902-3';s.onload=()=>window.MadaProfileActionsFix?.wire?.();document.body.appendChild(s)}
  function wire(page){
   if(!page)return; loadActionsFix();
   if(page.dataset.madaButtonsWired==='1')return;
