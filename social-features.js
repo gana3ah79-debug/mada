@@ -4,7 +4,6 @@
   const reactionNames={like:'إعجاب',love:'أحببته',haha:'هاها',wow:'واو',sad:'حزين',angry:'غاضب'};
   let longPressTimer=null,longPressed=false,menu=null,storyTimer=null;
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
-  const getPost=id=>window.feedPosts?.get(id);
 
   function reactionMenu(btn){
     closeReactionMenu();
@@ -38,14 +37,13 @@
     like.innerHTML=`<span class="reaction-icon">${selected?reactionMap[selected]:'👍'}</span><span>${selected?reactionNames[selected]:'إعجاب'}</span>`;
     like.title='اضغط للإعجاب، واضغط مطولًا لاختيار تفاعل';
     like.setAttribute('aria-label','التفاعل مع المنشور');
-    ['mousedown','touchstart'].forEach(ev=>like.addEventListener(ev,e=>{
+    ['mousedown','touchstart'].forEach(ev=>like.addEventListener(ev,()=>{
       longPressed=false; clearTimeout(longPressTimer);
       longPressTimer=setTimeout(()=>{longPressed=true;reactionMenu(like);},500);
     },{passive:true}));
     ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=>like.addEventListener(ev,()=>clearTimeout(longPressTimer),{passive:true}));
     like.addEventListener('click',async e=>{if(longPressed){e.preventDefault();longPressed=false;return;} const current=like.dataset.reaction|| (like.dataset.liked==='true'?'like':null); await setReaction(like.dataset.id,current==='like'?'none':'like');});
   }
-  function refreshPost(id){const p=document.querySelector(`article.post[data-post-id="${CSS.escape(id)}"]`);if(p){p.querySelector('.post-actions')?.removeAttribute('data-social-ready');decoratePost(p);}}
 
   async function setReaction(postId,type){
     if(!window.user||!window.sb)return;
@@ -58,7 +56,6 @@
         const {error}=await sb.from('post_likes').upsert({post_id:postId,user_id:user.id,reaction_type:type},{onConflict:'post_id,user_id'}); if(error)throw error;
         if(btn){btn.dataset.liked='true';btn.dataset.reaction=type;}
       }
-      // Re-read this post's reactions so counters and emoji are always database-backed.
       const {data,error}=await sb.from('post_likes').select('user_id,reaction_type').eq('post_id',postId); if(error)throw error;
       const likes=data||[]; const mine=likes.find(x=>x.user_id===user.id)?.reaction_type||null;
       if(btn){btn.dataset.liked=String(!!mine); if(mine)btn.dataset.reaction=mine;else delete btn.dataset.reaction; btn.innerHTML=`<span class="reaction-icon">${mine?reactionMap[mine]:'👍'}</span><span>${mine?reactionNames[mine]:'إعجاب'}</span>`;}
@@ -70,17 +67,6 @@
   }
   window.madaSetReaction=setReaction;
 
-  async function loadStories(){
-    if(!window.sb||!window.user)return;
-    const section=document.querySelector('.stories'); if(!section)return;
-    const {data,error}=await sb.from('stories').select('id,user_id,media_url,created_at,expires_at,profiles!stories_user_id_fkey(display_name,avatar_url)').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(30);
-    if(error){console.warn('stories unavailable',error);return;}
-    const byUser=new Map();(data||[]).forEach(s=>{if(!byUser.has(s.user_id))byUser.set(s.user_id,s);});
-    const mine=byUser.get(user.id); const items=[mine,...Array.from(byUser.values()).filter(s=>s.user_id!==user.id)].filter(Boolean).slice(0,8);
-    section.innerHTML=`<button class="story add-story" type="button"><span class="story-plus">＋</span><span>قصتك</span></button>`+items.map(s=>{const name=s.user_id===user.id?'قصتك':(s.profiles?.display_name||'مستخدم');return `<button class="story live-story" type="button" data-story-id="${esc(s.id)}" data-user-id="${esc(s.user_id)}"><span class="story-thumb" style="background-image:url('${esc(s.media_url)}')"></span><span>${esc(name)}</span></button>`}).join('');
-    section.querySelector('.add-story').onclick=pickStory;
-    section.querySelectorAll('.live-story').forEach(b=>b.onclick=()=>openStory(b.dataset.storyId,data||[]));
-  }
   function pickStory(){
     let input=document.getElementById('storyInput'); if(!input){input=document.createElement('input');input.id='storyInput';input.type='file';input.accept='image/*';input.hidden=true;document.body.appendChild(input);input.onchange=uploadStory;}
     input.click();
@@ -98,9 +84,19 @@
       input.value='';await loadStories();
     }catch(e){alert('تعذر نشر القصة: '+(e?.message||'خطأ غير متوقع'));}
   }
+  async function loadStories(){
+    if(!window.sb||!window.user)return;
+    const section=document.querySelector('.stories'); if(!section)return;
+    const {data,error}=await sb.from('stories').select('id,user_id,media_url,created_at,expires_at,profiles!stories_user_id_fkey(display_name,avatar_url)').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(30);
+    if(error){console.warn('stories unavailable',error);return;}
+    const byUser=new Map();(data||[]).forEach(s=>{if(!byUser.has(s.user_id))byUser.set(s.user_id,s);});
+    const mine=byUser.get(user.id); const items=[mine,...Array.from(byUser.values()).filter(s=>s.user_id!==user.id)].filter(Boolean).slice(0,8);
+    section.innerHTML=`<button class="story add-story" type="button"><span class="story-plus">＋</span><span>قصتك</span></button>`+items.map(s=>{const name=s.user_id===user.id?'قصتك':(s.profiles?.display_name||'مستخدم');return `<button class="story live-story" type="button" data-story-id="${esc(s.id)}" data-user-id="${esc(s.user_id)}"><span class="story-thumb" style="background-image:url('${esc(s.media_url)}')"></span><span>${esc(name)}</span></button>`}).join('');
+    section.querySelector('.add-story').onclick=pickStory;
+    section.querySelectorAll('.live-story').forEach(b=>b.onclick=()=>openStory(b.dataset.storyId,data||[]));
+  }
   function openStory(id,all){
-    const index=Math.max(0,all.findIndex(x=>x.id===id)); const stories=all.filter(x=>new Date(x.expires_at)>new Date());if(!stories.length)return;
-    const start=stories.findIndex(x=>x.id===id);let i=start>=0?start:index;
+    const stories=all.filter(x=>new Date(x.expires_at)>new Date());if(!stories.length)return; const index=stories.findIndex(x=>x.id===id);let i=index>=0?index:0;
     const overlay=document.createElement('div');overlay.className='story-viewer';
     overlay.innerHTML='<button class="story-close" aria-label="إغلاق">×</button><div class="story-progress"></div><div class="story-media"></div><div class="story-caption"></div>';
     document.body.appendChild(overlay);overlay.querySelector('.story-close').onclick=()=>{clearTimeout(storyTimer);overlay.remove();};
@@ -109,13 +105,39 @@
   }
   window.madaLoadStories=loadStories;
 
+  /* Share: the post button calls handleShare(post); native Share Sheet first, Clipboard fallback second. */
+  window.handleShare=async function(post){
+    const postId=typeof post==='string'?post:post?.id;
+    const postText=typeof post==='string'?'':(post?.body||'');
+    const postUrl=post?.url||post?.postUrl||`${location.origin}${location.pathname}#post-${encodeURIComponent(postId||'')}`;
+    const shareData={title:'تطبيق Mada',text:postText||'شاهد هذا المنشور على تطبيق Mada!',url:postUrl};
+    try{
+      if(typeof navigator.share==='function'){
+        await navigator.share(shareData);
+      }else{
+        throw new Error('SHARE_UNSUPPORTED');
+      }
+    }catch(err){
+      if(err?.name==='AbortError')return;
+      try{
+        if(navigator.clipboard?.writeText) await navigator.clipboard.writeText(shareData.url);
+        else {const ta=document.createElement('textarea');ta.value=shareData.url;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
+        alert('تم نسخ الرابط إلى الحافظة');
+      }catch(copyErr){alert('تعذر نسخ الرابط');console.warn(copyErr);}
+    }
+  };
+
+  document.addEventListener('click',e=>{
+    const b=e.target.closest?.('.share');
+    if(!b)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const postId=b.dataset.id;
+    const article=b.closest('article.post');
+    const post={id:postId,body:article?.querySelector('.post-text')?.textContent?.trim()||'',url:`${location.origin}${location.pathname}#post-${encodeURIComponent(postId||'')}`};
+    window.handleShare(post);
+  },true);
+
   const observer=new MutationObserver(()=>document.querySelectorAll('#feed article.post').forEach(decoratePost));
   observer.observe(document.getElementById('feed')||document.body,{childList:true,subtree:true});
   document.addEventListener('DOMContentLoaded',()=>{setTimeout(loadStories,1200);});
-  // app.js already has sharePost; this wrapper guarantees a clipboard fallback when native share is unavailable.
-  window.madaNativeShare=async function(postId){
-    const p=getPost(postId),url=`${location.origin}${location.pathname}#post-${encodeURIComponent(postId)}`,text=p?.body||'شاهد هذا المنشور على Mada';
-    try{if(navigator.share){await navigator.share({title:'Mada',text,url});}else if(navigator.clipboard){await navigator.clipboard.writeText(url);alert('تم نسخ رابط المنشور');}else{prompt('انسخ رابط المنشور:',url);}if(window.sb&&window.user)await sb.from('post_shares').insert({post_id:postId,user_id:user.id}).catch(()=>{});}catch(e){if(e?.name!=='AbortError')console.warn(e);}
-  };
-  document.addEventListener('click',e=>{const b=e.target.closest?.('.share');if(b){e.preventDefault();e.stopImmediatePropagation();window.madaNativeShare(b.dataset.id);}},true);
 })();
