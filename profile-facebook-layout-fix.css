@@ -1,0 +1,27 @@
+/* Final Facebook-like profile ordering and duplicate protection */
+#modal .modal-card.fb-profile-modal{padding:0!important;overflow-x:hidden!important}
+#modal .modal-card.fb-profile-modal #modalBody{padding:0!important}
+#modal .modal-card.fb-profile-modal .profile-page{display:flex!important;flex-direction:column!important}
+#modal .modal-card.fb-profile-modal .fb-profile-top{order:0!important}
+#modal .modal-card.fb-profile-modal .cover{order:1!important}
+#modal .modal-card.fb-profile-modal .profile-main{order:2!important}
+#modal .modal-card.fb-profile-modal .profile-tabs{order:3!important}
+#modal .modal-card.fb-profile-modal .fb-details{order:4!important}
+#modal .modal-card.fb-profile-modal .fb-profile-composer{order:5!important}
+#modal .modal-card.fb-profile-modal .fb-friends{order:6!important}
+#modal .modal-card.fb-profile-modal .fb-section-title{order:7!important}
+#modal .modal-card.fb-profile-modal .profile-content{order:8!important}
+#modal .modal-card.fb-profile-modal .profile-content .profile-posts{display:grid;gap:0}
+#modal .modal-card.fb-profile-modal .profile-content .profile-post{border-top:8px solid #f0f2f5!important}
+#modal .modal-card.fb-profile-modal .profile-page + .profile-page{display:none!important}
+#modal .modal-card.fb-profile-modal .profile-page ~ .profile-page{display:none!important}
+#modal .modal-card.fb-profile-modal .profile-page .profile-actions{display:flex!important;flex-wrap:wrap}
+#modal .modal-card.fb-profile-modal .profile-actions>*{min-width:0!important}
+#modal .modal-card.fb-profile-modal .profile-actions .wide{width:auto!important}
+#modal .modal-card.fb-profile-modal .fb-shared-section{order:7!important}
+#modal .modal-card.fb-profile-modal .fb-shared-section h3{margin:0 0 10px;font-size:17px}
+#modal .modal-card.fb-profile-modal .fb-share-item{background:#fff;border-top:8px solid #f0f2f5;padding:10px 14px 0}
+#modal .modal-card.fb-profile-modal .fb-share-label{font-size:12px;color:#656f7d;margin:0 0 7px;font-weight:700}
+#modal .modal-card.fb-profile-modal .fb-share-item img{display:block;width:100%;max-height:520px;object-fit:cover;border-radius:4px}
+#modal .modal-card.fb-profile-modal .fb-share-item .fb-share-text{font-size:14px;line-height:1.6;padding:7px 0}
+body.dark #modal .modal-card.fb-profile-modal .fb-share-item{background:#101a2a;border-color:#27364e}
