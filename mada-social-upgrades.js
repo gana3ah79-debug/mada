@@ -12,7 +12,15 @@
     const me=await currentUser(); const {data:post}=await s.from('posts').select('id,author_id,body,media_url').eq('id',id).maybeSingle();
     if(!post){$('shareMsg').textContent='المنشور غير موجود.';return}
     const url=location.origin+location.pathname+'#post-'+id;
-    $('shareProfile').onclick=async()=>{if(!me){$('shareMsg').textContent='سجل الدخول أولاً للمشاركة داخل ملفك.';return}const r=await s.from('posts').insert({author_id:me.id,body:`🔁 مشاركة من منشور Mada\n${post.body||''}`.trim(),media_url:post.media_url||null,visibility:'public'});$('shareMsg').textContent=r.error?'❌ '+r.error.message:'✅ تمت المشاركة داخل ملفك.'};
+    $('shareProfile').onclick=async()=>{
+      if(!me){$('shareMsg').textContent='سجل الدخول أولاً للمشاركة داخل ملفك.';return}
+      const r=await s.from('post_shares').insert({post_id:id,user_id:me.id,target_user_id:me.id});
+      if(r.error){
+        $('shareMsg').textContent=/duplicate|unique/i.test(r.error.message||'')?'ℹ️ المنشور موجود بالفعل في ملفك.':'❌ '+r.error.message;
+        return;
+      }
+      $('shareMsg').textContent='✅ تمت المشاركة داخل ملفك الشخصي، وليست منشورًا جديدًا على الوول.';
+    };
     $('shareFriend').onclick=async()=>{if(!me){$('shareMsg').textContent='سجل الدخول أولاً.';return}const fr=await s.from('friendships').select('requester_id,addressee_id').or(`requester_id.eq.${me.id},addressee_id.eq.${me.id}`).eq('status','accepted');const ids=(fr.data||[]).map(x=>x.requester_id===me.id?x.addressee_id:x.requester_id);if(!ids.length){$('shareMsg').textContent='لا توجد أصدقاء بعد.';return}const ps=(await s.from('profiles').select('id,display_name').in('id',ids).limit(30)).data||[];$('shareMsg').innerHTML=ps.map(p=>`<button class="social-btn" data-up-share="${p.id}">${esc(p.display_name||'صديق')}</button>`).join(' ');document.querySelectorAll('[data-up-share]').forEach(x=>x.onclick=async()=>{const r=await s.from('post_shares').insert({post_id:id,user_id:me.id,target_user_id:x.dataset.upShare});x.textContent=r.error?'فشل':'✓ تمت';x.disabled=true})};
     $('shareExternal').onclick=async()=>{try{if(navigator.share)await navigator.share({title:'Mada',text:'منشور على Mada',url});else await navigator.clipboard.writeText(url);$('shareMsg').textContent='✅ تمت المشاركة خارج Mada.'}catch{}};
     $('copyExternal').onclick=async()=>{try{await navigator.clipboard.writeText(url);$('shareMsg').textContent='✅ تم نسخ الرابط.'}catch{$('shareMsg').textContent=url}};
