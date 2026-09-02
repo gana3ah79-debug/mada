@@ -19,7 +19,7 @@
  function loadWiring(){
   if(window.MadaProfileButtons)return;
   if(document.querySelector('script[data-mada-profile-buttons]'))return;
-  const s=document.createElement('script');s.src='profile-button-wiring.js?v=20260902-2';s.dataset.madaProfileButtons='1';document.body.appendChild(s);
+  const s=document.createElement('script');s.src='profile-button-wiring.js?v=20260902-3';s.dataset.madaProfileButtons='1';document.body.appendChild(s);
  }
  loadWiring();
  const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(()=>{fix();loadWiring()},60)});obs.observe(document.body,{childList:true,subtree:true});
