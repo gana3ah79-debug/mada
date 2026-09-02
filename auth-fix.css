@@ -6,7 +6,7 @@
 .auth-sheet-close{position:absolute;left:16px;top:14px;width:42px;height:42px;border:0;background:#eef1f5;color:#111827;border-radius:50%;font-size:28px;line-height:1;z-index:2}
 .auth-secondary{border:0;background:#edf3ff;color:#2567d8;min-height:50px;border-radius:16px;font-weight:900;margin-top:10px}
 #auth .link-btn{display:block;margin:12px auto 0}
-#auth .admin-action{margin-top:12px}
+#auth .admin-action{display:none!important}
 .modal[hidden],#modal[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.auth-sheet-open{overflow:hidden}
 @media(max-width:520px){#auth .auth-card{max-height:88vh;border-radius:26px 26px 0 0;padding:24px 16px 28px}.auth-sheet-close{left:12px;top:10px;width:40px;height:40px}}
