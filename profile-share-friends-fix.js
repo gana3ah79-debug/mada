@@ -3,11 +3,11 @@
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
   async function currentUser(){const s=getSB();if(!s)return null;const r=await s.auth.getUser();return r.data?.user||null}
   async function getShareCount(id){const s=getSB();if(!s)return 0;const r=await s.from('post_shares').select('*',{count:'exact',head:true}).eq('post_id',id);return r.count||0}
-  function setShareCount(btn,count){if(!btn)return;const old=btn.querySelector('.share-count')?.textContent;if(old===String(count))return;btn.dataset.shareCount=String(count);btn.innerHTML=`↗️ مشاركة <span class="share-count">${count}</span>`}
+  function setShareCount(btn,count){if(!btn)return;btn.dataset.shareCount=String(count);btn.innerHTML=`↗️ مشاركة <span class="share-count">${count}</span>`}
   async function enhanceCounts(root){if(!root)return;const buttons=[...root.querySelectorAll('.profile-share[data-id]')];await Promise.all(buttons.map(async b=>setShareCount(b,await getShareCount(b.dataset.id))))}
   function renderSharedPost(post,author,likesCount,commentsCount,sharesCount){
     const article=document.createElement('article');article.className='card post profile-post shared-profile-post';article.dataset.post=post.id;article.dataset.sharedCopy=post.id;
-    article.innerHTML=`<div class="post-head profile-post-head"><div class="avatar">${author?.avatar_url?`<img src="${esc(author.avatar_url)}" alt="">`:esc((author?.display_name||'مستخدم').trim().charAt(0)||'م')}</div><div><b>${esc(author?.display_name||'مستخدم Mada')}</b><div class="post-time">${new Date(post.created_at).toLocaleString('ar-EG')}</div></div></div><div class="shared-post-label">↗️ منشور مُشارك في الملف الشخصي</div><div class="post-text">${esc(post.body||'')}</div>${post.media_url?`<img class="post-image" src="${esc(post.media_url)}" alt="صورة المنشور" loading="lazy">`:''}<div class="post-actions"><button class="profile-like" data-id="${post.id}" data-liked="false">👍 إعجاب ${likesCount}</button><button class="profile-comment" data-id="${post.id}">💬 تعليق ${commentsCount}</button><button class="profile-share" data-id="${post.id}">↗️ مشاركة <span class="share-count">${sharesCount}</span></button></div><div class="profile-comments"><div class="comment-box"><input data-pcomment="${post.id}" placeholder="اكتب تعليقًا..."><button data-psend="${post.id}">إرسال</button></div></div>`;
+    article.innerHTML=`<div class="post-head profile-post-head"><div class="avatar">${author?.avatar_url?`<img src="${esc(author.avatar_url)}" alt="">`:esc((author?.display_name||'مستخدم').trim().charAt(0)||'م')}</div><div><b>${esc(author?.display_name||'مستخدم Mada')}</b><div class="post-time">${new Date(post.created_at).toLocaleString('ar-EG')}</div></div><div class="shared-post-menu-wrap"><button type="button" class="shared-post-menu-btn" aria-label="خيارات المنشور">⋯</button><div class="shared-post-menu" hidden><button type="button" class="shared-delete" data-shared-delete="${post.id}">🗑️ حذف المشاركة من ملفي</button></div></div></div><div class="shared-post-label">↗️ منشور مُشارك في الملف الشخصي</div><div class="post-text">${esc(post.body||'')}</div>${post.media_url?`<img class="post-image" src="${esc(post.media_url)}" alt="صورة المنشور" loading="lazy">`:''}<div class="post-actions"><button class="profile-like" data-id="${post.id}" data-liked="false">👍 إعجاب ${likesCount}</button><button class="profile-comment" data-id="${post.id}">💬 تعليق ${commentsCount}</button><button class="profile-share" data-id="${post.id}">↗️ مشاركة <span class="share-count">${sharesCount}</span></button></div><div class="profile-comments"><div class="comment-box"><input data-pcomment="${post.id}" placeholder="اكتب تعليقًا..."><button data-psend="${post.id}">إرسال</button></div></div>`;
     return article;
   }
   async function loadExistingShares(){
@@ -38,8 +38,20 @@
     alert('تمت مشاركة المنشور داخل الملف الشخصي ✓');
     if(window.__MADA_PROFILE_ID===me.id)setTimeout(loadExistingShares,100);
   }
+  async function deleteSharedPost(id,article){
+    const s=getSB(),me=await currentUser();if(!s||!me)return alert('سجّل الدخول مرة أخرى.');
+    if(!confirm('حذف هذا المنشور من ملفك الشخصي؟\nلن يتم حذف المنشور الأصلي من صاحبه.'))return;
+    const r=await s.from('post_shares').delete().eq('post_id',id).eq('target_user_id',me.id);
+    if(r.error)return alert('تعذر حذف المشاركة: '+r.error.message);
+    article?.remove();
+  }
   function boot(){
-    document.addEventListener('click',e=>{const share=e.target.closest('.profile-share');if(!share)return;e.preventDefault();e.stopImmediatePropagation();shareToProfile(share.dataset.id)},true);
+    document.addEventListener('click',e=>{
+      const share=e.target.closest('.profile-share');if(share){e.preventDefault();e.stopImmediatePropagation();shareToProfile(share.dataset.id);return}
+      const menu=e.target.closest('.shared-post-menu-btn');if(menu){e.preventDefault();e.stopPropagation();const wrap=menu.closest('.shared-post-menu-wrap');const box=wrap?.querySelector('.shared-post-menu');document.querySelectorAll('.shared-post-menu').forEach(x=>{if(x!==box)x.hidden=true});if(box)box.hidden=!box.hidden;return}
+      const del=e.target.closest('.shared-delete');if(del){e.preventDefault();e.stopImmediatePropagation();const article=del.closest('.shared-profile-post');deleteSharedPost(del.dataset.sharedDelete,article);return}
+      document.querySelectorAll('.shared-post-menu').forEach(x=>{if(!e.target.closest('.shared-post-menu-wrap'))x.hidden=true});
+    },true);
     const modal=document.getElementById('modal');if(!modal)return;
     let timer=0;
     const observer=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(()=>{enhanceCounts(modal);loadExistingShares()},120)});
