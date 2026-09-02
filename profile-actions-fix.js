@@ -4,7 +4,6 @@
  const msg=t=>{if(window.showModal)window.showModal('Mada',`<div class="empty">${t}</div>`);else alert(t)};
  async function user(){const s=await sb().auth.getUser();return s.data?.user||null}
  function stop(e){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}
- function setLikeUI(button,liked,count){button.dataset.liked=String(liked);button.classList.toggle('liked',liked);button.textContent=`${liked?'💙':'👍'} إعجاب ${Math.max(0,count)}`}
  async function wire(){
   const page=document.querySelector('#modal .profile-page');
   if(page&&!page.dataset.actionsFixed){
@@ -48,27 +47,6 @@
     if(typeof window.showProfileEdit==='function')return window.showProfileEdit();
     msg('وظيفة تعديل الملف غير متاحة حاليًا.');
    }
-   page.querySelectorAll('.profile-like').forEach(button=>{
-    if(button.dataset.madaLikeFixed==='1')return;
-    button.dataset.madaLikeFixed='1';
-    button.addEventListener('click',async e=>{
-     stop(e);
-     if(button.dataset.busy==='1')return;
-     const postId=button.dataset.id,wasLiked=button.dataset.liked==='true';
-     const oldText=button.textContent,oldLiked=wasLiked;
-     const match=oldText.match(/(\d+)\s*$/),oldCount=match?Number(match[1]):0;
-     const nextLiked=!wasLiked,nextCount=oldCount+(nextLiked?1:-1);
-     button.dataset.busy='1';
-     setLikeUI(button,nextLiked,nextCount);
-     try{
-      const q=nextLiked?await sb().from('post_likes').insert({post_id:postId,user_id:me.id}):await sb().from('post_likes').delete().eq('post_id',postId).eq('user_id',me.id);
-      if(q.error)throw q.error;
-     }catch(err){
-      setLikeUI(button,oldLiked,oldCount);button.textContent=oldText;
-      msg('تعذر حفظ الإعجاب: '+(err?.message||err));
-     }finally{button.dataset.busy='0'}
-    },true);
-   });
    add?.addEventListener('click',e=>{stop(e);friend()},true);
    accept?.addEventListener('click',e=>{stop(e);friend()},true);
    follow?.addEventListener('click',e=>{stop(e);doFollow()},true);
