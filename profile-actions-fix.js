@@ -58,7 +58,7 @@
      const oldText=button.textContent,oldLiked=wasLiked;
      const match=oldText.match(/(\d+)\s*$/),oldCount=match?Number(match[1]):0;
      const nextLiked=!wasLiked,nextCount=oldCount+(nextLiked?1:-1);
-     button.dataset.busy='1';button.disabled=true;
+     button.dataset.busy='1';
      setLikeUI(button,nextLiked,nextCount);
      try{
       const q=nextLiked?await sb().from('post_likes').insert({post_id:postId,user_id:me.id}):await sb().from('post_likes').delete().eq('post_id',postId).eq('user_id',me.id);
@@ -66,7 +66,7 @@
      }catch(err){
       setLikeUI(button,oldLiked,oldCount);button.textContent=oldText;
       msg('تعذر حفظ الإعجاب: '+(err?.message||err));
-     }finally{button.disabled=false;button.dataset.busy='0'}
+     }finally{button.dataset.busy='0'}
     },true);
    });
    add?.addEventListener('click',e=>{stop(e);friend()},true);
