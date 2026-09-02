@@ -28,7 +28,8 @@ function formatDate(value) {
 function handleError(message, error) { console.error(message, error); alert(message); }
 
 async function loadProfile() {
-  const { data, error } = await sb.from('profiles').select('id,username,display_name,avatar_url,bio,role,is_banned,premium_until').eq('id', user.id).maybeSingle();
+  // Keep this query aligned with the real profiles table. premium_until does not exist there.
+  const { data, error } = await sb.from('profiles').select('id,username,display_name,avatar_url,bio,role,is_banned').eq('id', user.id).maybeSingle();
   if (error) throw error;
   profile = data || { display_name: user.email?.split('@')[0] || 'مستخدم Mada' };
   const { data: sub, error: subError } = await sb.from('subscriptions')
@@ -39,7 +40,6 @@ async function loadProfile() {
     .limit(1).maybeSingle();
   if (subError) console.warn('subscription check failed', subError);
   premium = !!sub && (!sub.current_period_end || new Date(sub.current_period_end) > new Date());
-  if (!premium && profile.premium_until) premium = new Date(profile.premium_until) > new Date();
   $('userAvatar').textContent = initials(profile.display_name);
   updatePremiumUI();
 }
