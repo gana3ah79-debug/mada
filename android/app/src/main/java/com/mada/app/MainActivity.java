@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
                 catch (Exception e) { fileCallback = null; return false; }
             }
         });
-        webView.loadUrl(START_URL + "?v=20260901-20");
+        webView.loadUrl(START_URL + "?v=20260902-1");
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
