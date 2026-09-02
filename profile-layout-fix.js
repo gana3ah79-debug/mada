@@ -15,14 +15,20 @@
   if(details){const tabs=p.querySelector('.profile-tabs');if(tabs)tabs.after(details);else p.appendChild(details)}
   p.dataset.madaLayoutFixed='1';
   window.MadaProfileButtons?.wire?.(p);
+  window.MadaFinalLikeFix?.run?.();
  }
  function loadWiring(){
   if(window.MadaProfileButtons)return;
   if(document.querySelector('script[data-mada-profile-buttons]'))return;
-  const s=document.createElement('script');s.src='profile-button-wiring-v4.js?v=20260902-1';s.dataset.madaProfileButtons='1';document.body.appendChild(s);
+  const s=document.createElement('script');s.src='profile-button-wiring-v4.js?v=20260902-2';s.dataset.madaProfileButtons='1';document.body.appendChild(s);
  }
- loadWiring();
- const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(()=>{fix();loadWiring()},60)});obs.observe(document.body,{childList:true,subtree:true});
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{fix();loadWiring()},300));else setTimeout(()=>{fix();loadWiring()},300);
+ function loadLikeFinal(){
+  if(window.MadaFinalLikeFix)return;
+  if(document.querySelector('script[data-mada-final-like]'))return;
+  const s=document.createElement('script');s.src='profile-like-final-fix.js?v=20260902-1';s.dataset.madaFinalLike='1';document.body.appendChild(s);
+ }
+ loadWiring();loadLikeFinal();
+ const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(()=>{fix();loadWiring();loadLikeFinal()},60)});obs.observe(document.body,{childList:true,subtree:true});
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{fix();loadWiring();loadLikeFinal()},300));else setTimeout(()=>{fix();loadWiring();loadLikeFinal()},300);
  window.MadaProfileLayoutFix={run:fix};
 })();
