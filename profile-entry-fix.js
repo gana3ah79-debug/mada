@@ -95,6 +95,48 @@
     }
   }
 
+  function installProfileLikeNoRefresh(){
+    if(document.documentElement.dataset.madaProfileLikeNoRefresh==='1')return;
+    document.documentElement.dataset.madaProfileLikeNoRefresh='1';
+    document.addEventListener('click',async function(e){
+      const button=e.target.closest?.('.profile-like');
+      if(!button)return;
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      if(button.dataset.busy==='1')return;
+      const client=window.MADA_SUPABASE_CLIENT||window.sb;
+      if(!client)return;
+      const postId=button.dataset.id;
+      const wasLiked=button.dataset.liked==='true';
+      const oldText=button.textContent;
+      const m=oldText.match(/(\d+)\s*$/);
+      const oldCount=m?Number(m[1]):0;
+      const nextLiked=!wasLiked;
+      const nextCount=Math.max(0,oldCount+(nextLiked?1:-1));
+      button.dataset.busy='1';
+      button.dataset.liked=String(nextLiked);
+      button.classList.toggle('liked',nextLiked);
+      button.textContent=`${nextLiked?'💙':'👍'} إعجاب ${nextCount}`;
+      try{
+        const auth=await client.auth.getUser();
+        const me=auth.data?.user;
+        if(!me)throw new Error('يجب تسجيل الدخول أولًا');
+        const q=nextLiked
+          ?await client.from('post_likes').insert({post_id:postId,user_id:me.id})
+          :await client.from('post_likes').delete().eq('post_id',postId).eq('user_id',me.id);
+        if(q.error)throw q.error;
+      }catch(err){
+        button.dataset.liked=String(wasLiked);
+        button.classList.toggle('liked',wasLiked);
+        button.textContent=oldText;
+        if(window.showModal)window.showModal('Mada',`<div class="empty">تعذر حفظ الإعجاب: ${err?.message||err}</div>`);
+        else alert('تعذر حفظ الإعجاب: '+(err?.message||err));
+      }finally{
+        button.dataset.busy='0';
+      }
+    },true);
+  }
+
   const $=id=>document.getElementById(id);
+  installProfileLikeNoRefresh();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
