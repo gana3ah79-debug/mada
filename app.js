@@ -3,41 +3,231 @@ const sb = createClient(window.MADA_SUPABASE_URL, window.MADA_SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 const auth = $('auth'), app = $('app'), feed = $('feed'), input = $('postInput'), imageInput = $('imageInput');
 let user = null, profile = null, premium = false, selectedFile = null;
-function esc(s){return String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]))}
-function initials(n){return (n||'م').trim().charAt(0)}
-function showModal(title,body){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modal').hidden=false}
-function closeModal(){$('modal').hidden=true}
-async function loadProfile(){
-  const {data,error}=await sb.from('profiles').select('*').eq('id',user.id).single();
-  if(error){console.error(error);return}
-  profile=data;
-  const {data:sub}=await sb.from('subscriptions').select('status,current_period_end').eq('user_id',user.id).in('status',['trialing','active']).order('current_period_end',{ascending:false}).limit(1).maybeSingle();
-  premium=!!sub && (!sub.current_period_end || new Date(sub.current_period_end)>new Date());
-  $('userAvatar').textContent=initials(profile.display_name); updatePremiumUI();
+let feedPosts = new Map(), activeConversation = null, realtimeChannels = [];
+
+const esc = s => String(s ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+const initials = n => (n || 'م').trim().charAt(0);
+const safeError = e => e?.message || 'حدث خطأ غير متوقع';
+
+function showModal(title, body) {
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = body;
+  $('modal').hidden = false;
 }
-async function loadFeed(){
-  feed.innerHTML='<div class="card empty">جاري تحميل المنشورات…</div>';
-  const {data,error}=await sb.from('posts').select('id,author_id,body,media_url,created_at,profiles(display_name,avatar_url)').eq('visibility','public').order('created_at',{ascending:false}).limit(50);
-  if(error){feed.innerHTML='<div class="card empty">تعذر تحميل المنشورات. حاول مرة أخرى.</div>';console.error(error);return}
-  const ids=(data||[]).map(p=>p.id); let likes=[],comments=[];
-  if(ids.length){const l=await sb.from('post_likes').select('post_id,user_id').in('post_id',ids);likes=l.data||[];const c=await sb.from('comments').select('id,post_id,author_id,body,created_at,profiles(display_name)').in('post_id',ids).order('created_at',{ascending:true});comments=c.data||[];}
-  if(!data?.length){feed.innerHTML='<div class="card empty">لا توجد منشورات بعد. كن أول من ينشر في Mada 👋</div>';return}
-  feed.innerHTML='';
-  data.forEach(p=>{const pl=likes.filter(x=>x.post_id===p.id),cs=comments.filter(x=>x.post_id===p.id),liked=pl.some(x=>x.user_id===user.id);const el=document.createElement('article');el.className='card post';el.innerHTML=`<div class="post-head"><div class="avatar">${initials(p.profiles?.display_name)}</div><div><div class="post-name">${esc(p.profiles?.display_name||'مستخدم Mada')}</div><div class="post-time">${new Date(p.created_at).toLocaleString('ar-EG')}</div></div></div><div class="post-text">${esc(p.body||'')}</div>${p.media_url?`<img class="post-image" src="${esc(p.media_url)}" alt="صورة المنشور">`:''}<div class="post-actions"><button class="like ${liked?'liked':''}" data-id="${p.id}" data-liked="${liked}">👍 إعجاب ${pl.length}</button><button>💬 تعليق ${cs.length}</button><button class="share" data-id="${p.id}">↗️ مشاركة</button></div><div class="comments">${cs.map(c=>`<div class="comment"><b>${esc(c.profiles?.display_name||'مستخدم')}</b> ${esc(c.body)}</div>`).join('')}<div class="comment-box"><input data-comment="${p.id}" placeholder="اكتب تعليقًا..."><button data-send="${p.id}">إرسال</button></div></div>`;feed.appendChild(el);});
+function closeModal() { $('modal').hidden = true; }
+function setBusy(btn, busy, text) {
+  if (!btn) return;
+  btn.disabled = busy;
+  if (busy) btn.dataset.oldText = btn.textContent;
+  btn.textContent = busy ? text : (btn.dataset.oldText || btn.textContent);
 }
-function updatePremiumUI(){$('premiumBanner').hidden=premium;$('premiumBtn').title=premium?'Mada Premium مفعل':'اشترك في Mada Premium'}
-async function addPost(){const text=input.value.trim();const max=premium?5000:1000;if(text.length>max){alert(`الحد الأقصى ${max} حرف`);return}if(!text&&!selectedFile)return;let media_url=null;if(selectedFile){const ext=(selectedFile.name.split('.').pop()||'jpg').toLowerCase();const path=`${user.id}/${crypto.randomUUID()}.${ext}`;const up=await sb.storage.from('mada-media').upload(path,selectedFile,{contentType:selectedFile.type,upsert:false});if(up.error){alert('تعذر رفع الصورة');console.error(up.error);return}media_url=sb.storage.from('mada-media').getPublicUrl(path).data.publicUrl}const {error}=await sb.from('posts').insert({author_id:user.id,body:text||null,media_url,visibility:'public'});if(error){alert('تعذر نشر المنشور');console.error(error);return}input.value='';selectedFile=null;imageInput.value='';input.placeholder='بماذا تفكر؟';await loadFeed()}
-async function toggleLike(postId,liked){if(liked)await sb.from('post_likes').delete().eq('post_id',postId).eq('user_id',user.id);else await sb.from('post_likes').insert({post_id:postId,user_id:user.id});await loadFeed()}
-async function addComment(postId){const box=document.querySelector(`[data-comment="${postId}"]`);const text=box?.value.trim();if(!text)return;const {error}=await sb.from('comments').insert({post_id:postId,author_id:user.id,body:text});if(error){alert('تعذر إضافة التعليق');return}await loadFeed()}
-async function premiumView(){const {data:plan}=await sb.from('premium_plans').select('*').eq('code','monthly').single();showModal('💎 Mada Premium',`<div class="premium-card"><h3>ارتقِ بتجربة Mada</h3><ul class="feature-list"><li>💎 شارة Premium</li><li>🚫 تجربة بدون إعلانات</li><li>📝 منشورات حتى 5000 حرف</li><li>🎨 مزايا وتخصيصات حصرية</li><li>⚡ أولوية للمزايا الجديدة</li></ul><div class="price-box"><b>${esc(plan?.name||'Mada Premium')}</b><br><strong>${plan?.price_egp||99} جنيه مصري / شهر</strong></div><button id="payBtn" class="premium-btn wide">${premium?'Premium مفعل ✓':'الاشتراك والدفع'}</button><p id="payMsg"></p></div>`);if(!premium)$('payBtn').onclick=startCheckout}
-async function startCheckout(){ $('payMsg').textContent='سيتم تجهيز الدفع الآمن…'; const {data,error}=await sb.functions.invoke('create-checkout',{body:{plan_code:'monthly'}}); if(error||!data?.url){$('payMsg').textContent='بوابة الدفع لم تُفعّل بمفاتيح Paymob بعد.';console.error(error||data);return} location.href=data.url }
-async function claimFirstAdmin(){const {data,error}=await sb.functions.invoke('claim-first-admin',{body:{}});if(error||!data?.success){alert('لا يمكن إنشاء مسؤول أول. قد يكون هناك مسؤول موجود بالفعل.');return false}alert('تم تحويل هذا الحساب إلى أول مسؤول في Mada.');return true}
-async function adminLogin(){showModal('⚙️ دخول الإدارة',`<input id="adminEmail" type="email" placeholder="البريد الإداري" style="width:100%;padding:12px;margin:6px 0"><input id="adminPass" type="password" placeholder="كلمة المرور" style="width:100%;padding:12px;margin:6px 0"><button id="adminSubmit" class="primary wide">دخول</button><button id="claimAdmin" class="admin-action" style="width:100%;margin-top:8px">👑 إنشاء أول مسؤول (مرة واحدة)</button><p style="font-size:12px;color:#65676b">زر إنشاء المسؤول يعمل فقط إذا لم يوجد أي مسؤول من قبل.</p>`);$('adminSubmit').onclick=async()=>{const email=$('adminEmail').value.trim(),pass=$('adminPass').value;const {error}=await sb.auth.signInWithPassword({email,password:pass});if(error){alert('بيانات الدخول غير صحيحة');return}const {data:p}=await sb.from('profiles').select('role,is_banned').eq('id',(await sb.auth.getUser()).data.user.id).single();if(p?.role==='admin'&&!p.is_banned){location.href='admin.html';return}alert('هذا الحساب ليس مسؤولاً. إذا كان لا يوجد مسؤول بعد، استخدم زر إنشاء أول مسؤول.');await sb.auth.signOut()};$('claimAdmin').onclick=async()=>{const email=$('adminEmail').value.trim(),pass=$('adminPass').value;if(!email||!pass){alert('اكتب البريد وكلمة المرور أولاً');return}const {error}=await sb.auth.signInWithPassword({email,password:pass});if(error){alert('سجّل الحساب أولاً من شاشة Mada ثم استخدمه هنا.');return}const ok=await claimFirstAdmin();if(ok)location.href='admin.html';else await sb.auth.signOut()}}
-async function start(){const {data:{session}}=await sb.auth.getSession();if(!session){auth.hidden=false;app.hidden=true;return}user=session.user;auth.hidden=true;app.hidden=false;await loadProfile();await loadFeed()}
-$('loginBtn').onclick=async()=>{const name=$('nameInput').value.trim(),email=$('emailInput').value.trim(),password=$('passwordInput').value;if(!email||password.length<6){alert('اكتب بريدًا صحيحًا وكلمة مرور 6 أحرف على الأقل');return}let r=await sb.auth.signInWithPassword({email,password});if(r.error){r=await sb.auth.signUp({email,password,options:{data:{display_name:name||email.split('@')[0]}}});if(r.error){alert(r.error.message);return}if(!r.data.session){$('authMsg').textContent='تم إنشاء الحساب. افتح بريدك واضغط رابط التأكيد ثم سجّل الدخول.';return}}await start()};
+function formatDate(value) {
+  try { return new Date(value).toLocaleString('ar-EG', {dateStyle:'short', timeStyle:'short'}); }
+  catch { return ''; }
+}
+function handleError(message, error) { console.error(message, error); alert(message); }
+
+async function loadProfile() {
+  const { data, error } = await sb.from('profiles').select('id,username,display_name,avatar_url,bio,role,is_banned,premium_until').eq('id', user.id).maybeSingle();
+  if (error) throw error;
+  profile = data || { display_name: user.email?.split('@')[0] || 'مستخدم Mada' };
+  const { data: sub, error: subError } = await sb.from('subscriptions')
+    .select('status,current_period_end')
+    .eq('user_id', user.id)
+    .in('status', ['trialing','active'])
+    .order('current_period_end', { ascending:false })
+    .limit(1).maybeSingle();
+  if (subError) console.warn('subscription check failed', subError);
+  premium = !!sub && (!sub.current_period_end || new Date(sub.current_period_end) > new Date());
+  if (!premium && profile.premium_until) premium = new Date(profile.premium_until) > new Date();
+  $('userAvatar').textContent = initials(profile.display_name);
+  updatePremiumUI();
+}
+
+function renderPost(p, likes, comments) {
+  const liked = likes.some(x => x.user_id === user.id);
+  const author = p.profiles || {};
+  const likeCount = likes.length;
+  const commentHtml = comments.slice(0, 20).map(c => `<div class="comment"><b>${esc(c.profiles?.display_name || 'مستخدم')}</b> ${esc(c.body)}</div>`).join('');
+  const el = document.createElement('article');
+  el.className = 'card post';
+  el.dataset.postId = p.id;
+  el.innerHTML = `<div class="post-head"><div class="avatar">${initials(author.display_name)}</div><div><div class="post-name">${esc(author.display_name || 'مستخدم Mada')}</div><div class="post-time">${formatDate(p.created_at)}</div></div></div>
+  <div class="post-text">${esc(p.body || '')}</div>
+  ${p.media_url ? `<img class="post-image" loading="lazy" src="${esc(p.media_url)}" alt="صورة المنشور">` : ''}
+  <div class="post-actions"><button class="like ${liked ? 'liked':''}" data-id="${p.id}" data-liked="${liked}">👍 إعجاب ${likeCount}</button><button class="comment-toggle" data-id="${p.id}">💬 تعليق ${comments.length}</button><button class="share" data-id="${p.id}">↗️ مشاركة</button></div>
+  <div class="comments"><div class="comment-list">${commentHtml}</div><div class="comment-box"><input data-comment="${p.id}" maxlength="1000" placeholder="اكتب تعليقًا..."><button data-send="${p.id}">إرسال</button></div></div>`;
+  return el;
+}
+
+async function loadFeed() {
+  feed.innerHTML = '<div class="card empty">جاري تحميل المنشورات…</div>';
+  const { data, error } = await sb.from('posts')
+    .select('id,author_id,body,media_url,created_at,profiles!posts_author_id_fkey(display_name,avatar_url)')
+    .eq('visibility','public').order('created_at',{ascending:false}).limit(20);
+  if (error) { feed.innerHTML = `<div class="card empty">تعذر تحميل المنشورات.<br><small>${esc(safeError(error))}</small></div>`; return; }
+  if (!data?.length) { feed.innerHTML = '<div class="card empty">لا توجد منشورات بعد. كن أول من ينشر في Mada 👋</div>'; return; }
+  const ids = data.map(p => p.id);
+  const [likesRes, commentsRes] = await Promise.all([
+    sb.from('post_likes').select('post_id,user_id,reaction_type').in('post_id',ids),
+    sb.from('comments').select('id,post_id,author_id,body,created_at,profiles!comments_author_id_fkey(display_name)').in('post_id',ids).order('created_at',{ascending:true})
+  ]);
+  const likesByPost = new Map(), commentsByPost = new Map();
+  (likesRes.data || []).forEach(x => { if (!likesByPost.has(x.post_id)) likesByPost.set(x.post_id, []); likesByPost.get(x.post_id).push(x); });
+  (commentsRes.data || []).forEach(x => { if (!commentsByPost.has(x.post_id)) commentsByPost.set(x.post_id, []); commentsByPost.get(x.post_id).push(x); });
+  feedPosts.clear(); data.forEach(p => feedPosts.set(p.id,p));
+  const frag = document.createDocumentFragment();
+  data.forEach(p => frag.appendChild(renderPost(p, likesByPost.get(p.id)||[], commentsByPost.get(p.id)||[])));
+  feed.replaceChildren(frag);
+}
+
+function updatePremiumUI() {
+  $('premiumBanner').hidden = premium;
+  $('premiumBtn').title = premium ? 'Mada Premium مفعل' : 'اشترك في Mada Premium';
+}
+
+async function addPost() {
+  const text = input.value.trim();
+  const max = premium ? 5000 : 1000;
+  if (text.length > max) return alert(`الحد الأقصى ${max} حرف`);
+  if (!text && !selectedFile) return;
+  const btn = $('postBtn'); setBusy(btn,true,'جارٍ النشر…');
+  try {
+    let media_url = null;
+    if (selectedFile) {
+      if (!selectedFile.type.startsWith('image/')) throw new Error('اختر صورة صحيحة');
+      if (selectedFile.size > 8 * 1024 * 1024) throw new Error('حجم الصورة يجب ألا يتجاوز 8 ميجابايت');
+      const ext = (selectedFile.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const up = await sb.storage.from('mada-media').upload(path, selectedFile, {contentType:selectedFile.type, upsert:false});
+      if (up.error) throw up.error;
+      media_url = sb.storage.from('mada-media').getPublicUrl(path).data.publicUrl;
+    }
+    const { error } = await sb.from('posts').insert({author_id:user.id,body:text||null,media_url,visibility:'public'});
+    if (error) throw error;
+    input.value=''; selectedFile=null; imageInput.value=''; input.placeholder='بماذا تفكر؟';
+    await loadFeed();
+  } catch (e) { handleError('تعذر نشر المنشور: ' + safeError(e), e); }
+  finally { setBusy(btn,false); }
+}
+
+async function toggleLike(postId, liked) {
+  const btn = feed.querySelector(`.like[data-id="${CSS.escape(postId)}"]`);
+  if (btn) btn.disabled = true;
+  try {
+    const q = liked
+      ? sb.from('post_likes').delete().eq('post_id',postId).eq('user_id',user.id)
+      : sb.from('post_likes').insert({post_id:postId,user_id:user.id,reaction_type:'like'});
+    const {error} = await q;
+    if (error) throw error;
+    if (btn) { btn.dataset.liked = String(!liked); btn.classList.toggle('liked',!liked); const n = Number((btn.textContent.match(/\d+$/)||['0'])[0]); btn.textContent = `👍 إعجاب ${Math.max(0,n+(liked?-1:1))}`; }
+  } catch (e) { handleError('تعذر تحديث الإعجاب: ' + safeError(e), e); }
+  finally { if (btn) btn.disabled=false; }
+}
+
+async function addComment(postId) {
+  const box = feed.querySelector(`[data-comment="${CSS.escape(postId)}"]`);
+  const text = box?.value.trim(); if (!text) return;
+  const send = feed.querySelector(`[data-send="${CSS.escape(postId)}"]`); setBusy(send,true,'…');
+  try {
+    const {error} = await sb.from('comments').insert({post_id:postId,author_id:user.id,body:text});
+    if (error) throw error;
+    box.value='';
+    const list = feed.querySelector(`article[data-post-id="${CSS.escape(postId)}"] .comment-list`);
+    if (list) { const row=document.createElement('div'); row.className='comment'; row.innerHTML=`<b>${esc(profile?.display_name||'مستخدم')}</b> ${esc(text)}`; list.appendChild(row); }
+  } catch(e) { handleError('تعذر إضافة التعليق: ' + safeError(e), e); }
+  finally { setBusy(send,false); }
+}
+
+async function sharePost(postId) {
+  const url = `${location.origin}${location.pathname}#post-${encodeURIComponent(postId)}`;
+  try {
+    if (navigator.share) await navigator.share({title:'Mada',text:'شاهد هذا المنشور على Mada',url});
+    else { await navigator.clipboard?.writeText(url); alert('تم نسخ رابط المنشور'); }
+    await sb.from('post_shares').insert({post_id:postId,user_id:user.id}).catch(()=>{});
+  } catch(e) { if (e?.name !== 'AbortError') console.warn(e); }
+}
+
+async function premiumView() {
+  const {data:plan,error} = await sb.from('premium_plans').select('name,price_egp,interval_months,features').eq('code','monthly').maybeSingle();
+  if(error) console.warn(error);
+  const price = plan?.price_egp ?? 99, months = plan?.interval_months ?? 1;
+  showModal('💎 Mada Premium',`<div class="premium-card"><h3>ارتقِ بتجربة Mada</h3><ul class="feature-list"><li>💎 شارة Premium</li><li>🚫 تجربة بدون إعلانات</li><li>📝 منشورات حتى 5000 حرف</li><li>🎨 مزايا وتخصيصات حصرية</li><li>⚡ أولوية للمزايا الجديدة</li></ul><div class="price-box"><b>${esc(plan?.name||'Mada Premium')}</b><br><strong>${esc(price)} جنيه مصري / ${months===1?'شهر':months+' أشهر'}</strong></div><button id="payBtn" class="premium-btn wide">${premium?'Premium مفعل ✓':'الاشتراك والدفع'}</button><p id="payMsg"></p></div>`);
+  if(!premium) $('payBtn').onclick=startCheckout;
+}
+async function startCheckout(){ const msg=$('payMsg'); if(msg) msg.textContent='سيتم تجهيز الدفع الآمن…'; const {data,error}=await sb.functions.invoke('create-checkout',{body:{plan_code:'monthly'}}); if(error||!data?.url){if(msg)msg.textContent='الدفع الإلكتروني غير مفعّل حاليًا.';console.error(error||data);return} location.href=data.url; }
+async function claimFirstAdmin(){const {data,error}=await sb.functions.invoke('claim-first-admin',{body:{}});if(error||!data?.success){alert('لا يمكن إنشاء مسؤول أول. قد يكون هناك مسؤول موجود بالفعل.');return false}alert('تم تحويل هذا الحساب إلى أول مسؤول في Mada.');return true;}
+async function adminLogin(){showModal('⚙️ دخول الإدارة',`<input id="adminEmail" type="email" placeholder="البريد الإداري" style="width:100%;padding:12px;margin:6px 0"><input id="adminPass" type="password" placeholder="كلمة المرور" style="width:100%;padding:12px;margin:6px 0"><button id="adminSubmit" class="primary wide">دخول</button><button id="claimAdmin" class="admin-action" style="width:100%;margin-top:8px">👑 إنشاء أول مسؤول (مرة واحدة)</button>`);$('adminSubmit').onclick=async()=>{const email=$('adminEmail').value.trim(),pass=$('adminPass').value;const {error}=await sb.auth.signInWithPassword({email,password:pass});if(error){alert('بيانات الدخول غير صحيحة');return}const {data:p}=await sb.from('profiles').select('role,is_banned').eq('id',(await sb.auth.getUser()).data.user.id).single();if(p?.role==='admin'&&!p.is_banned){location.href='admin.html';return}alert('هذا الحساب ليس مسؤولاً.');await sb.auth.signOut()};$('claimAdmin').onclick=async()=>{const email=$('adminEmail').value.trim(),pass=$('adminPass').value;if(!email||!pass)return alert('اكتب البريد وكلمة المرور أولاً');const {error}=await sb.auth.signInWithPassword({email,password:pass});if(error)return alert('سجّل الحساب أولاً من شاشة Mada ثم استخدمه هنا.');const ok=await claimFirstAdmin();if(ok)location.href='admin.html';else await sb.auth.signOut();};}
+
+async function searchUsers(term) {
+  const q = term.trim(); if(q.length < 2) return alert('اكتب حرفين على الأقل');
+  const box=$('results'); if(box) box.innerHTML='<p>جاري البحث…</p>';
+  const {data,error}=await sb.from('profiles').select('id,username,display_name,avatar_url').or(`username.ilike.%${q.replace(/[,()]/g,'')}%,display_name.ilike.%${q.replace(/[,()]/g,'')}%`).neq('id',user.id).limit(15);
+  if(error){if(box)box.innerHTML=`<p>تعذر البحث: ${esc(safeError(error))}</p>`;return;}
+  if(!data?.length){if(box)box.innerHTML='<p>لا توجد نتائج.</p>';return;}
+  if(box)box.innerHTML=data.map(p=>`<div class="comment" style="display:flex;align-items:center;gap:10px"><div class="avatar">${initials(p.display_name)}</div><div style="flex:1"><b>${esc(p.display_name)}</b><br><small>@${esc(p.username||'')}</small></div><button class="admin-action friend-action" data-user="${p.id}">إضافة صديق</button></div>`).join('');
+}
+
+async function openFriends() {
+  showModal('👥 الأصدقاء','<div id="friendsBody">جاري تحميل الأصدقاء…</div>');
+  const {data,error}=await sb.from('friendships').select('id,requester_id,addressee_id,status,created_at').or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`).order('created_at',{ascending:false}).limit(50);
+  if(error){$('friendsBody').innerHTML=`<p>تعذر تحميل الأصدقاء: ${esc(safeError(error))}</p>`;return;}
+  const ids=[...new Set((data||[]).flatMap(x=>[x.requester_id,x.addressee_id]).filter(id=>id!==user.id))];
+  let profiles=[]; if(ids.length){const r=await sb.from('profiles').select('id,username,display_name').in('id',ids);profiles=r.data||[];}
+  const map=new Map(profiles.map(x=>[x.id,x]));
+  $('friendsBody').innerHTML=(data||[]).length?data.map(f=>{const other=f.requester_id===user.id?f.addressee_id:f.requester_id;const p=map.get(other)||{};const canAccept=f.addressee_id===user.id&&f.status==='pending';return `<div class="comment"><b>${esc(p.display_name||'مستخدم')}</b><br><small>${f.status==='accepted'?'صديق':f.status==='pending'?(canAccept?'طلب وارد':'طلب مرسل'):f.status}</small>${canAccept?` <button class="admin-action accept-friend" data-id="${f.id}">قبول</button>`:''}</div>`;}).join(''):'<p>لا توجد صداقات بعد. استخدم البحث لإضافة أشخاص.</p>';
+}
+
+async function addFriend(otherId) {
+  const {data:existing} = await sb.from('friendships').select('id,status').or(`and(requester_id.eq.${user.id},addressee_id.eq.${otherId}),and(requester_id.eq.${otherId},addressee_id.eq.${user.id})`).maybeSingle();
+  if(existing) return alert(existing.status==='accepted'?'أنتم أصدقاء بالفعل':'يوجد طلب صداقة بالفعل');
+  const {error}=await sb.from('friendships').insert({requester_id:user.id,addressee_id:otherId,status:'pending'});
+  if(error) return alert('تعذر إرسال طلب الصداقة: '+safeError(error));
+  alert('تم إرسال طلب الصداقة ✓');
+}
+async function acceptFriend(id){const {error}=await sb.from('friendships').update({status:'accepted',updated_at:new Date().toISOString()}).eq('id',id);if(error)alert('تعذر قبول الطلب: '+safeError(error));else openFriends();}
+
+async function getOrCreateConversation(otherId) {
+  const {data:mine}=await sb.from('conversation_members').select('conversation_id').eq('user_id',user.id);
+  const ids=(mine||[]).map(x=>x.conversation_id);
+  if(ids.length){const {data:both}=await sb.from('conversation_members').select('conversation_id,user_id').in('conversation_id',ids).eq('user_id',otherId);const cid=both?.find(x=>ids.includes(x.conversation_id))?.conversation_id;if(cid)return cid;}
+  const {data:conv,error}=await sb.from('conversations').insert({}).select('id').single(); if(error)throw error;
+  const {error:memberError}=await sb.from('conversation_members').insert([{conversation_id:conv.id,user_id:user.id},{conversation_id:conv.id,user_id:otherId}]); if(memberError)throw memberError;
+  return conv.id;
+}
+async function openMessages() {
+  showModal('💬 الرسائل',`<div id="messagesBody"><p>اختر شخصًا من البحث لبدء محادثة.</p></div><div id="messageComposer" hidden class="comment-box"><input id="messageInput" maxlength="2000" placeholder="اكتب رسالة…"><button id="sendMessage">إرسال</button></div>`);
+  const {data:members}=await sb.from('conversation_members').select('conversation_id,user_id').eq('user_id',user.id).limit(50);
+  if(!members?.length)return;
+  const otherIds=[]; const cidByOther=new Map();
+  for(const m of members){const {data:others}=await sb.from('conversation_members').select('user_id').eq('conversation_id',m.conversation_id).neq('user_id',user.id).limit(1);const oid=others?.[0]?.user_id;if(oid){otherIds.push(oid);cidByOther.set(oid,m.conversation_id);}}
+  const {data:ps}=await sb.from('profiles').select('id,display_name').in('id',[...new Set(otherIds)]);
+  $('messagesBody').innerHTML=(ps||[]).map(p=>`<button class="admin-action message-user" data-user="${p.id}" data-conv="${cidByOther.get(p.id)}">💬 ${esc(p.display_name)}</button>`).join('')||'<p>لا توجد محادثات بعد.</p>';
+}
+async function openConversation(otherId, convId) {
+  const cid=convId||await getOrCreateConversation(otherId); activeConversation=cid;
+  const {data:msgs,error}=await sb.from('messages').select('id,sender_id,body,created_at').eq('conversation_id',cid).order('created_at',{ascending:true}).limit(100);
+  if(error)return alert('تعذر تحميل الرسائل: '+safeError(error));
+  const {data:other}=await sb.from('profiles').select('display_name').eq('id',otherId).maybeSingle();
+  showModal('💬 '+esc(other?.display_name||'محادثة'),`<div id="chatList" style="max-height:55vh;overflow:auto">${(msgs||[]).map(m=>`<div class="comment" style="text-align:${m.sender_id===user.id?'right':'left'}"><span>${esc(m.body)}</span><br><small>${formatDate(m.created_at)}</small></div>`).join('')||'<p>لا توجد رسائل بعد.</p>'}</div><div class="comment-box"><input id="messageInput" maxlength="2000" placeholder="اكتب رسالة…"><button id="sendMessage">إرسال</button></div>`);
+  $('sendMessage').onclick=async()=>{const b=$('messageInput'),text=b.value.trim();if(!text)return;const {error}=await sb.from('messages').insert({conversation_id:cid,sender_id:user.id,body:text});if(error)return alert('تعذر إرسال الرسالة: '+safeError(error));b.value='';const list=$('chatList');const row=document.createElement('div');row.className='comment';row.innerHTML=`<span>${esc(text)}</span><br><small>الآن</small>`;list.appendChild(row);list.scrollTop=list.scrollHeight;};
+  subscribeMessages(cid);
+}
+function subscribeMessages(cid){realtimeChannels.forEach(c=>sb.removeChannel(c));realtimeChannels=[];try{const ch=sb.channel('mada-chat-'+cid).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`conversation_id=eq.${cid}`},payload=>{if(payload.new.sender_id===user.id)return;const list=$('chatList');if(!list)return;const row=document.createElement('div');row.className='comment';row.innerHTML=`<span>${esc(payload.new.body)}</span><br><small>الآن</small>`;list.appendChild(row);list.scrollTop=list.scrollHeight;}).subscribe();realtimeChannels.push(ch);}catch(e){console.warn(e);}}
+function subscribeAppRealtime(){try{const ch=sb.channel('mada-app-'+user.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:`user_id=eq.${user.id}`},payload=>{if(!document.hidden)console.log('New notification',payload.new);}).subscribe();realtimeChannels.push(ch);}catch(e){console.warn(e);}}
+
+async function start(){
+  try { const {data:{session}}=await sb.auth.getSession(); if(!session){auth.hidden=false;app.hidden=true;return;} user=session.user; auth.hidden=true;app.hidden=false; await loadProfile(); await loadFeed(); subscribeAppRealtime(); }
+  catch(e){console.error(e);auth.hidden=false;app.hidden=true;$('authMsg').textContent='تعذر تشغيل Mada الآن. تحقق من الاتصال ثم حاول مرة أخرى.';}
+}
+
+$('loginBtn').onclick=async()=>{const name=$('nameInput').value.trim(),email=$('emailInput').value.trim(),password=$('passwordInput').value;if(!email||password.length<6)return alert('اكتب بريدًا صحيحًا وكلمة مرور 6 أحرف على الأقل');const btn=$('loginBtn');setBusy(btn,true,'جارٍ الدخول…');try{let r=await sb.auth.signInWithPassword({email,password});if(r.error){r=await sb.auth.signUp({email,password,options:{data:{display_name:name||email.split('@')[0]}}});if(r.error)throw r.error;if(!r.data.session)return $('authMsg').textContent='تم إنشاء الحساب. افتح بريدك واضغط رابط التأكيد ثم سجّل الدخول.';}await start();}catch(e){alert('تعذر تسجيل الدخول: '+safeError(e));}finally{setBusy(btn,false)}};
 $('adminLoginBtn').onclick=adminLogin;$('postBtn').onclick=addPost;$('createNav').onclick=()=>input.focus();$('photoBtn').onclick=()=>imageInput.click();imageInput.onchange=()=>{selectedFile=imageInput.files?.[0]||null;if(selectedFile)input.placeholder='اكتب وصف الصورة ثم اضغط نشر'};$('premiumBtn').onclick=premiumView;$('premiumBannerBtn').onclick=premiumView;$('closeModal').onclick=closeModal;
-feed.onclick=async e=>{const like=e.target.closest('.like');if(like){await toggleLike(like.dataset.id,like.dataset.liked==='true');return}const send=e.target.closest('[data-send]');if(send){await addComment(send.dataset.send);return}const share=e.target.closest('.share');if(share){const url=location.href+'#post-'+share.dataset.id;if(navigator.share)await navigator.share({title:'Mada',url});else{await navigator.clipboard?.writeText(url);alert('تم نسخ رابط المنشور')}}};
-$('profileNav').onclick=()=>showModal('الملف الشخصي',`<div style="text-align:center"><div class="avatar" style="margin:auto;width:70px;height:70px;font-size:28px">${initials(profile?.display_name)}</div><h3>${esc(profile?.display_name)} ${premium?'💎':''}</h3><p>${esc(user?.email)}</p>${profile?.role==='admin'?'<p>👑 مسؤول Mada</p>':''}<button id="logout" class="primary wide">تسجيل الخروج</button></div>`);
-$('modal').onclick=async e=>{if(e.target.id==='logout'){await sb.auth.signOut();closeModal();location.reload()}};
-$('friendsNav').onclick=()=>showModal('الأصدقاء','<p>نظام الأصدقاء سيتم ربطه بجدول friendships الموجود في قاعدة البيانات.</p>');
-$('notifyNav').onclick=async()=>{const {data}=await sb.from('notifications').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(30);showModal('الإشعارات',(data?.length?data.map(n=>`<div class="comment"><b>${esc(n.title)}</b><br>${esc(n.body||'')}</div>`).join(''):'<p>لا توجد إشعارات.</p>'))};$('notifyBtn').onclick=$('notifyNav').onclick;$('searchBtn').onclick=()=>showModal('البحث','<input id="searchInput" placeholder="ابحث عن مستخدم…" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px"><button id="doSearch" class="primary wide" style="margin-top:8px">بحث</button><div id="results"></div>');$('msgBtn').onclick=()=>showModal('الرسائل','<p>سنضيف المحادثات الفورية باستخدام Realtime بعد تجهيز شاشة المحادثات.</p>');start();
+feed.onclick=async e=>{const like=e.target.closest('.like');if(like){await toggleLike(like.dataset.id,like.dataset.liked==='true');return}const send=e.target.closest('[data-send]');if(send){await addComment(send.dataset.send);return}const share=e.target.closest('.share');if(share){await sharePost(share.dataset.id);return}const ct=e.target.closest('.comment-toggle');if(ct){feed.querySelector(`[data-comment="${CSS.escape(ct.dataset.id)}"]`)?.focus();}};
+$('profileNav').onclick=()=>showModal('الملف الشخصي',`<div style="text-align:center"><div class="avatar" style="margin:auto;width:70px;height:70px;font-size:28px">${initials(profile?.display_name)}</div><h3>${esc(profile?.display_name||'مستخدم')} ${premium?'💎':''}</h3><p>${esc(user?.email||'')}</p>${profile?.bio?`<p>${esc(profile.bio)}</p>`:''}${profile?.role==='admin'?'<p>👑 مسؤول Mada</p>':''}<button id="logout" class="primary wide">تسجيل الخروج</button></div>`);
+$('modal').onclick=async e=>{if(e.target.id==='logout'){await sb.auth.signOut();closeModal();location.reload()}const friend=e.target.closest('.friend-action');if(friend)await addFriend(friend.dataset.user);const accept=e.target.closest('.accept-friend');if(accept)await acceptFriend(accept.dataset.id);const mu=e.target.closest('.message-user');if(mu)await openConversation(mu.dataset.user,mu.dataset.conv);if(e.target.id==='doSearch')await searchUsers($('searchInput').value);};
+$('friendsNav').onclick=openFriends;$('notifyNav').onclick=async()=>{const {data,error}=await sb.from('notifications').select('id,type,title,body,read_at,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(30);if(error)return showModal('الإشعارات',`<p>تعذر تحميل الإشعارات: ${esc(safeError(error))}</p>`);showModal('الإشعارات',(data?.length?data.map(n=>`<div class="comment"><b>${esc(n.title||'إشعار')}</b><br>${esc(n.body||'')}<br><small>${formatDate(n.created_at)}</small></div>`).join(''):'<p>لا توجد إشعارات.</p>'));};$('notifyBtn').onclick=$('notifyNav').onclick;
+$('searchBtn').onclick=()=>showModal('البحث عن مستخدم',`<input id="searchInput" placeholder="اسم المستخدم…" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px"><button id="doSearch" class="primary wide" style="margin-top:8px">بحث</button><div id="results"></div>`);
+$('msgBtn').onclick=openMessages;
+sb.auth.onAuthStateChange((_event,session)=>{if(!session&&user){user=null;auth.hidden=false;app.hidden=true;}});
+start();
