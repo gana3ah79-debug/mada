@@ -3,63 +3,69 @@
  const sb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
  let busy=false,lastPage=null,lastId='';
- function injectExactStyle(){
+ function style(){
   if(document.getElementById('mada-fb-exact-style'))return;
   const s=document.createElement('style');s.id='mada-fb-exact-style';s.textContent=`
-   .fb-profile-modal .profile-page{font-family:Arial,Tahoma,sans-serif!important;background:#fff!important;color:#171717!important}
-   .fb-profile-modal .profile-main{padding:0 12px 12px!important;text-align:right!important}
-   .fb-profile-modal .profile-page .cover{height:112px!important;background:#e9edf2!important}
-   .fb-profile-modal .profile-avatar{width:92px!important;height:92px!important;margin:-46px 0 5px auto!important;border:4px solid #fff!important;font-size:30px!important}
-   .fb-profile-modal .profile-page h2{font-size:22px!important;font-weight:800!important;margin:0 0 2px!important}
-   .fb-profile-modal .profile-bio{font-size:14px!important;line-height:1.5!important;margin:0 0 4px!important;color:#656d78!important}
-   .fb-profile-modal .profile-stats{display:flex!important;gap:18px!important;justify-content:flex-start!important;margin:2px 0!important;padding:0!important}
-   .fb-profile-modal .profile-stats>button{padding:2px 0!important;background:transparent!important}
-   .fb-profile-modal .profile-stats b{font-size:16px!important;font-weight:800!important}.fb-profile-modal .profile-stats span{font-size:12px!important}
-   .fb-profile-modal .profile-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;margin-top:7px!important}
-   .fb-profile-modal .profile-actions button{min-width:0!important;width:100%!important;min-height:38px!important;height:38px!important;border-radius:7px!important;font-size:13px!important;font-weight:800!important;padding:6px!important}
-   .fb-profile-modal .profile-actions button:last-child{grid-column:1/-1}
-   .fb-profile-modal .profile-actions .primary{background:#1877f2!important;color:#fff!important}.fb-profile-modal .profile-actions .profile-pill{background:#e4e6eb!important;color:#172033!important}
-   .fb-profile-modal .profile-tabs{margin-top:5px!important;position:sticky!important;top:0!important;background:#fff!important;border-top:1px solid #e4e6eb!important;border-bottom:1px solid #ddd!important;z-index:7}
-   .fb-profile-modal .profile-tabs button{font-size:14px!important;padding:10px 5px!important;color:#65676b!important}.fb-profile-modal .profile-tabs .active{color:#1877f2!important}
-   .fb-details,.fb-friends,.fb-profile-composer{margin:0!important;padding:12px!important;border:0!important;border-top:7px solid #f0f2f5!important;border-radius:0!important;box-shadow:none!important}
-   .fb-details h3,.fb-friends h3{font-size:18px!important;margin:0 0 8px!important}.fb-detail-list>div{font-size:15px!important;padding:4px 0!important}
-   .fb-friends-grid{gap:9px!important;overflow:hidden!important}.fb-friends-grid>button{width:74px!important;min-width:74px!important}.fb-friend-avatar{width:74px!important;height:74px!important}.fb-friends-grid b{font-size:12px!important}
-   .fb-profile-composer{padding:10px 12px!important}.fb-composer-row button{font-size:15px!important;padding:9px 12px!important}.fb-composer-actions button{font-size:13px!important;padding:8px!important}
-   .fb-section-title,.fb-shared-section h3{font-size:18px!important;padding:10px 12px 5px!important;border-top:7px solid #f0f2f5!important}
-   .profile-content{padding:0!important}.profile-post{border-top:7px solid #f0f2f5!important}.profile-post-head{padding:9px 12px 5px!important}.profile-post .post-text{font-size:16px!important;line-height:1.7!important;padding:5px 12px 9px!important}.profile-post .post-actions button{font-size:13px!important}
-   .fb-share-item{padding:9px 12px 11px!important}.fb-share-label{font-size:13px!important}.fb-share-author{font-size:14px!important}.fb-share-text{font-size:16px!important}
-   @media(max-width:600px){.fb-profile-modal .profile-page .cover{height:96px!important}.fb-profile-modal .profile-avatar{width:86px!important;height:86px!important;margin-top:-43px!important}.fb-profile-modal .profile-page h2{font-size:21px!important}.fb-profile-modal .profile-bio{font-size:14px!important}.fb-profile-modal .profile-actions button{font-size:13px!important}.fb-friend-avatar,.fb-friends-grid>button{width:68px!important;min-width:68px!important}.fb-friend-avatar{height:68px!important}}
+   .fb-profile-modal{padding:0!important;background:#fff!important}
+   .fb-profile-modal .modal-card{padding:0!important;max-width:100%!important;width:100%!important;border-radius:0!important;box-shadow:none!important}
+   .fb-profile-modal #modalBody{padding:0!important}
+   .fb-profile-header{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:#fff;border-bottom:1px solid #e4e6eb;direction:rtl;position:sticky;top:0;z-index:20}
+   .fb-profile-header .fb-ph-name{font-size:18px;font-weight:800;flex:1;text-align:right;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+   .fb-ph-btn{width:38px;height:38px;border:0;border-radius:50%;background:#f0f2f5;font-size:20px;font-weight:900;display:grid;place-items:center}
+   .profile-page{width:100%!important;max-width:none!important;margin:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;overflow:visible!important}
+   .profile-page .cover{height:128px!important;background:#e9edf2!important;background-size:cover!important;background-position:center!important;border:0!important}
+   .profile-page .profile-main{padding:0 12px 10px!important;text-align:right!important;position:relative!important}
+   .profile-page .profile-avatar{width:96px!important;height:96px!important;margin:-48px 0 6px auto!important;border:4px solid #fff!important;box-shadow:0 2px 8px rgba(0,0,0,.18)!important;font-size:32px!important}
+   .profile-page h2{font-size:22px!important;line-height:1.35!important;font-weight:800!important;margin:0 0 2px!important}
+   .profile-page .profile-bio{font-size:14px!important;line-height:1.5!important;margin:0 0 4px!important;color:#65676b!important;text-align:right!important}
+   .profile-page .profile-stats{display:flex!important;justify-content:flex-start!important;gap:22px!important;border:0!important;margin:2px 0 7px!important;padding:0!important}
+   .profile-page .profile-stats>button{flex:0 0 auto!important;padding:2px 0!important;background:transparent!important}
+   .profile-page .profile-stats b{font-size:16px!important;font-weight:800!important}.profile-page .profile-stats span{font-size:12px!important;color:#65676b!important}
+   .profile-page .profile-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important;margin-top:6px!important}
+   .profile-page .profile-actions button{width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;border-radius:7px!important;font-size:13px!important;font-weight:800!important;padding:5px!important;box-shadow:none!important}
+   .profile-page .profile-actions button:last-child{grid-column:1/-1}
+   .profile-page .profile-actions .primary{background:#1877f2!important;color:#fff!important}.profile-page .profile-actions .profile-pill{background:#e4e6eb!important;color:#172033!important}
+   .fb-profile-info,.fb-profile-friends,.fb-profile-composer,.fb-shared-section,.profile-content{border-top:7px solid #f0f2f5!important;margin:0!important;background:#fff!important;box-shadow:none!important;border-radius:0!important}
+   .fb-profile-info{padding:12px!important}
+   .fb-profile-info h3,.fb-profile-friends h3,.fb-shared-section h3{font-size:18px!important;margin:0 0 8px!important;font-weight:800!important}
+   .fb-detail-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:15px!important}
+   .fb-profile-friends{padding:12px!important}.fb-friends-head{display:flex;justify-content:space-between;align-items:center}.fb-friends-head button{border:0;background:transparent;color:#1877f2;font-size:14px;font-weight:700}
+   .fb-friends-grid{display:flex!important;gap:9px!important;overflow-x:auto!important;padding-bottom:2px}.fb-friend-card{width:74px;min-width:74px;border:0;background:transparent;text-align:center;font:inherit;padding:0}.fb-friend-avatar{width:74px!important;height:74px!important;border-radius:50%!important;overflow:hidden;background:#e9edf5;display:grid;place-items:center;font-weight:800}.fb-friend-avatar img{width:100%;height:100%;object-fit:cover}.fb-friend-card b{display:block;font-size:12px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+   .fb-profile-composer{padding:10px 12px!important}.fb-composer-row{display:flex;align-items:center;gap:8px}.fb-mini-avatar{width:40px;height:40px;border-radius:50%;overflow:hidden;background:#e9edf5;display:grid;place-items:center;font-weight:800}.fb-mini-avatar img{width:100%;height:100%;object-fit:cover}.fb-think{flex:1;border:0;border-radius:22px;background:#f0f2f5;padding:11px 14px;text-align:right;font-size:15px;color:#65676b}.fb-composer-actions{display:flex;justify-content:space-around;border-top:1px solid #e4e6eb;margin-top:8px;padding-top:7px}.fb-composer-actions button{border:0;background:transparent;font-size:13px;font-weight:700}
+   .profile-page .profile-tabs{display:flex!important;margin:0!important;border-top:7px solid #f0f2f5!important;border-bottom:1px solid #ddd!important;background:#fff!important;position:sticky!important;top:48px!important;z-index:10!important}
+   .profile-page .profile-tabs button{flex:1!important;padding:11px 5px!important;font-size:14px!important;font-weight:800!important;color:#65676b!important;background:transparent!important;border:0!important}.profile-page .profile-tabs button.active{color:#1877f2!important}.profile-page .profile-tabs button.active:after{height:3px!important;background:#1877f2!important;left:18%!important;right:18%!important}
+   .profile-content{padding:0!important}.profile-posts{display:grid!important;gap:0!important}.profile-post{border:0!important;border-radius:0!important;border-top:7px solid #f0f2f5!important;box-shadow:none!important;overflow:hidden!important}.profile-post-head{padding:10px 12px 5px!important}.profile-post .post-text{padding:5px 12px 9px!important;font-size:16px!important;line-height:1.75!important}.profile-post .post-image{width:100%!important;max-height:520px!important;object-fit:cover!important}.profile-post .post-actions{padding:4px 6px!important}.profile-post .post-actions button{font-size:13px!important}
+   .fb-shared-section{padding:0!important}.fb-shared-section h3{padding:10px 12px 5px!important}.fb-share-item{border-top:1px solid #edf0f4!important;padding:9px 12px 11px!important}.fb-share-label{font-size:13px!important;color:#1877f2!important;font-weight:800!important}.fb-share-author{font-size:14px!important}.fb-share-text{font-size:16px!important;line-height:1.7!important}
+   @media(max-width:600px){.profile-page .cover{height:112px!important}.profile-page .profile-avatar{width:92px!important;height:92px!important;margin-top:-46px!important}.profile-page h2{font-size:21px!important}.fb-profile-header{height:46px}.profile-page .profile-actions button{font-size:13px!important}.fb-profile-friends{padding:10px 12px!important}}
   `;document.head.appendChild(s);
  }
+ function header(page){
+  if(page.querySelector('.fb-profile-header'))return;
+  const name=page.querySelector('h2')?.textContent?.replace('👑','').trim()||'الملف الشخصي';
+  const h=document.createElement('div');h.className='fb-profile-header';h.innerHTML=`<button class="fb-ph-btn" type="button" data-profile-back>‹</button><div class="fb-ph-name">${esc(name)}</div><button class="fb-ph-btn" type="button">⋯</button>`;
+  page.prepend(h);h.querySelector('[data-profile-back]').onclick=()=>document.getElementById('closeModal')?.click();
+ }
+ async function infoAndFriends(page,id){
+  if(page.querySelector('.fb-profile-info'))return;
+  const p=(await sb().from('profiles').select('*').eq('id',id).maybeSingle()).data||{};
+  const info=document.createElement('section');info.className='fb-profile-info';
+  const rows=[];if(p.location)rows.push('📍 '+p.location);if(p.relationship_status)rows.push('💞 '+p.relationship_status);if(p.job)rows.push('💼 '+p.job);if(p.education)rows.push('🎓 '+p.education);
+  if(rows.length)info.innerHTML='<h3>التفاصيل الشخصية</h3>'+rows.map(x=>`<div class="fb-detail-row">${esc(x)}</div>`).join('');
+  if(info.innerHTML){const tabs=page.querySelector('.profile-tabs');tabs?.after(info)}
+  const f1=await sb().from('friendships').select('requester_id,addressee_id').eq('requester_id',id).eq('status','accepted').limit(12);const f2=await sb().from('friendships').select('requester_id,addressee_id').eq('addressee_id',id).eq('status','accepted').limit(12);
+  const ids=[...new Set([...(f1.data||[]).map(x=>x.addressee_id),...(f2.data||[]).map(x=>x.requester_id)])].filter(x=>x&&x!==id).slice(0,12);if(!ids.length)return;
+  const fr=(await sb().from('profiles').select('id,display_name,avatar_url').in('id',ids)).data||[];
+  const sec=document.createElement('section');sec.className='fb-profile-friends';sec.innerHTML=`<div class="fb-friends-head"><h3>الأصدقاء</h3><button type="button">عرض الكل</button></div><div class="fb-friends-grid">${fr.map(x=>`<button class="fb-friend-card" type="button"><span class="fb-friend-avatar">${x.avatar_url?`<img src="${esc(x.avatar_url)}">`:esc((x.display_name||'م').trim().charAt(0))}</span><b>${esc(x.display_name||'مستخدم')}</b></button>`).join('')}</div>`;
+  const anchor=page.querySelector('.profile-content');anchor?.before(sec);
+ }
+ function composer(page,id){
+  if(page.querySelector('.fb-profile-composer'))return;
+  const avatar=page.querySelector('.profile-avatar')?.querySelector('img')?.src||'';const sec=document.createElement('section');sec.className='fb-profile-composer';sec.innerHTML=`<div class="fb-composer-row"><span class="fb-mini-avatar">${avatar?`<img src="${esc(avatar)}">`:'م'}</span><button class="fb-think" type="button">بم تفكر؟</button></div><div class="fb-composer-actions"><button type="button">🖼️ صورة</button><button type="button">🎥 فيديو</button><button type="button">🎬 ريلز</button></div>`;const friends=page.querySelector('.fb-profile-friends');(friends||page.querySelector('.profile-content'))?.after(sec);sec.querySelector('.fb-think').onclick=()=>document.getElementById('createNav')?.click();
+ }
  async function sharedPosts(page,id){
-  if(busy||!page||!id)return;
-  if(page.querySelector('.fb-shared-section')&&lastPage===page&&lastId===id)return;
-  busy=true;
-  try{
-   const r=await sb().from('post_shares').select('post_id,user_id,target_user_id,created_at').eq('target_user_id',id).order('created_at',{ascending:false}).limit(30);
-   const shares=r.data||[];if(!shares.length)return;
-   const ids=[...new Set(shares.map(x=>x.post_id).filter(Boolean))];
-   const pr=await sb().from('posts').select('id,author_id,body,media_url,created_at').in('id',ids);const posts=pr.data||[];if(!posts.length)return;
-   const aids=[...new Set(posts.map(x=>x.author_id).filter(Boolean))];const ar=aids.length?await sb().from('profiles').select('id,display_name,avatar_url').in('id',aids):{data:[]};
-   const am=new Map((ar.data||[]).map(x=>[x.id,x])),pm=new Map(posts.map(x=>[x.id,x]));
-   const rows=shares.map(s=>{const p=pm.get(s.post_id),a=p&&am.get(p.author_id);return p?`<article class="fb-share-item"><div class="fb-share-label">↗️ مشاركة</div><div class="fb-share-author"><span>${a?.avatar_url?`<img src="${esc(a.avatar_url)}">`:esc((a?.display_name||'مستخدم').trim().charAt(0))}</span><b>${esc(a?.display_name||'مستخدم Mada')}</b><small> · مشاركة داخل الملف الشخصي</small></div>${p.body?`<div class="fb-share-text">${esc(p.body)}</div>`:''}${p.media_url?`<img src="${esc(p.media_url)}" alt="" loading="lazy">`:''}</article>`:''}).filter(Boolean).join('');
-   if(!rows)return;
-   const sec=document.createElement('section');sec.className='fb-shared-section';sec.innerHTML='<h3>المنشورات</h3>'+rows;
-   const content=page.querySelector('.profile-content');if(content)content.parentNode.insertBefore(sec,content);else page.appendChild(sec);lastPage=page;lastId=id;
-  }finally{busy=false}
- }
- function polish(){
-  injectExactStyle();
-  const m=modal(),page=m?.querySelector('.profile-page');if(!m||!page)return;
-  m.querySelector('.modal-card')?.classList.add('fb-profile-modal');
-  const roots=m.querySelectorAll('#modalBody>.profile-page');roots.forEach((x,i)=>{if(i)x.remove()});
-  const top=page.querySelector('.fb-profile-top');if(top){top.querySelector('b')?.remove();top.style.justifyContent='flex-start'}
-  const id=window.__MADA_PROFILE_ID,me=window.user?.id;
-  if(id&&me&&id===me&&page.querySelector('#editProfile')&&!page.querySelector('#addStoryProfile')){
-   const edit=page.querySelector('#editProfile');const story=document.createElement('button');story.id='addStoryProfile';story.type='button';story.className='profile-pill';story.textContent='➕ إضافة إلى القصة';edit.parentNode.insertBefore(story,edit);story.onclick=()=>{m.querySelector('#closeModal')?.click();setTimeout(()=>window.MadaStoriesReels?.create?.('story'),120)};
-  }
-  sharedPosts(page,id);
- }
- const start=()=>{const m=modal();if(m)new MutationObserver(()=>setTimeout(polish,80)).observe(m,{childList:true,subtree:true});polish()};
+  if(busy||!page||!id||page.querySelector('.fb-shared-section'))return;
+  busy=true;try{const r=await sb().from('post_shares').select('post_id,user_id,target_user_id,created_at').eq('target_user_id',id).order('created_at',{ascending:false}).limit(30);const shares=r.data||[];if(!shares.length)return;const ids=[...new Set(shares.map(x=>x.post_id).filter(Boolean))];const posts=(await sb().from('posts').select('id,author_id,body,media_url,created_at').in('id',ids)).data||[];if(!posts.length)return;const aids=[...new Set(posts.map(x=>x.author_id).filter(Boolean))];const ar=aids.length?(await sb().from('profiles').select('id,display_name,avatar_url').in('id',aids)).data||[]:[];const am=new Map(ar.map(x=>[x.id,x])),pm=new Map(posts.map(x=>[x.id,x]));const rows=shares.map(s=>{const p=pm.get(s.post_id),a=p&&am.get(p.author_id);return p?`<article class="fb-share-item"><div class="fb-share-label">↗️ مشاركة</div><div class="fb-share-author"><span>${a?.avatar_url?`<img src="${esc(a.avatar_url)}">`:esc((a?.display_name||'مستخدم').trim().charAt(0))}</span><b>${esc(a?.display_name||'مستخدم Mada')}</b><small> · مشاركة داخل الملف الشخصي</small></div>${p.body?`<div class="fb-share-text">${esc(p.body)}</div>`:''}${p.media_url?`<img src="${esc(p.media_url)}" alt="" loading="lazy">`:''}</article>`:''}).filter(Boolean).join('');if(!rows)return;const sec=document.createElement('section');sec.className='fb-shared-section';sec.innerHTML='<h3>المنشورات</h3>'+rows;const content=page.querySelector('.profile-content');content?.before(sec);lastPage=page;lastId=id}finally{busy=false}}
+ function polish(){style();const m=modal(),page=m?.querySelector('.profile-page');if(!m||!page)return;m.querySelector('.modal-card')?.classList.add('fb-profile-modal');const roots=m.querySelectorAll('#modalBody>.profile-page');roots.forEach((x,i)=>{if(i)x.remove()});header(page);const id=window.__MADA_PROFILE_ID,me=window.user?.id;if(id&&me&&id===me&&page.querySelector('#editProfile')&&!page.querySelector('#addStoryProfile')){const edit=page.querySelector('#editProfile');const story=document.createElement('button');story.id='addStoryProfile';story.type='button';story.className='profile-pill';story.textContent='➕ إضافة إلى القصة';edit.parentNode.insertBefore(story,edit);story.onclick=()=>{m.querySelector('#closeModal')?.click();setTimeout(()=>window.MadaStoriesReels?.create?.('story'),120)}};infoAndFriends(page,id);composer(page,id);sharedPosts(page,id)}
+ const start=()=>{const m=modal();if(m){new MutationObserver(()=>setTimeout(polish,100)).observe(m,{childList:true,subtree:true});setTimeout(polish,100)}};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
