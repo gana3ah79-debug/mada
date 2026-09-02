@@ -14,14 +14,7 @@
   async function sharedPosts(profileId){const sh=await sb().from('post_shares').select('post_id,created_at').eq('user_id',profileId).is('target_user_id',null).order('created_at',{ascending:false}).limit(50);const rows=sh.data||[];if(!rows.length)return[];const ids=[...new Set(rows.map(x=>x.post_id))];const pr=await sb().from('posts').select('id,author_id,body,media_url,created_at,visibility').in('id',ids);const posts=pr.data||[];const aids=[...new Set(posts.map(x=>x.author_id))];const ar=aids.length?await sb().from('profiles').select('id,display_name,avatar_url').in('id',aids):{data:[]};const am=new Map((ar.data||[]).map(x=>[x.id,x]));const by=new Map(posts.map(x=>[x.id,x]));return rows.map(x=>({share:x,p:by.get(x.post_id),a:am.get(by.get(x.post_id)?.author_id)})).filter(x=>x.p)}
   function renderShares(items){
     if(!items.length)return'<div class="empty">لا توجد مشاركات في الملف الشخصي بعد.</div>';
-    return items.map(x=>{
-      const name=esc(x.a?.display_name||'مستخدم');
-      const avatar=esc((x.a?.display_name||'م').trim().charAt(0));
-      const time=new Date(x.p.created_at).toLocaleString('ar-EG');
-      const body=esc(x.p.body||'');
-      const image=x.p.media_url?'<img class="post-image" src="'+esc(x.p.media_url)+'" alt="منشور">':'';
-      return '<article class="card profile-shared-post"><div class="shared-label">↗️ شارك منشورًا</div><div class="post-head"><div class="avatar">'+avatar+'</div><div><b>'+name+'</b><div class="post-time">'+time+'</div></div></div><div class="post-text">'+body+'</div>'+image+'<div class="post-actions"><button class="profile-share" data-id="'+x.p.id+'">↗️ مشاركة</button></div></article>';
-    }).join('');
+    return items.map(x=>{const name=esc(x.a?.display_name||'مستخدم');const avatar=esc((x.a?.display_name||'م').trim().charAt(0));const time=new Date(x.p.created_at).toLocaleString('ar-EG');const body=esc(x.p.body||'');const image=x.p.media_url?'<img class="post-image" src="'+esc(x.p.media_url)+'" alt="منشور">':'';return '<article class="card profile-shared-post"><div class="shared-label">↗️ شارك منشورًا</div><div class="post-head"><div class="avatar">'+avatar+'</div><div><b>'+name+'</b><div class="post-time">'+time+'</div></div></div><div class="post-text">'+body+'</div>'+image+'<div class="post-actions"><button class="profile-share" data-id="'+x.p.id+'">↗️ مشاركة</button></div></article>'}).join('');
   }
   async function enhanceProfile(profileId){const box=$('profilePosts'),tab=$('tabPosts');if(!box)return;if(tab){tab.textContent='المشاركات';tab.classList.add('active')}box.innerHTML=renderShares(await sharedPosts(profileId));decorateModalBadges(profileId)}
   async function decorateModalBadges(profileId){const bm=await badges([profileId]),b=bm.get(profileId);if(!b)return;const h=badgeHtml(b),h2=document.querySelector('#modalBody .profile-main h2');if(h2&&!h2.dataset.badgeDone){h2.insertAdjacentHTML('beforeend',' '+h);h2.dataset.badgeDone='1'}}
@@ -29,6 +22,43 @@
   async function publicOrPrivateProfile(id){if(!id)return;if(window.user&&oldOpenProfile){try{await oldOpenProfile(id);setTimeout(()=>enhanceProfile(id),80);return}catch(e){}}return publicProfile(id)}
   window.openProfile=publicOrPrivateProfile;window.MadaFeatureControls={loadSettings,applyPremiumVisibility,decorateFeed,enhanceProfile};
   function storyShape(){document.querySelectorAll('.story-card:not(.add-story)').forEach(x=>x.classList.add('vertical-story'))}
-  function boot(){loadSettings();installShareInterceptor();storyShape();decorateFeed();const obs=new MutationObserver(()=>{storyShape();decorateFeed();applyPremiumVisibility()});obs.observe(document.body,{childList:true,subtree:true});if(window.MadaStoriesReels?.loadStories)window.MadaStoriesReels.loadStories()}
+
+  async function searchPanel(){
+    showModal('⌕ بحث في Mada','<div class="mada-search"><input id="madaSearchInput" placeholder="ابحث عن شخص…" autocomplete="off"><button id="madaSearchBtn" class="primary wide">بحث</button><div id="madaSearchResults" class="results"></div></div>');
+    const run=async()=>{const q=$('madaSearchInput').value.trim();const box=$('madaSearchResults');if(q.length<2){box.innerHTML='<div class="empty">اكتب حرفين على الأقل للبحث.</div>';return}box.innerHTML='<div class="empty">جاري البحث…</div>';const users=await searchUsers(q);box.innerHTML=users.length?users.map(x=>`<button class="mada-search-result" data-open-profile="${x.id}"><span class="avatar">${esc((x.display_name||'م').trim().charAt(0))}</span><span><b>${esc(x.display_name||'مستخدم')}</b><small>${esc(x.role==='admin'?'مسؤول Mada':'عضو في Mada')}</small></span><strong>فتح</strong></button>`).join(''):'<div class="empty">لا توجد نتائج مطابقة.</div>'};$('madaSearchBtn').onclick=run;$('madaSearchInput').onkeydown=e=>{if(e.key==='Enter')run()};$('madaSearchResults').onclick=e=>{const b=e.target.closest('[data-open-profile]');if(b)publicOrPrivateProfile(b.dataset.openProfile)};$('madaSearchInput').focus();
+  }
+
+  async function notificationsPanel(){
+    showModal('🔔 الإشعارات','<div id="madaNotifications" class="notifications-panel"><div class="empty">جاري تحميل الإشعارات…</div></div>');
+    const box=$('madaNotifications');if(!box)return;const r=await sb().from('notifications').select('*').eq('user_id',window.user.id).order('created_at',{ascending:false}).limit(50);if(r.error){box.innerHTML='<div class="empty">لا يمكن تحميل الإشعارات الآن.</div>';return}const rows=r.data||[];box.innerHTML=rows.length?rows.map(n=>`<article class="mada-notification"><div class="notification-icon">🔔</div><div><b>${esc(n.title||n.type||'إشعار')}</b><p>${esc(n.body||n.message||'لديك تحديث جديد في Mada')}</p><small>${n.created_at?new Date(n.created_at).toLocaleString('ar-EG'):''}</small></div></article>`).join(''):'<div class="empty">لا توجد إشعارات جديدة 🎉</div>';
+  }
+
+  function menuPanel(){
+    showModal('☰ قائمة Mada',`<div class="mada-menu-grid">
+      <button data-nav="home">🏠<b>الرئيسية</b><small>آخر المنشورات</small></button>
+      <button data-nav="profile">👤<b>ملفي الشخصي</b><small>الملف والمنشورات</small></button>
+      <button data-nav="friends">👥<b>الأصدقاء</b><small>طلبات واقتراحات</small></button>
+      <button data-nav="messages">💬<b>الرسائل</b><small>محادثات فورية</small></button>
+      <button data-nav="notifications">🔔<b>الإشعارات</b><small>آخر التنبيهات</small></button>
+      <button data-nav="reels">🎬<b>الريلز</b><small>شاهد وانشر</small></button>
+      <button data-nav="theme">🌙<b>الوضع الليلي</b><small>تغيير المظهر</small></button>
+      <button data-nav="premium">💎<b>Premium</b><small>الاشتراك والمزايا</small></button>
+    </div>`);
+    $('modalBody').querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{const n=b.dataset.nav;if(n==='home'){closeModal();window.scrollTo({top:0,behavior:'smooth'})}if(n==='profile'){closeModal();publicOrPrivateProfile(window.user?.id)}if(n==='friends')window.Social?.center();if(n==='messages')window.messagesView?.();else if(n==='notifications')notificationsPanel();else if(n==='reels')window.MadaStoriesReels?.loadReels();else if(n==='theme')applyTheme(!document.body.classList.contains('dark'));else if(n==='premium')window.addManualPayment?.()});
+  }
+
+  function createPanel(){
+    if(window.MadaStoriesReels?.create)return window.MadaStoriesReels.create('story');
+    showModal('➕ إنشاء','<div class="mada-create-grid"><button id="quickPostCreate">📝 منشور</button><button id="quickStoryCreate">⭕ قصة</button><button id="quickReelCreate">🎬 ريل</button></div>');
+    $('quickPostCreate').onclick=()=>{$('closeModal').click();$('postInput')?.focus()};$('quickStoryCreate').onclick=()=>window.MadaStoriesReels?.create('story');$('quickReelCreate').onclick=()=>window.MadaStoriesReels?.create('reel');
+  }
+
+  function wireNavigation(){
+    const bind=(id,fn)=>{const e=$(id);if(e){e.onclick=fn;e.classList.add('mada-functional')}};
+    bind('searchBtn',searchPanel);bind('msgBtn',()=>window.messagesView?.());bind('msgBtn2',()=>window.messagesView?.());bind('themeBtn',()=>applyTheme(!document.body.classList.contains('dark')));bind('notifyBtn',notificationsPanel);bind('notifyNav',notificationsPanel);bind('notifyBottom',notificationsPanel);bind('premiumBtn',()=>window.addManualPayment?.());bind('premiumBannerBtn',()=>window.addManualPayment?.());bind('premiumBannerAction',()=>window.addManualPayment?.());bind('friendsNav',()=>window.Social?.center());bind('friendsBottom',()=>window.Social?.center());bind('menuBtn',menuPanel);bind('menuBottom',menuPanel);bind('createNav',createPanel);bind('createBottom',createPanel);bind('profileNav',()=>publicOrPrivateProfile(window.user?.id));bind('photoBtn',()=>{$('imageInput')?.click()});
+    document.querySelectorAll('.bottom-nav>button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.bottom-nav>button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
+  }
+
+  function boot(){loadSettings();installShareInterceptor();storyShape();decorateFeed();wireNavigation();const obs=new MutationObserver(()=>{storyShape();decorateFeed();applyPremiumVisibility()});obs.observe(document.body,{childList:true,subtree:true});if(window.MadaStoriesReels?.loadStories)window.MadaStoriesReels.loadStories()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,800));else setTimeout(boot,800);
 })();
