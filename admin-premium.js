@@ -4,7 +4,7 @@
  const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
  let realtime=null;
  async function isAdmin(){const {data:{session}}=await sb.auth.getSession();if(!session)return false;const {data:p,error}=await sb.from('profiles').select('role,is_banned').eq('id',session.user.id).maybeSingle();if(error){console.warn('admin check',error);return false}return p?.role==='admin'&&!p?.is_banned}
- async function count(q){const {count,error}=await q.select('*',{count:'exact',head:true});if(error)throw error;return count||0}
+ async function count(table,filter){let q=sb.from(table).select('*',{count:'exact',head:true});if(filter)q=q.eq(filter[0],filter[1]);const {count,error}=await q;if(error)throw error;return count||0}
  async function receiptUrl(path){if(!path)return null;if(/^https?:\/\//i.test(path))return path;const {data,error}=await sb.storage.from('payment-receipts').createSignedUrl(path,600);if(error){console.warn('receipt url',error);return null}return data?.signedUrl||null}
  async function render(){
   const c=$('content'); if(!c)return;
@@ -14,7 +14,7 @@
    const results=await Promise.allSettled([
     sb.from('admin_settings').select('*').eq('id',true).maybeSingle(),
     sb.from('subscription_requests').select('id,user_id,transaction_ref,receipt_image_url,status,created_at,profiles(display_name,username)').order('created_at',{ascending:false}).limit(100),
-    count(sb.from('profiles').eq('is_premium',true)),count(sb.from('profiles')),count(sb.from('posts'))
+    count('profiles',['is_premium',true]),count('profiles'),count('posts')
    ]);
    const value=i=>results[i].status==='fulfilled'?results[i].value:null;
    const settingsRes=value(0), requestsRes=value(1);
