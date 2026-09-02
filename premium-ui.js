@@ -1,4 +1,4 @@
-/* Mada Premium visual perks */
+/* Mada Premium visual perks + admin button guard */
 (function(){
   const sb=window.sb;
   const badgeIcon={crown:'👑',diamond:'💎'};
@@ -12,7 +12,14 @@
     (rows||[]).forEach(p=>cache.set(p.id,p.profiles||{}));
     posts.forEach(post=>{const p=cache.get(post.dataset.postId);if(!p?.is_premium)return;const head=post.querySelector('.post-head'),avatar=head?.querySelector('.avatar'),name=head?.querySelector('.post-name');if(!head||!avatar||!name)return;post.classList.add('premium-post');avatar.classList.add('premium-avatar');if(p.avatar_url){avatar.style.backgroundImage=`url("${String(p.avatar_url).replace(/"/g,'&quot;')}")`;avatar.textContent='';}name.classList.add('premium-name');if(p.custom_color&&/^#[0-9a-f]{3,8}$/i.test(p.custom_color))name.style.color=p.custom_color;let badge=name.querySelector('.premium-badge');if(!badge){badge=document.createElement('span');badge.className='premium-badge';name.appendChild(badge);}badge.textContent=badgeIcon[p.badge]||'💎';badge.title='Mada Premium';});
   }
+  async function guardAdminButton(){
+    const btn=document.getElementById('adminLoginBtn');if(!btn||!sb)return;
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session){btn.hidden=true;return;}
+    const {data:p}=await sb.from('profiles').select('role,is_banned').eq('id',session.user.id).maybeSingle();
+    btn.hidden=!(p?.role==='admin'&&!p?.is_banned);
+  }
   window.madaDecoratePremium=decorate;
   new MutationObserver(()=>setTimeout(decorate,0)).observe(document.getElementById('feed')||document.body,{childList:true,subtree:true});
-  document.addEventListener('DOMContentLoaded',()=>setTimeout(decorate,1200));
+  document.addEventListener('DOMContentLoaded',()=>{setTimeout(decorate,1200);guardAdminButton();});
 })();
