@@ -4,6 +4,7 @@
 
     <application
         android:allowBackup="true"
+        android:icon="@drawable/mada_icon"
         android:label="Mada"
         android:usesCleartextTraffic="false"
         android:theme="@style/AppTheme">
