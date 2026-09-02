@@ -1,4 +1,4 @@
-/* Mada profile layout guard: remove async duplicates and enforce one stable order. */
+/* Mada profile layout + interaction guard. Keeps the profile clean and loads the real button wiring. */
 (function(){
  function page(){return document.querySelector('#modal .profile-page')}
  function dedupe(p,selector){const all=[...p.querySelectorAll(selector)];all.slice(1).forEach(x=>x.remove());return all[0]||null}
@@ -14,8 +14,15 @@
   if(content)p.appendChild(content);
   if(details){const tabs=p.querySelector('.profile-tabs');if(tabs)tabs.after(details);else p.appendChild(details)}
   p.dataset.madaLayoutFixed='1';
+  window.MadaProfileButtons?.wire?.(p);
  }
- const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(fix,60)});obs.observe(document.body,{childList:true,subtree:true});
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(fix,300));else setTimeout(fix,300);
+ function loadWiring(){
+  if(window.MadaProfileButtons)return;
+  if(document.querySelector('script[data-mada-profile-buttons]'))return;
+  const s=document.createElement('script');s.src='profile-button-wiring.js?v=20260902-1';s.dataset.madaProfileButtons='1';document.body.appendChild(s);
+ }
+ loadWiring();
+ const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(()=>{fix();loadWiring()},60)});obs.observe(document.body,{childList:true,subtree:true});
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{fix();loadWiring()},300));else setTimeout(()=>{fix();loadWiring()},300);
  window.MadaProfileLayoutFix={run:fix};
 })();
