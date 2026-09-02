@@ -1,4 +1,18 @@
 (function(){
+  let profileHistory=false;
+
+  function enterProfileHistory(id){
+    if(profileHistory)return;
+    profileHistory=true;
+    try{history.pushState({madaProfile:true,profileId:id||null},'',location.href)}catch(e){console.warn('profile history',e)}
+  }
+
+  function leaveProfileHistory(){
+    if(!profileHistory)return false;
+    profileHistory=false;
+    try{history.back();return true}catch(e){return false}
+  }
+
   function openProfileSafe(id){
     const target=id||window.madaUser?.()?.id;
     const profileOpen=window.ProfileUI?.open;
@@ -6,6 +20,7 @@
       alert('واجهة الملف الشخصي لم تجهز بعد. حدّث الصفحة وحاول مرة أخرى.');
       return;
     }
+    enterProfileHistory(target);
     return Promise.resolve(profileOpen(target)).then(()=>{
       if(window.MadaFeatureControls?.enhanceProfile){
         setTimeout(()=>window.MadaFeatureControls.enhanceProfile(target),120);
@@ -19,6 +34,12 @@
   }
 
   window.openProfile=openProfileSafe;
+
+  window.addEventListener('popstate',function(e){
+    if(!profileHistory)return;
+    profileHistory=false;
+    if(window.closeModal)window.closeModal();
+  });
 
   function bind(){
     const menu=$('menuBtn');
@@ -34,7 +55,16 @@
         }
       },0);
     });
+
+    const close=document.getElementById('closeModal');
+    if(close&&!close.dataset.profileHistoryBound){
+      close.dataset.profileHistoryBound='1';
+      close.addEventListener('click',function(){
+        if(profileHistory)leaveProfileHistory();
+      },true);
+    }
   }
+
   const $=id=>document.getElementById(id);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
