@@ -38,8 +38,22 @@
   if(document.querySelector('script[data-mada-final-like]'))return;
   const s=document.createElement('script');s.src='profile-like-final-fix.js?v=20260902-1';s.dataset.madaFinalLike='1';document.body.appendChild(s);
  }
+ function watchModal(){
+  const modal=document.getElementById('modal');
+  if(modal){
+   const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(()=>{if(page()){fix();loadWiring();loadLikeFinal()}},80)});
+   obs.observe(modal,{childList:true,subtree:true});
+   return true;
+  }
+  return false;
+ }
  installBottomNavPerf();loadWiring();loadLikeFinal();
- const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(()=>{fix();loadWiring();loadLikeFinal()},60)});obs.observe(document.body,{childList:true,subtree:true});
+ if(!watchModal()){
+  const finder=new MutationObserver(()=>{
+   if(watchModal()){finder.disconnect();const p=page();if(p){fix();loadWiring();loadLikeFinal()}}
+  });
+  finder.observe(document.body,{childList:true});
+ }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{fix();loadWiring();loadLikeFinal()},300));else setTimeout(()=>{fix();loadWiring();loadLikeFinal()},300);
  window.MadaProfileLayoutFix={run:fix};
 })();
