@@ -1,12 +1,78 @@
-/* Mada Admin: Premium settings and subscription requests */
+/* Mada Admin: Premium dashboard */
 (function(){
- const {createClient}=window.supabase; const sb=createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
- const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
- async function isAdmin(){const {data:{session}}=await sb.auth.getSession();if(!session)return false;const {data:p}=await sb.from('profiles').select('role,is_banned').eq('id',session.user.id).maybeSingle();return p?.role==='admin'&&!p?.is_banned}
- async function render(){if(!(await isAdmin()))return;const c=$('content');c.innerHTML='<div class="card">جاري تحميل Premium…</div>';const [{data:s},{data:r}]=await Promise.all([sb.from('admin_settings').select('*').eq('id',true).maybeSingle(),sb.from('subscription_requests').select('id,user_id,transaction_ref,receipt_image_url,status,created_at,profiles(display_name,username)').order('created_at',{ascending:false}).limit(100)]);c.innerHTML=`<h2>💎 Premium</h2><div class="card admin-premium-settings"><h3>إعدادات الاشتراك</h3><label>📱 رقم المحفظة</label><input id="premiumWallet" value="${esc(s?.cash_wallet)}" placeholder="01xxxxxxxxx"><label>💰 سعر الاشتراك بالجنيه</label><input id="premiumPrice" type="number" min="0" step="0.01" value="${s?.subscription_price_egp??99}"><button class="save" id="savePremiumSettings">💾 حفظ</button><p id="premiumSaveMsg"></p></div><h3>طلبات Premium</h3><div class="grid">${(r||[]).map(x=>`<div class="card request-card"><b>${esc(x.profiles?.display_name||x.profiles?.username||'مستخدم')}</b><p>رقم العملية: <strong>${esc(x.transaction_ref||'-')}</strong></p><p>الحالة: ${esc(x.status)}</p>${x.receipt_image_url?`<a href="${esc(x.receipt_image_url)}" target="_blank" rel="noopener"><img class="receipt" src="${esc(x.receipt_image_url)}" alt="إيصال الدفع"></a>`:''}${x.status==='pending'?`<div><button class="approve" data-id="${x.id}" data-user="${x.user_id}">قبول</button><button class="danger reject" data-id="${x.id}">رفض</button></div>`:''}</div>`).join('')||'<div class="card">لا توجد طلبات.</div>'}</div>`;
-  $('savePremiumSettings').onclick=async()=>{const {data:{session}}=await sb.auth.getSession();const {error}=await sb.from('admin_settings').update({cash_wallet:$('premiumWallet').value.trim()||null,subscription_price_egp:Number($('premiumPrice').value),updated_at:new Date().toISOString(),updated_by:session.user.id}).eq('id',true);$('premiumSaveMsg').textContent=error?'تعذر الحفظ.':'✅ تم حفظ الإعدادات.'};
-  c.querySelectorAll('.approve').forEach(b=>b.onclick=()=>review(b.dataset.id,b.dataset.user,'approved'));c.querySelectorAll('.reject').forEach(b=>b.onclick=()=>review(b.dataset.id,null,'rejected'));
+ const {createClient}=window.supabase;
+ const sb=createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
+ const $=id=>document.getElementById(id);
+ const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+ async function isAdmin(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return false;
+  const {data:p}=await sb.from('profiles').select('role,is_banned').eq('id',session.user.id).maybeSingle();
+  return p?.role==='admin'&&!p?.is_banned;
  }
- async function review(id,userId,status){if(!(await isAdmin()))return alert('غير مصرح');const {data:{session}}=await sb.auth.getSession();const patch={status,reviewed_at:new Date().toISOString(),reviewed_by:session.user.id};const {error}=await sb.from('subscription_requests').update(patch).eq('id',id);if(error)return alert('تعذر تحديث الطلب: '+error.message);if(status==='approved'&&userId){const {error:e}=await sb.from('profiles').update({is_premium:true,badge:'diamond'}).eq('id',userId);if(e)return alert('تم قبول الطلب لكن تعذر تفعيل Premium: '+e.message)}render();}
- window.madaAdminPremium=render;document.addEventListener('DOMContentLoaded',()=>{const aside=document.querySelector('#dash aside');if(!aside)return;const b=document.createElement('button');b.dataset.tab='premium-requests';b.textContent='💎 طلبات Premium';b.onclick=render;aside.appendChild(b);});
+ async function count(q){const {count,error}=await q.select('*',{count:'exact',head:true});return error?0:(count||0)}
+ async function render(){
+  if(!(await isAdmin()))return;
+  const c=$('content');
+  c.innerHTML='<div class="card">جاري تحميل لوحة Premium…</div>';
+  const [{data:s},{data:r},users,posts]=await Promise.all([
+   sb.from('admin_settings').select('*').eq('id',true).maybeSingle(),
+   sb.from('subscription_requests').select('id,user_id,transaction_ref,receipt_image_url,status,created_at,profiles(display_name,username)').order('created_at',{ascending:false}).limit(100),
+   count(sb.from('profiles').eq('is_premium',true)),
+   count(sb.from('posts'))
+  ]);
+  const requests=r||[];
+  const pending=requests.filter(x=>x.status==='pending').length;
+  c.innerHTML=`
+   <div class="admin-premium-head"><div><h2>💎 Premium</h2><p>إدارة الاشتراكات والدفع من مكان واحد</p></div><span class="badge-admin">Mada Admin</span></div>
+   <section class="premium-admin-section">
+    <div class="stats-grid">
+     <div class="stat-card"><span class="stat-title">إجمالي المستخدمين</span><h3>${await count(sb.from('profiles'))}</h3></div>
+     <div class="stat-card gold"><span class="stat-title">مشتركو Premium 💎</span><h3>${users}</h3></div>
+     <div class="stat-card orange"><span class="stat-title">طلبات معلقة ⏳</span><h3>${pending}</h3></div>
+     <div class="stat-card"><span class="stat-title">إجمالي المنشورات</span><h3>${posts}</h3></div>
+    </div>
+   </section>
+   <section class="admin-card premium-admin-section">
+    <h3>💳 إعدادات الدفع والاشتراك</h3>
+    <div class="form-row">
+     <div class="form-group"><label>رقم المحفظة (Vodafone Cash / InstaPay)</label><input id="premiumWallet" value="${esc(s?.cash_wallet)}" placeholder="010xxxxxxxx"></div>
+     <div class="form-group"><label>قيمة الاشتراك الشهري (جنيه)</label><input id="premiumPrice" type="number" min="0" step="0.01" value="${s?.subscription_price_egp??99}"></div>
+    </div>
+    <button class="btn-primary" id="savePremiumSettings">💾 حفظ التعديلات</button><p id="premiumSaveMsg"></p>
+   </section>
+   <section class="admin-card premium-admin-section">
+    <div class="section-title-row"><h3>📥 طلبات Premium</h3><span class="pending-chip">${pending} معلقة</span></div>
+    <div class="table-responsive"><table class="admin-table"><thead><tr><th>المستخدم</th><th>رقم العملية</th><th>الإيصال</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody id="requests-table-body">
+     ${requests.map(x=>`<tr><td><strong>${esc(x.profiles?.display_name||x.profiles?.username||'مستخدم')}</strong><small>${esc(x.profiles?.username?('@'+x.profiles.username):'')}</small></td><td>${esc(x.transaction_ref||'-')}</td><td>${x.receipt_image_url?`<a href="${esc(x.receipt_image_url)}" target="_blank" rel="noopener" class="view-link">عرض الصورة 🖼️</a>`:'لا يوجد'}</td><td><span class="status-${esc(x.status)}">${x.status==='pending'?'معلق':x.status==='approved'?'مقبول':'مرفوض'}</span></td><td>${x.status==='pending'?`<button class="btn-action approve" data-id="${esc(x.id)}" data-user="${esc(x.user_id)}">قبول 👑</button><button class="btn-action reject" data-id="${esc(x.id)}">رفض ❌</button>`:'—'}</td></tr>`).join('')||'<tr><td colspan="5">لا توجد طلبات حتى الآن.</td></tr>'}
+    </tbody></table></div>
+   </section>`;
+  $('savePremiumSettings').onclick=async()=>{
+   const {data:{session}}=await sb.auth.getSession();
+   const price=Number($('premiumPrice').value);
+   if(!Number.isFinite(price)||price<0)return $('premiumSaveMsg').textContent='اكتب سعراً صحيحاً.';
+   const {error}=await sb.from('admin_settings').update({cash_wallet:$('premiumWallet').value.trim()||null,subscription_price_egp:price,updated_at:new Date().toISOString(),updated_by:session.user.id}).eq('id',true);
+   $('premiumSaveMsg').textContent=error?'تعذر الحفظ: '+error.message:'✅ تم حفظ الإعدادات.';
+  };
+  c.querySelectorAll('.approve').forEach(b=>b.onclick=()=>review(b.dataset.id,b.dataset.user,'approved'));
+  c.querySelectorAll('.reject').forEach(b=>b.onclick=()=>review(b.dataset.id,null,'rejected'));
+ }
+ async function review(id,userId,status){
+  if(!(await isAdmin()))return alert('غير مصرح');
+  if(status==='rejected'&&!confirm('تأكيد رفض طلب Premium؟'))return;
+  const {data:{session}}=await sb.auth.getSession();
+  const patch={status,reviewed_at:new Date().toISOString(),reviewed_by:session.user.id};
+  const {error}=await sb.from('subscription_requests').update(patch).eq('id',id);
+  if(error)return alert('تعذر تحديث الطلب: '+error.message);
+  if(status==='approved'&&userId){
+   const {error:e}=await sb.from('profiles').update({is_premium:true,badge:'diamond'}).eq('id',userId);
+   if(e)return alert('تم قبول الطلب لكن تعذر تفعيل Premium: '+e.message);
+  }
+  render();
+ }
+ window.madaAdminPremium=render;
+ document.addEventListener('DOMContentLoaded',()=>{
+  const b=document.querySelector('#dash aside button[data-tab="premium"]');
+  if(b)b.onclick=render;
+ });
 })();
