@@ -1,4 +1,4 @@
-/* Mada social features: reactions, stories, native share fallback */
+/* Mada social features: reactions, stories */
 (function(){
   const reactionMap={like:'👍',love:'❤️',haha:'😂',wow:'😮',sad:'😢',angry:'😡'};
   const reactionNames={like:'إعجاب',love:'أحببته',haha:'هاها',wow:'واو',sad:'حزين',angry:'غاضب'};
@@ -104,38 +104,6 @@
     overlay.onclick=e=>{if(e.target===overlay||e.target.classList.contains('story-media')){i++;show();}};show();
   }
   window.madaLoadStories=loadStories;
-
-  /* Share: the post button calls handleShare(post); native Share Sheet first, Clipboard fallback second. */
-  window.handleShare=async function(post){
-    const postId=typeof post==='string'?post:post?.id;
-    const postText=typeof post==='string'?'':(post?.body||'');
-    const postUrl=post?.url||post?.postUrl||`${location.origin}${location.pathname}#post-${encodeURIComponent(postId||'')}`;
-    const shareData={title:'تطبيق Mada',text:postText||'شاهد هذا المنشور على تطبيق Mada!',url:postUrl};
-    try{
-      if(typeof navigator.share==='function'){
-        await navigator.share(shareData);
-      }else{
-        throw new Error('SHARE_UNSUPPORTED');
-      }
-    }catch(err){
-      if(err?.name==='AbortError')return;
-      try{
-        if(navigator.clipboard?.writeText) await navigator.clipboard.writeText(shareData.url);
-        else {const ta=document.createElement('textarea');ta.value=shareData.url;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();}
-        alert('تم نسخ الرابط إلى الحافظة');
-      }catch(copyErr){alert('تعذر نسخ الرابط');console.warn(copyErr);}
-    }
-  };
-
-  document.addEventListener('click',e=>{
-    const b=e.target.closest?.('.share');
-    if(!b)return;
-    e.preventDefault();e.stopImmediatePropagation();
-    const postId=b.dataset.id;
-    const article=b.closest('article.post');
-    const post={id:postId,body:article?.querySelector('.post-text')?.textContent?.trim()||'',url:`${location.origin}${location.pathname}#post-${encodeURIComponent(postId||'')}`};
-    window.handleShare(post);
-  },true);
 
   const observer=new MutationObserver(()=>document.querySelectorAll('#feed article.post').forEach(decoratePost));
   observer.observe(document.getElementById('feed')||document.body,{childList:true,subtree:true});
