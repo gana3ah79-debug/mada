@@ -11,7 +11,7 @@ function postOptionsMessage(message, type = 'info') {
 
 async function openPostOptions(postId, postAuthorId) {
   currentSelectedPostId = postId;
-  currentSelectedPostOwnerId = postAuthorId;
+  currentSelectedPostOwnerId = postAuthorId || '';
   const overlay = document.getElementById('post-options-overlay');
   const ownerActions = document.getElementById('owner-actions');
   if (!overlay) return;
@@ -20,7 +20,7 @@ async function openPostOptions(postId, postAuthorId) {
     const { data: { user } } = await sb.auth.getUser();
     if (user) {
       const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).maybeSingle();
-      const isOwner = user.id === postAuthorId;
+      const isOwner = user.id === currentSelectedPostOwnerId;
       const isAdmin = profile?.role === 'admin';
       if (ownerActions && (isOwner || isAdmin)) ownerActions.style.display = 'block';
     }
@@ -100,14 +100,16 @@ async function confirmDeletePost() {
 }
 
 function installPostOptionButtons(root = document) {
-  root.querySelectorAll('.post').forEach(card => {
+  root.querySelectorAll('.post, .profile-post').forEach(card => {
     if (card.querySelector('.three-dots-btn')) return;
     const postId = card.dataset.postId;
     if (!postId) return;
     let ownerId = card.dataset.authorId || '';
-    try { ownerId = ownerId || feedPosts?.get?.(postId)?.author_id || ''; } catch (_) {}
+    if (!ownerId && card.classList.contains('post')) {
+      try { ownerId = feedPosts?.get?.(postId)?.author_id || ''; } catch (_) {}
+    }
     card.dataset.authorId = ownerId;
-    const head = card.querySelector('.post-head');
+    const head = card.querySelector('.post-head, .profile-post-head');
     if (!head) return;
     const btn = document.createElement('button');
     btn.type = 'button';
