@@ -1,4 +1,7 @@
 /* Mada — Post options bottom sheet */
+(function(){
+const { createClient } = window.supabase;
+const postOptionsSb = createClient(window.MADA_SUPABASE_URL, window.MADA_SUPABASE_KEY);
 let currentSelectedPostId = null;
 let currentSelectedPostOwnerId = null;
 
@@ -17,9 +20,9 @@ async function openPostOptions(postId, postAuthorId) {
   if (!overlay) return;
   if (ownerActions) ownerActions.style.display = 'none';
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    const { data: { user } } = await postOptionsSb.auth.getUser();
     if (user) {
-      const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      const { data: profile } = await postOptionsSb.from('profiles').select('role').eq('id', user.id).maybeSingle();
       const isOwner = user.id === currentSelectedPostOwnerId;
       const isAdmin = profile?.role === 'admin';
       if (ownerActions && (isOwner || isAdmin)) ownerActions.style.display = 'block';
@@ -40,9 +43,9 @@ function closePostOptions() {
 async function handleInterest(isInterested) {
   if (!currentSelectedPostId) return;
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    const { data: { user } } = await postOptionsSb.auth.getUser();
     if (!user) return postOptionsMessage('يجب تسجيل الدخول أولاً.', 'error');
-    const { error } = await sb.from('post_interests').upsert({ post_id: currentSelectedPostId, user_id: user.id, is_interested: !!isInterested }, { onConflict: 'post_id,user_id' });
+    const { error } = await postOptionsSb.from('post_interests').upsert({ post_id: currentSelectedPostId, user_id: user.id, is_interested: !!isInterested }, { onConflict: 'post_id,user_id' });
     if (error) throw error;
     postOptionsMessage(isInterested ? 'تم تسجيل اهتمامك بالمنشور.' : 'تم تسجيل أنك غير مهتم بهذا المنشور.');
     closePostOptions();
@@ -52,16 +55,16 @@ async function handleInterest(isInterested) {
 async function handleSavePost() {
   if (!currentSelectedPostId) return;
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    const { data: { user } } = await postOptionsSb.auth.getUser();
     if (!user) return postOptionsMessage('يجب تسجيل الدخول أولاً.', 'error');
-    const { data: existing, error: findError } = await sb.from('post_saves').select('post_id').eq('post_id', currentSelectedPostId).eq('user_id', user.id).maybeSingle();
+    const { data: existing, error: findError } = await postOptionsSb.from('post_saves').select('post_id').eq('post_id', currentSelectedPostId).eq('user_id', user.id).maybeSingle();
     if (findError) throw findError;
     if (existing) {
-      const { error } = await sb.from('post_saves').delete().eq('post_id', currentSelectedPostId).eq('user_id', user.id);
+      const { error } = await postOptionsSb.from('post_saves').delete().eq('post_id', currentSelectedPostId).eq('user_id', user.id);
       if (error) throw error;
       postOptionsMessage('تم إلغاء حفظ المنشور.');
     } else {
-      const { error } = await sb.from('post_saves').insert({ post_id: currentSelectedPostId, user_id: user.id });
+      const { error } = await postOptionsSb.from('post_saves').insert({ post_id: currentSelectedPostId, user_id: user.id });
       if (error) throw error;
       postOptionsMessage('تم حفظ المنشور. 🔖');
     }
@@ -72,9 +75,9 @@ async function handleSavePost() {
 async function handleReportPost() {
   if (!currentSelectedPostId) return;
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    const { data: { user } } = await postOptionsSb.auth.getUser();
     if (!user) return postOptionsMessage('يجب تسجيل الدخول أولاً.', 'error');
-    const { error } = await sb.from('post_reports').upsert({ post_id: currentSelectedPostId, reporter_id: user.id, reason: 'إبلاغ من قائمة خيارات المنشور' }, { onConflict: 'post_id,reporter_id' });
+    const { error } = await postOptionsSb.from('post_reports').upsert({ post_id: currentSelectedPostId, reporter_id: user.id, reason: 'إبلاغ من قائمة خيارات المنشور' }, { onConflict: 'post_id,reporter_id' });
     if (error) throw error;
     postOptionsMessage('تم إرسال البلاغ إلى مسؤولي Mada. شكرًا لمساعدتنا.');
     closePostOptions();
@@ -85,13 +88,13 @@ async function confirmDeletePost() {
   if (!currentSelectedPostId) return;
   const postId = currentSelectedPostId;
   try {
-    const { data: { user } } = await sb.auth.getUser();
+    const { data: { user } } = await postOptionsSb.auth.getUser();
     if (!user) return postOptionsMessage('يجب تسجيل الدخول أولاً.', 'error');
-    const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).maybeSingle();
+    const { data: profile } = await postOptionsSb.from('profiles').select('role').eq('id', user.id).maybeSingle();
     const allowed = user.id === currentSelectedPostOwnerId || profile?.role === 'admin';
     if (!allowed) return postOptionsMessage('ليس لديك صلاحية حذف هذا المنشور.', 'error');
     if (!window.confirm('هل أنت متأكد من رغبتك في حذف هذا المنشور نهائياً؟')) return;
-    const { error } = await sb.from('posts').delete().eq('id', postId);
+    const { error } = await postOptionsSb.from('posts').delete().eq('id', postId);
     if (error) throw error;
     document.querySelector(`[data-post-id="${CSS.escape(postId)}"]`)?.remove();
     postOptionsMessage('تم حذف المنشور بنجاح.');
@@ -106,7 +109,7 @@ function installPostOptionButtons(root = document) {
     if (!postId) return;
     let ownerId = card.dataset.authorId || '';
     if (!ownerId && card.classList.contains('post')) {
-      try { ownerId = feedPosts?.get?.(postId)?.author_id || ''; } catch (_) {}
+      try { ownerId = window.feedPosts?.get?.(postId)?.author_id || ''; } catch (_) {}
     }
     card.dataset.authorId = ownerId;
     const head = card.querySelector('.post-head, .profile-post-head');
@@ -123,11 +126,17 @@ function installPostOptionButtons(root = document) {
 }
 
 const postOptionsObserver = new MutationObserver(() => installPostOptionButtons());
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => {
+function initPostOptions(){
   installPostOptionButtons();
-  postOptionsObserver.observe(document.body, { childList: true, subtree: true });
-}); else {
-  installPostOptionButtons();
-  postOptionsObserver.observe(document.body, { childList: true, subtree: true });
+  if (document.body) postOptionsObserver.observe(document.body, { childList: true, subtree: true });
 }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPostOptions); else initPostOptions();
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePostOptions(); });
+
+window.openPostOptions = openPostOptions;
+window.closePostOptions = closePostOptions;
+window.handleInterest = handleInterest;
+window.handleSavePost = handleSavePost;
+window.handleReportPost = handleReportPost;
+window.confirmDeletePost = confirmDeletePost;
+})();
