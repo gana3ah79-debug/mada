@@ -6,6 +6,10 @@ on:
     paths:
       - 'android/**'
       - '.github/workflows/build-apk.yml'
+      - '*.html'
+      - '*.css'
+      - '*.js'
+      - 'assets/**'
 
 jobs:
   build:
@@ -28,6 +32,14 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      - name: Bundle Mada web app into APK assets
+        run: |
+          mkdir -p android/app/src/main/assets/mada
+          find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.json' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.ico' \) -exec cp -f {} android/app/src/main/assets/mada/ \;
+          if [ -d assets ]; then cp -R assets/. android/app/src/main/assets/mada/; fi
+          test -f android/app/src/main/assets/mada/index.html
+          echo "Bundled files: $(find android/app/src/main/assets/mada -type f | wc -l)"
+
       - name: Build APK
         working-directory: android
         run: gradle assembleDebug --no-daemon
@@ -35,8 +47,11 @@ jobs:
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk Mada.apk
 
+      - name: Show APK size
+        run: ls -lh Mada.apk
+
       - name: Upload Mada APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mada-APK
+          name: Mada-APK-Full
           path: Mada.apk
