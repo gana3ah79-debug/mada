@@ -20,13 +20,18 @@ window.openMessages=window.openMessages||function(){
   const s=document.createElement('script');s.src='post-reactions-enhance.js?v=20260903-02';s.async=false;document.head.appendChild(s);
 })();
 
-// Modern notification center: opens from the bell buttons, marks read, and refreshes the badge without reload.
+// Modern notification center.
 (function(){
   const css=document.createElement('link');css.rel='stylesheet';css.href='notifications-enhance.css?v=20260903-01';document.head.appendChild(css);
   const s=document.createElement('script');s.src='notifications-enhance.js?v=20260903-01';s.async=false;document.head.appendChild(s);
 })();
 
-// Share button recovery: keep the مشاركة action visible after feed re-renders.
+// Share button recovery.
 (function(){
-  const s=document.createElement('script');s.src='share-button-fix.js?v=20260903-01';s.async=false;document.head.appendChild(s);
+  const s=document.createElement('script');s.src='share-button-fix.js?v=20260903-02';s.async=false;document.head.appendChild(s);
+})();
+
+// Share sheet utility actions.
+(function(){
+  const s=document.createElement('script');s.src='share-actions-fix.js?v=20260903-01';s.async=false;document.head.appendChild(s);
 })();
