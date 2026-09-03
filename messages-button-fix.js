@@ -1,66 +1,57 @@
-/* Mada: activate messages/search buttons and modal close. */
+/* Mada modern search experience */
 (function(){
   const $=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
-
-  function showSearch(){
-    const modal=$('modal'),title=$('modalTitle'),body=$('modalBody');
-    if(!modal||!title||!body)return;
-    title.textContent='⌕ البحث عن مستخدم';
-    body.innerHTML='<div style="display:flex;gap:8px;margin-bottom:14px"><input id="madaSearchInput" type="search" placeholder="اكتب الاسم أو اسم المستخدم" style="flex:1;padding:13px;border:1px solid #ddd;border-radius:14px"><button id="madaSearchGo" type="button" class="primary">بحث</button></div><div id="madaSearchResults"><div class="card empty">اكتب الاسم أو اسم المستخدم ثم اضغط بحث.</div></div>';
-    modal.hidden=false;
-    const input=$('madaSearchInput');
-    const run=()=>searchUsers(input?.value.trim());
-    $('madaSearchGo').onclick=run;
-    input?.addEventListener('keydown',e=>{if(e.key==='Enter')run();});
-    setTimeout(()=>input?.focus(),50);
+  const key='mada_recent_searches';
+  let timer=null;
+  const recent=()=>{try{return JSON.parse(localStorage.getItem(key)||'[]').slice(0,8)}catch(_){return[]}};
+  const saveRecent=p=>{let a=recent().filter(x=>x.id!==p.id);a.unshift({id:p.id,name:p.display_name||p.username||'مستخدم',username:p.username||'',avatar:p.avatar_url||''});try{localStorage.setItem(key,JSON.stringify(a.slice(0,8)))}catch(_){} };
+  const avatar=p=>p.avatar_url?`<img src="${esc(p.avatar_url)}" alt="" loading="lazy">`:`<span>${esc((p.display_name||p.username||'م').charAt(0))}</span>`;
+  function open(){
+    const modal=$('modal'),title=$('modalTitle'),body=$('modalBody'); if(!modal||!title||!body)return;
+    title.textContent=''; title.className='modern-search-title';
+    body.className='modern-search-body';
+    body.innerHTML=`<div class="modern-search-head"><button type="button" class="modern-search-back" aria-label="رجوع">←</button><div class="modern-search-box"><span>⌕</span><input id="modernSearchInput" type="search" autocomplete="off" placeholder="ابحث في Mada" aria-label="البحث في Mada"><button type="button" id="modernSearchClear" aria-label="مسح">×</button></div></div><div id="modernSearchContent"></div>`;
+    modal.classList.add('modern-search-modal'); modal.hidden=false;
+    const input=$('modernSearchInput');
+    $('modernSearchClear').onclick=()=>{input.value='';input.focus();renderHome()};
+    $('.modern-search-back').onclick=()=>{modal.hidden=true;modal.classList.remove('modern-search-modal')};
+    input.addEventListener('input',()=>{clearTimeout(timer);const q=input.value.trim();if(!q){renderHome();return}renderLoading();timer=setTimeout(()=>search(q),260)});
+    renderHome(); setTimeout(()=>input.focus(),80);
   }
-
-  async function searchUsers(q){
-    const out=$('madaSearchResults');
-    if(!out)return;
-    if(!q){out.innerHTML='<div class="card empty">اكتب اسم المستخدم للبحث.</div>';return;}
-    if(!window.sb||!window.user){out.innerHTML='<div class="card empty">سجّل الدخول أولاً.</div>';return;}
-    out.innerHTML='<div class="card empty">جاري البحث…</div>';
+  function content(){return $('modernSearchContent')}
+  function renderLoading(){const c=content();if(c)c.innerHTML='<div class="search-status"><span class="search-spinner"></span><div>جاري البحث…</div></div>'}
+  function renderHome(){
+    const c=content(); if(!c)return;
+    const a=recent();
+    c.innerHTML=`<div class="search-section-head"><b>عمليات البحث الأخيرة</b>${a.length?'<button id="clearRecent" type="button">مسح الكل</button>':''}</div>`+(a.length?a.map(p=>`<button type="button" class="search-user-row recent-row" data-id="${esc(p.id)}" data-name="${esc(p.name)}" data-username="${esc(p.username)}" data-avatar="${esc(p.avatar)}"><span class="search-avatar">${p.avatar?`<img src="${esc(p.avatar)}" alt="" loading="lazy">`:`${esc((p.name||'م').charAt(0))}`}</span><span class="search-user-info"><b>${esc(p.name)}</b><small>@${esc(p.username)}</small></span><span class="search-row-action">›</span></button>`).join(''):'<div class="search-empty"><div>⌕</div><b>ابدأ البحث</b><span>ابحث عن الأشخاص بالاسم أو اسم المستخدم</span></div>');
+    $('clearRecent')?.addEventListener('click',()=>{localStorage.removeItem(key);renderHome()});
+    c.querySelectorAll('.recent-row').forEach(r=>r.onclick=()=>openUser({id:r.dataset.id,display_name:r.dataset.name,username:r.dataset.username,avatar_url:r.dataset.avatar}));
+  }
+  async function search(q){
+    const c=content(); if(!c||!window.sb||!window.user)return;
     try{
-      const {data,error}=await window.sb.from('profiles').select('id,username,display_name,avatar_url').or(`display_name.ilike.%${q}%,username.ilike.%${q}%`).neq('id',window.user.id).limit(20);
+      const safe=q.replace(/[,%]/g,' ');
+      const {data,error}=await window.sb.from('profiles').select('id,username,display_name,avatar_url').or(`display_name.ilike.%${safe}%,username.ilike.%${safe}%`).neq('id',window.user.id).limit(20);
       if(error)throw error;
-      if(!data?.length){out.innerHTML='<div class="card empty">لم يتم العثور على مستخدم.</div>';return;}
-      out.innerHTML=data.map(p=>`<div class="card" style="display:flex;align-items:center;gap:10px;margin:8px 0;padding:12px"><div class="avatar">${esc((p.display_name||p.username||'م').charAt(0))}</div><div style="flex:1"><b>${esc(p.display_name||'مستخدم Mada')}</b><div style="opacity:.65;font-size:12px">@${esc(p.username||'')}</div></div><button type="button" class="primary mada-message-user" data-user-id="${esc(p.id)}">💬 رسالة</button></div>`).join('');
-      out.querySelectorAll('.mada-message-user').forEach(btn=>btn.addEventListener('click',async()=>{
-        const otherId=btn.dataset.userId;
-        btn.disabled=true;btn.textContent='جاري فتح…';
-        try{
-          if(typeof window.getOrCreateConversation!=='function'||typeof window.openConversation!=='function')throw new Error('نظام الرسائل غير جاهز');
-          const cid=await window.getOrCreateConversation(otherId);
-          await window.openConversation(otherId,cid);
-        }catch(e){console.error(e);btn.disabled=false;btn.textContent='💬 رسالة';alert('تعذر فتح المحادثة: '+(e?.message||'حدث خطأ'));}
-      }));
-    }catch(e){console.error(e);out.innerHTML='<div class="card empty">تعذر البحث.<br><small>'+esc(e?.message||'حدث خطأ')+'</small></div>';}
+      if(!data?.length){c.innerHTML=`<div class="search-empty"><div>⌕</div><b>لا توجد نتائج</b><span>جرّب اسمًا أو اسم مستخدم مختلفًا</span></div>`;return}
+      c.innerHTML=`<div class="search-section-head"><b>نتائج البحث</b><span>${data.length}</span></div>`+data.map(p=>`<button type="button" class="search-user-row result-row" data-id="${esc(p.id)}"><span class="search-avatar">${avatar(p)}</span><span class="search-user-info"><b>${esc(p.display_name||'مستخدم Mada')}</b><small>@${esc(p.username||'')}</small></span><span class="search-message-icon">💬</span></button>`).join('');
+      c.querySelectorAll('.result-row').forEach((r,i)=>{const p=data[i];r.onclick=()=>openUser(p)});
+    }catch(e){console.error(e);c.innerHTML='<div class="search-empty"><div>!</div><b>تعذر إتمام البحث</b><span>تحقق من الاتصال وحاول مرة أخرى</span></div>'}
   }
-
-  function bindUI(){
-    const msg=$('msgBtn');
-    if(msg&&msg.dataset.messagesBound!=='1'){
-      msg.dataset.messagesBound='1';msg.type='button';msg.disabled=false;msg.style.pointerEvents='auto';
-      msg.onclick=e=>{e.preventDefault();e.stopPropagation();if(typeof window.openMessages==='function')window.openMessages();};
-    }
-    const search=$('searchBtn');
-    if(search&&search.dataset.searchBound!=='1'){
-      search.dataset.searchBound='1';search.type='button';search.disabled=false;search.style.pointerEvents='auto';
-      search.onclick=e=>{e.preventDefault();e.stopPropagation();showSearch();};
-    }
-    const close=$('closeModal');
-    if(close&&close.dataset.closeBound!=='1'){
-      close.dataset.closeBound='1';close.type='button';close.onclick=e=>{e.preventDefault();e.stopPropagation();const m=$('modal');if(m)m.hidden=true;};
-    }
-    const modal=$('modal');
-    if(modal&&modal.dataset.backdropBound!=='1'){
-      modal.dataset.backdropBound='1';modal.addEventListener('click',e=>{if(e.target===modal)modal.hidden=true;});
-    }
+  async function openUser(p){
+    saveRecent(p);
+    try{
+      if(typeof window.getOrCreateConversation!=='function'||typeof window.openConversation!=='function')throw new Error('نظام الرسائل غير جاهز');
+      const cid=await window.getOrCreateConversation(p.id); await window.openConversation(p.id,cid);
+    }catch(e){console.error(e);if(typeof window.showToast==='function')window.showToast('تعذر فتح المحادثة');}
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindUI);else bindUI();
-  [300,800,1500,3000].forEach(ms=>setTimeout(bindUI,ms));
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('modal');if(m)m.hidden=true;}});
-  window.madaSearch=showSearch;
+  function bind(){
+    const msg=$('msgBtn');if(msg&&msg.dataset.messagesBound!=='1'){msg.dataset.messagesBound='1';msg.type='button';msg.onclick=e=>{e.preventDefault();e.stopPropagation();window.openMessages?.()}}
+    const searchBtn=$('searchBtn');if(searchBtn&&searchBtn.dataset.modernSearchBound!=='1'){searchBtn.dataset.modernSearchBound='1';searchBtn.type='button';searchBtn.onclick=e=>{e.preventDefault();e.stopPropagation();open()}}
+    const close=$('closeModal');if(close&&!close.dataset.closeBound){close.dataset.closeBound='1';close.onclick=()=>{$('modal').hidden=true;$('modal').classList.remove('modern-search-modal')}}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+  [300,800,1500,3000].forEach(ms=>setTimeout(bind,ms));
+  window.madaSearch=open;
 })();
