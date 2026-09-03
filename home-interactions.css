@@ -1,0 +1,15 @@
+/* Mada Home Interactions v1 — tactile social UI */
+.feed .post-actions{gap:4px}
+.feed .post-actions button{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .16s ease,background .16s ease,color .16s ease}
+.feed .post-actions button:hover{background:#f4f7fb!important;color:#1877f2!important}
+.feed .post-actions button:active{transform:scale(.94)!important}
+.feed .post-actions button::after{content:"";position:absolute;inset:3px;border-radius:12px;background:currentColor;opacity:0;transform:scale(.7);transition:opacity .16s ease,transform .16s ease}
+.feed .post-actions button:active::after{opacity:.07;transform:scale(1)}
+.feed .post-stats{min-height:30px}
+.feed .post-stats span{display:inline-flex;align-items:center;gap:4px}
+.feed .post-comments{border-top:0!important}
+.feed .post-options-btn,.feed .more-btn{transition:transform .18s ease,background .18s ease,box-shadow .18s ease}
+.feed .post-options-btn:hover,.feed .more-btn:hover{transform:scale(1.06);box-shadow:0 4px 14px rgba(20,35,65,.12)}
+.feed .post-options-btn:active,.feed .more-btn:active{transform:scale(.92)}
+@media(max-width:480px){.feed .post-actions{padding-inline:6px!important}.feed .post-actions button{min-width:0;white-space:nowrap}.feed .post-actions button span{max-width:74px;overflow:hidden;text-overflow:ellipsis}}
+@media(prefers-color-scheme:dark){.feed .post-actions button:hover{background:#202734!important;color:#5da2ff!important}.feed .post-options-btn:hover,.feed .more-btn:hover{box-shadow:0 4px 14px rgba(0,0,0,.28)}}
