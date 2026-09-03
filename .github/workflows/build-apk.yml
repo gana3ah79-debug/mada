@@ -10,28 +10,33 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: android
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-      - name: Build APK
-        uses: gradle/gradle-build-action@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          arguments: assembleDebug
-          build-root-directory: android
+          gradle-version: '8.10.2'
+
+      - name: Build APK
+        working-directory: android
+        run: gradle assembleDebug --no-daemon
+
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk Mada.apk
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk Mada.apk
+
       - name: Upload Mada APK
         uses: actions/upload-artifact@v4
         with:
           name: Mada-APK
-          path: android/Mada.apk
+          path: Mada.apk
