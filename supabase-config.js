@@ -7,3 +7,10 @@ window.openMessages=window.openMessages||function(){
   if(typeof window.madaMessenger==='function') return window.madaMessenger();
   if(typeof window.showMessages==='function') return window.showMessages();
 };
+
+// Home feed enhancement loads early and safely waits for app.js to expose loadFeed.
+(function(){
+  if(document.querySelector('link[data-mada-home-feed]'))return;
+  const css=document.createElement('link');css.rel='stylesheet';css.href='home-feed-enhance.css?v=20260903-01';css.dataset.madaHomeFeed='1';document.head.appendChild(css);
+  const s=document.createElement('script');s.src='home-feed-enhance.js?v=20260903-01';s.async=false;document.head.appendChild(s);
+})();
