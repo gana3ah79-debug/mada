@@ -3,16 +3,123 @@
   const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));
   const currentUser=()=>typeof user!=='undefined'?user:null;
   const toast=m=>typeof window.showMadaToast==='function'?window.showMadaToast(m):console.log(m);
-  function setupAutoPreviewReels(root=document){if(reelsObserver)reelsObserver.disconnect();const videos=root.querySelectorAll('.reel-video-preview');if(!('IntersectionObserver'in window))return;reelsObserver=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target;if(reelTimers.has(v)){clearTimeout(reelTimers.get(v));reelTimers.delete(v)}if(e.isIntersecting){v.muted=true;v.currentTime=0;v.play().then(()=>{const t=setTimeout(()=>{v.pause();v.currentTime=0;reelTimers.delete(v)},2000);reelTimers.set(v,t)}).catch(()=>{})}else{v.pause();v.currentTime=0}}),{threshold:.6});videos.forEach(v=>reelsObserver.observe(v))}
-  async function loadReels(){const row=document.getElementById('reelsRow');if(!row||typeof sb==='undefined')return;const {data,error}=await sb.from('reels').select('id,author_id,video_url,caption,created_at,profiles(display_name)').order('created_at',{ascending:false}).limit(30);if(error){row.innerHTML='<div class="reel-empty">تعذر تحميل الريلز</div>';return}if(!data?.length){row.innerHTML='<div class="reel-empty">لا توجد ريلز متاحة حالياً</div>';return}row.innerHTML=data.map(r=>`<article class="reel-card" data-reel-id="${esc(r.id)}"><video class="reel-video-preview" src="${esc(r.video_url)}" muted playsinline preload="metadata"></video><div class="reel-badge">🎬 ريلز</div><div class="reel-overlay-info"><span class="reel-author">@${esc(r.profiles?.display_name||'مستخدم')}</span>${r.caption?`<div>${esc(r.caption)}</div>`:''}</div><div class="reel-actions"><button type="button" onclick="toggleReelLike('${esc(r.id)}',this)">❤️ <span class="reel-like-count">0</span></button><button type="button" onclick="openReelComments('${esc(r.id)}')">💬 <span class="reel-comment-count">0</span></button><button type="button" onclick="shareReel('${esc(r.id)}')">↗️</button></div></article>`).join('');await loadReelCounts(data);setupAutoPreviewReels(row);setupReelGestures(row)}
-  async function loadReelCounts(rs){const ids=rs.map(r=>r.id);const [{data:l},{data:c}]=await Promise.all([sb.from('reel_likes').select('reel_id').in('reel_id',ids),sb.from('reel_comments').select('reel_id').in('reel_id',ids)]);const lc={},cc={};(l||[]).forEach(x=>lc[x.reel_id]=(lc[x.reel_id]||0)+1);(c||[]).forEach(x=>cc[x.reel_id]=(cc[x.reel_id]||0)+1);rs.forEach(r=>{const el=document.querySelector(`.reel-card[data-reel-id="${r.id}"]`);if(el){el.querySelector('.reel-like-count').textContent=lc[r.id]||0;el.querySelector('.reel-comment-count').textContent=cc[r.id]||0}})}
+
+  function setupAutoPreviewReels(root=document){
+    if(reelsObserver)reelsObserver.disconnect();
+    const videos=root.querySelectorAll('.reel-video-preview');
+    if(!('IntersectionObserver'in window))return;
+    reelsObserver=new IntersectionObserver(es=>es.forEach(e=>{
+      const v=e.target;
+      if(reelTimers.has(v)){clearTimeout(reelTimers.get(v));reelTimers.delete(v)}
+      if(e.isIntersecting){
+        v.muted=true;v.currentTime=0;
+        v.play().then(()=>{
+          const t=setTimeout(()=>{v.pause();v.currentTime=0;reelTimers.delete(v)},2000);
+          reelTimers.set(v,t);
+        }).catch(()=>{});
+      }else{v.pause();v.currentTime=0}
+    }),{threshold:.6});
+    videos.forEach(v=>reelsObserver.observe(v));
+  }
+
+  async function loadReels(){
+    const row=document.getElementById('reelsRow');
+    if(!row||typeof sb==='undefined')return;
+    const {data,error}=await sb.from('reels').select('id,author_id,video_url,caption,created_at,profiles(display_name)').order('created_at',{ascending:false}).limit(30);
+    if(error){row.innerHTML='<div class="reel-empty">تعذر تحميل الريلز</div>';return}
+    if(!data?.length){row.innerHTML='<div class="reel-empty">لا توجد ريلز متاحة حالياً</div>';return}
+    row.innerHTML=data.map(r=>`<article class="reel-card" data-reel-id="${esc(r.id)}"><video class="reel-video-preview" src="${esc(r.video_url)}" muted playsinline preload="metadata"></video><div class="reel-badge">🎬 ريلز</div><div class="reel-overlay-info"><span class="reel-author">@${esc(r.profiles?.display_name||'مستخدم')}</span>${r.caption?`<div>${esc(r.caption)}</div>`:''}</div><div class="reel-actions"><button type="button" onclick="toggleReelLike('${esc(r.id)}',this)">❤️ <span class="reel-like-count">0</span></button><button type="button" onclick="openReelComments('${esc(r.id)}')">💬 <span class="reel-comment-count">0</span></button><button type="button" onclick="shareReel('${esc(r.id)}')">↗️</button></div></article>`).join('');
+    await loadReelCounts(data);setupAutoPreviewReels(row);setupReelGestures(row);
+  }
+
+  async function loadReelCounts(rs){
+    const ids=rs.map(r=>r.id);
+    const [{data:l},{data:c}]=await Promise.all([sb.from('reel_likes').select('reel_id').in('reel_id',ids),sb.from('reel_comments').select('reel_id').in('reel_id',ids)]);
+    const lc={},cc={};(l||[]).forEach(x=>lc[x.reel_id]=(lc[x.reel_id]||0)+1);(c||[]).forEach(x=>cc[x.reel_id]=(cc[x.reel_id]||0)+1);
+    rs.forEach(r=>{const el=document.querySelector(`.reel-card[data-reel-id="${r.id}"]`);if(el){el.querySelector('.reel-like-count').textContent=lc[r.id]||0;el.querySelector('.reel-comment-count').textContent=cc[r.id]||0}})
+  }
+
   function setupReelGestures(row){let y=0;row.ontouchstart=e=>{if(e.touches.length===1)y=e.touches[0].clientY};row.ontouchend=e=>{const dy=e.changedTouches[0].clientY-y;if(Math.abs(dy)>45)row.scrollBy({top:dy<0?innerHeight:-innerHeight,behavior:'smooth'})}}
+
   window.openReelsSection=function(){const s=document.getElementById('reelsSection');if(!s)return;s.classList.add('is-open');document.body.classList.add('reels-view-open');loadReels()};
   window.closeReelsSection=function(){const s=document.getElementById('reelsSection');if(!s)return;s.classList.remove('is-open');document.body.classList.remove('reels-view-open');document.getElementById('reelsRow')?.scrollTo({top:0})};
-  window.toggleReelLike=async function(id,b){const u=currentUser();if(!u){toast('سجل الدخول أولاً');return}const {data:ex}=await sb.from('reel_likes').select('reel_id').eq('reel_id',id).eq('user_id',u.id).maybeSingle();if(ex)await sb.from('reel_likes').delete().eq('reel_id',id).eq('user_id',u.id);else await sb.from('reel_likes').insert({reel_id:id,user_id:u.id});const {count}=await sb.from('reel_likes').select('*',{count:'exact',head:true}).eq('reel_id',id);b.querySelector('.reel-like-count').textContent=count||0};
-  window.shareReel=async function(id){const u=currentUser();if(!u){toast('سجل الدخول أولاً');return}const {error}=await sb.from('reel_shares').upsert({reel_id:id,user_id:u.id},{onConflict:'reel_id,user_id'});if(error){toast('تعذر تسجيل المشاركة');return}const {data}=await sb.from('reels').select('video_url').eq('id',id).single();try{if(data?.video_url)await navigator.clipboard.writeText(data.video_url);toast('تمت المشاركة ونسخ الرابط ↗️')}catch{toast('تم تسجيل المشاركة ↗️')}};
-  window.createReel=async function(file,caption=''){const u=currentUser();if(!u||!file){toast(!u?'سجل الدخول أولاً':'اختر فيديو');return false}if(!file.type.startsWith('video/')){toast('اختر فيديو فقط');return false}if(file.size>50*1024*1024){toast('حجم الفيديو يجب ألا يتجاوز 50MB');return false}const ext=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp4';const path=`${u.id}/${crypto.randomUUID()}.${ext}`;const {error:up}=await sb.storage.from('reels').upload(path,file,{contentType:file.type,upsert:false});if(up){toast('تعذر رفع الفيديو. تأكد من Storage Bucket باسم reels');return false}const {data:p}=sb.storage.from('reels').getPublicUrl(path);const {error}=await sb.from('reels').insert({author_id:u.id,video_url:p.publicUrl,caption:caption.trim()||null});if(error){toast('تعذر حفظ الريلز');return false}toast('تم نشر الريلز بنجاح 🎬');await loadReels();return true};
-  window.openReelUploader=function(){let i=document.getElementById('reelUploadInput');if(!i){i=document.createElement('input');i.id='reelUploadInput';i.type='file';i.accept='video/*';i.hidden=true;document.body.appendChild(i);i.onchange=async()=>{const f=i.files?.[0];if(!f)return;await createReel(f,prompt('اكتب وصف الريلز (اختياري)')||'');i.value=''}}i.click()};
+
+  window.toggleReelLike=async function(id,b){
+    const u=currentUser();if(!u){toast('سجل الدخول أولاً');return}
+    const {data:ex}=await sb.from('reel_likes').select('reel_id').eq('reel_id',id).eq('user_id',u.id).maybeSingle();
+    if(ex)await sb.from('reel_likes').delete().eq('reel_id',id).eq('user_id',u.id);else await sb.from('reel_likes').insert({reel_id:id,user_id:u.id});
+    const {count}=await sb.from('reel_likes').select('*',{count:'exact',head:true}).eq('reel_id',id);b.querySelector('.reel-like-count').textContent=count||0;
+  };
+
+  window.shareReel=async function(id){
+    const u=currentUser();if(!u){toast('سجل الدخول أولاً');return}
+    const {error}=await sb.from('reel_shares').upsert({reel_id:id,user_id:u.id},{onConflict:'reel_id,user_id'});
+    if(error){toast('تعذر تسجيل المشاركة');return}
+    const {data}=await sb.from('reels').select('video_url').eq('id',id).single();
+    try{if(data?.video_url)await navigator.clipboard.writeText(data.video_url);toast('تمت المشاركة ونسخ الرابط ↗️')}catch{toast('تم تسجيل المشاركة ↗️')}
+  };
+
+  async function resumableUpload(file,path){
+    if(!window.tus) throw new Error('TUS_NOT_LOADED');
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session?.access_token) throw new Error('NO_SESSION');
+    const projectId=(window.MADA_SUPABASE_URL||'').replace(/^https:\/\//,'').split('.')[0];
+    const endpoint=`https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`;
+    return new Promise((resolve,reject)=>{
+      const upload=new tus.Upload(file,{
+        endpoint,
+        retryDelays:[0,3000,5000,10000,20000],
+        headers:{authorization:`Bearer ${session.access_token}`,apikey:window.MADA_SUPABASE_KEY||''},
+        uploadDataDuringCreation:true,
+        removeFingerprintOnSuccess:true,
+        chunkSize:6*1024*1024,
+        metadata:{bucketName:'reels',objectName:path,contentType:file.type||'video/mp4',cacheControl:'3600'},
+        onError:error=>reject(error),
+        onProgress:(uploaded,total)=>{const pct=Math.round(uploaded/total*100);toast(`جاري رفع الريلز ${pct}%`)},
+        onSuccess:()=>resolve(true)
+      });
+      upload.findPreviousUploads().then(previous=>{if(previous.length)upload.resumeFromPreviousUpload(previous[0]);upload.start()}).catch(reject);
+    });
+  }
+
+  window.createReel=async function(file,caption=''){
+    const u=currentUser();
+    if(!u||!file){toast(!u?'سجل الدخول أولاً':'اختر فيديو');return false}
+    if(!file.type.startsWith('video/')){toast('اختر فيديو فقط');return false}
+    if(file.size>50*1024*1024){toast('حجم الفيديو يجب ألا يتجاوز 50MB');return false}
+    const ext=(file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp4';
+    const path=`${u.id}/${crypto.randomUUID()}.${ext}`;
+    try{
+      if(file.size>6*1024*1024){
+        await resumableUpload(file,path);
+      }else{
+        const {error}=await sb.storage.from('reels').upload(path,file,{contentType:file.type||'video/mp4',cacheControl:'3600',upsert:false});
+        if(error)throw error;
+      }
+      const {data:p}=sb.storage.from('reels').getPublicUrl(path);
+      const {error}=await sb.from('reels').insert({author_id:u.id,video_url:p.publicUrl,caption:caption.trim()||null});
+      if(error)throw error;
+      toast('تم نشر الريلز بنجاح 🎬');await loadReels();return true;
+    }catch(error){
+      console.error('Mada reel upload error',error);
+      const msg=String(error?.message||'').toLowerCase();
+      if(msg.includes('row-level')||msg.includes('policy')||msg.includes('permission'))toast('الرفع مرفوض من صلاحيات Storage');
+      else if(error?.status===413||msg.includes('too large'))toast('الفيديو أكبر من الحد المسموح');
+      else if(error?.name==='AbortError')toast('تم إلغاء رفع الفيديو');
+      else toast('فشل رفع الفيديو. جرّب فيديو MP4 أصغر أو أعد المحاولة');
+      return false;
+    }
+  };
+
+  window.openReelUploader=function(){
+    let i=document.getElementById('reelUploadInput');
+    if(!i){
+      i=document.createElement('input');i.id='reelUploadInput';i.type='file';i.accept='video/*';i.capture=false;i.hidden=true;document.body.appendChild(i);
+      i.onchange=async()=>{const f=i.files?.[0];if(!f)return;await createReel(f,prompt('اكتب وصف الريلز (اختياري)')||'');i.value=''};
+    }
+    i.click();
+  };
+
   window.openFullReel=function(v){if(!v)return;v.muted=false;v.currentTime=0;const p=v.play();if(p?.catch)p.catch(()=>{});if(v.requestFullscreen)v.requestFullscreen().catch?.(()=>{})};
   window.setupAutoPreviewReels=setupAutoPreviewReels;window.loadReels=loadReels;
   document.addEventListener('DOMContentLoaded',()=>{setupAutoPreviewReels();setTimeout(loadReels,500)});
