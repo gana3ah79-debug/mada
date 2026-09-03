@@ -38,7 +38,8 @@
    const body=quote||'🔁 تمت مشاركة منشور';
    const {error}=await sb.from('posts').insert({author_id:user.id,body,visibility:shareVisibility,shared_post_id:targetPostId});
    if(error)throw error;
-   try { await sb.from('post_shares').insert({post_id:targetPostId,user_id:user.id}); } catch (_) {}
+   // Record the share and notify the original author through the existing social-event trigger.
+   try { await sb.from('post_shares').insert({post_id:targetPostId,user_id:user.id,target_user_id:targetPost.author_id}); } catch (shareError) { console.warn('share tracking unavailable',shareError); }
    const message=shareVisibility==='private'?'تمت المشاركة وحفظها في ملفك — أنت فقط تستطيع رؤيتها.':'تمت مشاركة المنشور في ملفك الشخصي وظهرت في الموجز.';
    closeShareModal();madaMessage('✓ '+message,'success');
    if(location.pathname.endsWith('index.html')||location.pathname.endsWith('/')){const feed=document.getElementById('feed');if(feed&&typeof window.loadFeed==='function')window.loadFeed();else location.reload();}
