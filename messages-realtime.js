@@ -48,8 +48,10 @@
         const cid=m.conversation_id;
         const ch=sb.channel('mada-msg-watch-'+cid).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`conversation_id=eq.${cid}`},payload=>{
           if(payload.new.sender_id===user.id)return;
+          // messenger-modern.js already renders the event when this conversation is open.
+          // Avoid a second toast/badge in that case.
+          if(window.madaMessengerCurrent?.cid===cid)return;
           showNativeBubble(payload.new);
-          if(document.getElementById('chatList'))return;
           unread++;setBadge(unread);
           toast('وصلتك رسالة جديدة 💬');
         }).subscribe();
