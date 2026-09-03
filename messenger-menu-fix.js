@@ -1,50 +1,9 @@
-/* Fix: Messenger three-dots menu */
+/* Messenger three-dots touch/visibility fix */
 (function(){
-  const q=s=>document.querySelector(s);
-  let menu=null;
-  function close(){ if(menu){menu.remove();menu=null;} }
-  function show(){
-    close();
-    const btn=q('#mmChatMore'); if(!btn) return;
-    menu=document.createElement('div');
-    menu.className='mm-chat-menu';
-    menu.innerHTML='<button type="button" data-action="search">🔎 <span>البحث في المحادثة</span></button><button type="button" data-action="refresh">🔄 <span>تحديث المحادثة</span></button><button type="button" data-action="close">✕ <span>إغلاق المحادثة</span></button>';
-    document.body.appendChild(menu);
-    const r=btn.getBoundingClientRect();
-    menu.style.top=Math.min(window.innerHeight-170,Math.max(8,r.bottom+6))+'px';
-    menu.style.left=Math.max(8,Math.min(window.innerWidth-235,r.left-185))+'px';
-    menu.onclick=async e=>{
-      const item=e.target.closest('[data-action]'); if(!item)return;
-      const action=item.dataset.action; close();
-      if(action==='close'){window.madaMessengerClose?.();return;}
-      if(action==='refresh'){
-        if(window.madaMessenger?.loadConversations) window.madaMessenger.loadConversations();
-        document.dispatchEvent(new CustomEvent('mada:refresh'));
-        return;
-      }
-      if(action==='search'){
-        const input=q('#mmFilter');
-        const list=q('#mmList'),chat=q('#mmChat');
-        if(chat&&!chat.hidden){
-          const messages=q('#mmMessages');
-          if(!messages)return;
-          const term=window.prompt('اكتب كلمة للبحث داخل الرسائل');
-          if(!term)return;
-          const rows=[...messages.querySelectorAll('.mm-bubble')];
-          let found=0;
-          rows.forEach(row=>{const ok=(row.innerText||'').toLowerCase().includes(term.toLowerCase());row.style.outline=ok?'2px solid currentColor':'';if(ok){found++;row.scrollIntoView({behavior:'smooth',block:'center'});}});
-          if(window.showToast) window.showToast(found?'تم العثور على '+found+' رسالة':'لم يتم العثور على الرسالة');
-        } else if(input){input.focus();}
-      }
-    };
-  }
-  function bind(){
-    const b=q('#mmChatMore');
-    if(!b||b.dataset.menuFix==='1')return;
-    b.dataset.menuFix='1';
-    b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();show();});
-  }
-  document.addEventListener('click',e=>{if(menu&&!e.target.closest('#mmChatMore')&&!e.target.closest('.mm-chat-menu'))close();});
-  new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});
-  [0,300,800,1500,3000].forEach(t=>setTimeout(bind,t));
+  const q=s=>document.querySelector(s);let menu=null;
+  function style(){if(document.getElementById('mmMenuZFix'))return;const s=document.createElement('style');s.id='mmMenuZFix';s.textContent='.mm-chat-menu{position:fixed!important;z-index:1000000!important;pointer-events:auto!important}.mm-chat-menu button{pointer-events:auto!important;position:relative!important;z-index:1000001!important}.mm-chat-head #mmChatMore{position:relative!important;z-index:1000002!important;cursor:pointer!important;touch-action:manipulation!important}';document.head.appendChild(s)}
+  function close(){if(menu){menu.remove();menu=null}}
+  function show(){style();close();const b=q('#mmChatMore');if(!b)return;menu=document.createElement('div');menu.className='mm-chat-menu';menu.innerHTML='<button type="button" data-action="search">🔎 البحث في المحادثة</button><button type="button" data-action="refresh">🔄 تحديث المحادثة</button><button type="button" data-action="close">✕ إغلاق المحادثة</button>';document.body.appendChild(menu);const r=b.getBoundingClientRect();menu.style.top=Math.min(innerHeight-170,Math.max(8,r.bottom+6))+'px';menu.style.left=Math.max(8,Math.min(innerWidth-245,r.left-195))+'px';menu.onclick=e=>{e.stopPropagation();const a=e.target.closest('[data-action]')?.dataset.action;if(!a)return;if(a==='close'){close();q('#mmChatBack')?.click()}else if(a==='refresh'){close();location.reload()}else if(a==='search'){const term=prompt('اكتب كلمة للبحث داخل الرسائل');if(!term)return;let n=0;[...q('#mmMessages').querySelectorAll('.mm-bubble')].forEach(x=>{const ok=(x.innerText||'').toLowerCase().includes(term.toLowerCase());x.style.outline=ok?'2px solid currentColor':'';if(ok){n++;x.scrollIntoView({behavior:'smooth',block:'center'})}});close();if(window.showToast)showToast(n?'تم العثور على '+n+' رسالة':'لم يتم العثور على الرسالة')}}}
+  function bind(){style();const b=q('#mmChatMore');if(!b)return;b.onclick=null;if(!b.dataset.menuFixBound){b.dataset.menuFixBound='1';b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();show()},true)}}
+  document.addEventListener('click',e=>{if(menu&&!e.target.closest('#mmChatMore')&&!e.target.closest('.mm-chat-menu'))close()});new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});[0,300,800,1500,3000,5000].forEach(t=>setTimeout(bind,t));
 })();
