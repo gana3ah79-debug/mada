@@ -28,7 +28,9 @@
   const btn=$('execute-profile-share');btn.disabled=true;btn.textContent='جارٍ النشر…';
   try{
    const quote=$('share-quote').value.trim();
-   const {error}=await sb.from('posts').insert({author_id:user.id,body:quote||null,visibility:shareVisibility,shared_post_id:targetPostId});
+   // posts_check requires body or media_url. A shared post without a quote still gets a valid body.
+   const body=quote||'🔁 تمت مشاركة منشور';
+   const {error}=await sb.from('posts').insert({author_id:user.id,body,visibility:shareVisibility,shared_post_id:targetPostId});
    if(error)throw error;
    await sb.from('post_shares').insert({post_id:targetPostId,user_id:user.id}).catch(()=>{});
    const message=shareVisibility==='private'?'تمت المشاركة وحفظها في ملفك — أنت فقط تستطيع رؤيتها.':'تمت مشاركة المنشور في ملفك الشخصي وظهرت في الموجز.';
