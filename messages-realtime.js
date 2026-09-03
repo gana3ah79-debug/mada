@@ -1,7 +1,6 @@
-/* Mada realtime messages: unread badge + incoming message toast */
+/* Mada realtime messages: unread badge + incoming message toast + Android bubbles */
 (function(){
   let channels=[];
-  const seen=new Set();
   let timer=null;
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
   function toast(text){
@@ -18,6 +17,27 @@
   }
   let unread=0;
   function clearUnread(){unread=0;setBadge(0);}
+  function messagePreview(m){
+    const t=m&&m.message_type;
+    if(t==='image')return '📷 صورة';
+    if(t==='video')return '🎬 فيديو';
+    if(t==='gif')return 'GIF';
+    if(t==='audio')return '🎤 رسالة صوتية';
+    if(t==='file')return '📎 ملف';
+    return String((m&&m.body)||'رسالة جديدة').trim().slice(0,120)||'رسالة جديدة';
+  }
+  async function showNativeBubble(m){
+    try{
+      if(!m||!m.conversation_id||!window.MadaNative||typeof window.MadaNative.showMessageBubble!=='function')return;
+      if(document.visibilityState==='visible' && document.hasFocus())return;
+      let title='Mada';
+      try{
+        const {data:p}=await sb.from('profiles').select('display_name').eq('id',m.sender_id).maybeSingle();
+        if(p&&p.display_name)title=p.display_name;
+      }catch(_){ }
+      window.MadaNative.showMessageBubble(String(m.conversation_id),title,messagePreview(m));
+    }catch(e){console.warn('Mada native bubble unavailable',e);}
+  }
   async function subscribe(){
     if(!window.sb||!window.user)return false;
     try{
@@ -28,7 +48,7 @@
         const cid=m.conversation_id;
         const ch=sb.channel('mada-msg-watch-'+cid).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`conversation_id=eq.${cid}`},payload=>{
           if(payload.new.sender_id===user.id)return;
-          // When a chat is open, its own realtime handler already renders the message.
+          showNativeBubble(payload.new);
           if(document.getElementById('chatList'))return;
           unread++;setBadge(unread);
           toast('وصلتك رسالة جديدة 💬');
