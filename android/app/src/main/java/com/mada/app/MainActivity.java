@@ -24,17 +24,17 @@ public class MainActivity extends Activity {
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
     s.setMediaPlaybackRequiresUserGesture(false);
-    s.setAllowFileAccess(false);
+    s.setAllowFileAccess(true);
     s.setAllowContentAccess(true);
     s.setBuiltInZoomControls(false);
     s.setDisplayZoomControls(false);
+    s.setDatabaseEnabled(true);
 
     web.setWebViewClient(new WebViewClient());
     web.setWebChromeClient(new WebChromeClient() {
       @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
         fileCallback = callback;
-
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
@@ -50,16 +50,16 @@ public class MainActivity extends Activity {
       }
     });
 
-    web.loadUrl("https://gana3ah79-debug.github.io/mada/");
+    // The complete Mada web app is bundled inside the APK.
+    web.loadUrl("file:///android_asset/mada/index.html");
   }
 
   @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
     if (requestCode == FILE_CHOOSER_REQUEST) {
       Uri[] results = null;
-      if (resultCode == RESULT_OK && data != null) {
-        Uri uri = data.getData();
-        if (uri != null) results = new Uri[]{uri};
+      if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+        results = new Uri[]{data.getData()};
       }
       if (fileCallback != null) fileCallback.onReceiveValue(results);
       fileCallback = null;
