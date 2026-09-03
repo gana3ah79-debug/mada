@@ -1,33 +1,37 @@
-/* Mada Group Messenger UI v3 - real group identity, sender names, pinned banner */
+/* Mada Group Messenger UI v3 */
 (function(){
  const S=()=>{try{return sb}catch(e){return window.sb||null}};
  const U=()=>{try{return user}catch(e){return window.user||null}};
  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
  const toast=m=>window.madaToast?window.madaToast(m):window.showToast?window.showToast(m):console.log(m);
- let lastCid=null,lastDecorate=0;
- function css(){if(document.getElementById('gm-v3-css'))return;const x=document.createElement('style');x.id='gm-v3-css';x.textContent=`
- .gm-sender-name{font-size:11px;font-weight:800;opacity:.72;margin:0 0 4px 2px}
- .mm-bubble.theirs.gm-named{padding-top:7px}
- .gm-pinned-bar{position:sticky;top:0;z-index:4;margin:0 10px 8px;padding:10px 12px;border-radius:14px;background:rgba(80,120,255,.12);display:flex;align-items:center;gap:8px;cursor:pointer;border:1px solid rgba(80,120,255,.18)}
- .gm-pinned-bar b{display:block;font-size:12px}.gm-pinned-bar small{display:block;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
- .gm-pinned-close{margin-inline-start:auto;border:0;background:none;font-size:18px}
- .gm-group-avatar{display:grid;place-items:center;overflow:hidden}.mm-group-avatar img{width:100%;height:100%;object-fit:cover}
- `;document.head.appendChild(x)}
- async function groupMap(){const s=S(),u=U();if(!s||!u)return new Map();const {data:mine}=await s.from('conversation_members').select('conversation_id').eq('user_id',u.id);const ids=(mine||[]).map(x=>x.conversation_id);if(!ids.length)return new Map();const {data:gc}=await s.from('group_conversations').select('conversation_id,group_id').in('conversation_id',ids);if(!gc?.length)return new Map();const gids=[...new Set(gc.map(x=>x.group_id))];const {data:groups}=await s.from('groups').select('id,name,avatar_url,privacy').in('id',gids);const gm=new Map((groups||[]).map(x=>[x.id,x]));return new Map(gc.map(x=>[x.conversation_id,{...x,group:gm.get(x.group_id)}]));}
- async function enhanceList(){const map=await groupMap();if(!map.size)return;document.querySelectorAll('.mm-row[data-cid]').forEach(row=>{const m=map.get(row.dataset.cid);if(!m?.group)return;if(row.dataset.gmGroup==='1')return;row.dataset.gmGroup='1';const g=m.group;const av=row.querySelector('.mm-avatar');if(av)av.innerHTML=g.avatar_url?'<img src="'+esc(g.avatar_url)+'" alt="">':'👥';const b=row.querySelector('.mm-info b');const sm=row.querySelector('.mm-info small');if(b)b.textContent=g.name;if(sm)sm.textContent='👥 مجموعة · '+(g.privacy==='private'?'خاصة':'عامة');});}
- async function enhanceChat(){
-  const meta=window.__madaGroupConversation,chat=document.getElementById('mmChat');if(!meta?.conversationId||!chat||chat.hidden)return;
-  const s=S(),me=U();if(!s||!me)return;const cid=meta.conversationId;
-  const {data:g}=await s.from('groups').select('id,name,avatar_url,description,privacy').eq('id',meta.groupId).maybeSingle();if(!g)return;
-  const head=document.getElementById('mmChatUser');if(head){head.innerHTML='<span class="mm-avatar mm-group-avatar">'+(g.avatar_url?'<img src="'+esc(g.avatar_url)+'" alt="">':'👥')+'</span><span><b>'+esc(g.name)+'</b><small>👥 مجموعة · '+(g.privacy==='private'?'خاصة':'عامة')+'</small></span>';}
-  const {data:msgs}=await s.from('messages').select('id,sender_id,body,created_at').eq('conversation_id',cid).order('created_at',{ascending:true}).limit(300);const ids=[...new Set((msgs||[]).map(x=>x.sender_id))];const {data:profiles}=ids.length?await s.from('profiles').select('id,display_name,username,avatar_url').in('id',ids):{data:[]};const pm=new Map((profiles||[]).map(x=>[x.id,x]));
-  document.querySelectorAll('#mmMessages .mm-bubble[data-message-id]').forEach(b=>{const id=b.dataset.messageId;const m=(msgs||[]).find(x=>x.id===id);if(!m||m.sender_id===me.id||b.dataset.gmNamed==='1')return;const p=pm.get(m.sender_id);if(!p)return;b.dataset.gmNamed='1';b.classList.add('gm-named');const n=document.createElement('div');n.className='gm-sender-name';n.textContent=p.display_name||p.username||'عضو';b.insertBefore(n,b.firstChild);});
-  const {data:pins}=await s.from('group_pinned_messages').select('message_id').eq('group_id',g.id).order('created_at',{ascending:false}).limit(1);const pin=pins?.[0];let bar=document.getElementById('gmPinnedBar');if(pin){const m=(msgs||[]).find(x=>x.id===pin.message_id);if(m){if(!bar){bar=document.createElement('div');bar.id='gmPinnedBar';bar.className='gm-pinned-bar';const out=document.getElementById('mmMessages');out?.parentElement?.insertBefore(bar,out)}bar.innerHTML='<span>📌</span><span><b>رسالة مثبتة</b><small>'+esc(m.body||'📎 محتوى مرفق')+'</small></span>';bar.onclick=()=>{const el=document.querySelector('[data-message-id="'+CSS.escape(pin.message_id)+'"]');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.animate([{transform:'scale(1)'},{transform:'scale(1.03)'},{transform:'scale(1)'}],350)}}}}else if(bar)bar.remove();
-  lastCid=cid;lastDecorate=Date.now();
+ let lastCid=null,lastPinKey='';
+ async function enhance(){
+  const meta=window.__madaGroupConversation,s=S(),u=U(),chat=document.getElementById('mmChat');
+  if(!meta?.conversationId||!meta.groupId||!s||!u||!chat||chat.hidden)return;
+  const cid=meta.conversationId;
+  if(cid!==lastCid){lastCid=cid;lastPinKey='';}
+  const g=await s.from('groups').select('id,name,avatar_url,description,privacy,owner_id').eq('id',meta.groupId).maybeSingle();if(g.error||!g.data)return;
+  const group=g.data;
+  const head=document.getElementById('mmChatUser');
+  if(head&&!head.dataset.groupHeader){head.dataset.groupHeader='1';head.innerHTML='<span class="mm-avatar mm-group-avatar">'+(group.avatar_url?'<img src="'+esc(group.avatar_url)+'" alt="">':'👥')+'</span><span><b>'+esc(group.name)+'</b><small>👥 مجموعة · '+(group.privacy==='private'?'خاصة':'عامة')+'</small></span>';head.style.cursor='pointer';head.onclick=()=>members(group);}
+  await pinned(meta,group);
  }
- async function members(){const meta=window.__madaGroupConversation,s=S();if(!meta||!s)return;const g=(await s.from('groups').select('id,name,description,avatar_url').eq('id',meta.groupId).maybeSingle()).data;if(!g)return;const r=await s.from('group_members').select('user_id,role').eq('group_id',g.id);const ids=(r.data||[]).map(x=>x.user_id);const p=ids.length?await s.from('profiles').select('id,display_name,username,avatar_url').in('id',ids):{data:[]};const pm=new Map((p.data||[]).map(x=>[x.id,x]));const o=document.createElement('div');o.className='gmmi';o.innerHTML='<div class="gmmi-card"><div class="gmmi-head"><div class="gmmi-cover">'+(g.avatar_url?'<img src="'+esc(g.avatar_url)+'">':'👥')+'</div><div><h2 style="margin:0">'+esc(g.name)+'</h2><small>'+ids.length+' عضو</small></div><button class="gmmi-close">×</button></div><p>'+esc(g.description||'لا يوجد وصف للمجموعة.')+'</p><div class="gmmi-list">'+(r.data||[]).map(x=>{const q=pm.get(x.user_id)||{};return '<div class="gmmi-row">'+(q.avatar_url?'<img src="'+esc(q.avatar_url)+'">':'<span class="gmmi-letter">👤</span>')+'<div><b>'+esc(q.display_name||'مستخدم Mada')+'</b><small>'+esc(x.role==='admin'?'مشرف':'عضو')+'</small></div></div>'}).join('')+'</div></div>';document.body.appendChild(o);o.querySelector('.gmmi-close').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()}}
- css();
- setInterval(async()=>{try{await enhanceList();await enhanceChat()}catch(e){console.debug('group messenger ui',e)}},1000);
- window.madaGroupMessengerReset=()=>{lastCid=null;lastDecorate=0};
- window.madaGroupMessengerMembers=members;
+ async function pinned(meta,group){
+  const s=S();if(!s)return;
+  const r=await s.from('group_pinned_messages').select('message_id,created_at').eq('group_id',group.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
+  const out=document.getElementById('mmMessages');if(!out)return;
+  let bar=document.getElementById('gmPinnedBar');
+  if(!r.data){bar?.remove();return;}
+  const msg=await s.from('messages').select('id,body,message_type').eq('id',r.data.message_id).maybeSingle();if(!msg.data){bar?.remove();return;}
+  const key=r.data.message_id+':'+(msg.data.body||'');if(key===lastPinKey)return;lastPinKey=key;
+  if(!bar){bar=document.createElement('button');bar.id='gmPinnedBar';bar.type='button';bar.className='gm-pinned-bar';out.parentElement.insertBefore(bar,out)}
+  bar.innerHTML='📌 <span><b>رسالة مثبتة</b><small>'+esc(msg.data.body||({image:'🖼️ صورة',video:'🎬 فيديو',audio:'🎤 صوت',file:'📎 ملف',gif:'GIF'}[msg.data.message_type]||'رسالة'))+'</small></span><i>›</i>';
+  bar.onclick=()=>{const el=out.querySelector('[data-message-id="'+CSS.escape(msg.data.id)+'"]');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.animate([{transform:'scale(1)'},{transform:'scale(1.03)'},{transform:'scale(1)'}],500)}};
+ }
+ async function members(group){
+  const s=S();if(!s)return;const r=await s.from('group_members').select('user_id,role').eq('group_id',group.id);const ids=(r.data||[]).map(x=>x.user_id);const p=ids.length?await s.from('profiles').select('id,display_name,username,avatar_url').in('id',ids):{data:[]};const pm=new Map((p.data||[]).map(x=>[x.id,x]));
+  const o=document.createElement('div');o.className='gmmi';o.innerHTML='<div class="gmmi-card"><div class="gmmi-head"><div class="gmmi-cover">'+(group.avatar_url?'<img src="'+esc(group.avatar_url)+'">':'👥')+'</div><div><h2 style="margin:0">'+esc(group.name)+'</h2><small>'+ids.length+' عضو</small></div><button class="gmmi-close">×</button></div><p>'+esc(group.description||'لا يوجد وصف للمجموعة.')+'</p><div class="gmmi-list">'+(r.data||[]).map(x=>{const q=pm.get(x.user_id)||{};return '<div class="gmmi-row">'+(q.avatar_url?'<img src="'+esc(q.avatar_url)+'">':'<span class="gmmi-letter">👤</span>')+'<div><b>'+esc(q.display_name||q.username||'مستخدم Mada')+'</b><small>'+esc(x.role==='admin'?'مشرف':x.role==='owner'?'مالك':'عضو')+'</small></div></div>'}).join('')+'</div></div>';
+  document.body.appendChild(o);o.querySelector('.gmmi-close').onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()};
+ }
+ setInterval(enhance,700);enhance();window.madaGroupMessengerReset=()=>{lastCid=null;lastPinKey=''};
 })();
