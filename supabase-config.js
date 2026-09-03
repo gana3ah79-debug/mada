@@ -25,3 +25,8 @@ window.openMessages=window.openMessages||function(){
   const css=document.createElement('link');css.rel='stylesheet';css.href='notifications-enhance.css?v=20260903-01';document.head.appendChild(css);
   const s=document.createElement('script');s.src='notifications-enhance.js?v=20260903-01';s.async=false;document.head.appendChild(s);
 })();
+
+// Share button recovery: keep the مشاركة action visible after feed re-renders.
+(function(){
+  const s=document.createElement('script');s.src='share-button-fix.js?v=20260903-01';s.async=false;document.head.appendChild(s);
+})();
