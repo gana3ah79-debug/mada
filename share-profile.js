@@ -1,6 +1,6 @@
 (function(){
  const {createClient}=window.supabase; const sb=createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
- let targetPostId=null,targetPost=null,shareVisibility='public';
+ let targetPostId=null,targetPost=null,shareVisibility='public',shareBusy=false;
  const $=id=>document.getElementById(id);
  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
  function madaMessage(text,type='success'){
@@ -19,7 +19,7 @@
   $('share-privacy-menu').onclick=e=>{const b=e.target.closest('[data-privacy]');if(!b)return;shareVisibility=b.dataset.privacy;$('share-privacy-btn').textContent=shareVisibility==='private'?'أنا فقط 🔒 ▾':'الموجز 🌐 ▾';$('share-privacy-menu').hidden=true;};
  }
  async function openShareModal(id){
-  ensureModal();targetPostId=id;shareVisibility='public';
+  ensureModal();targetPostId=id;shareVisibility='public';shareBusy=false;
   const {data:{user}}=await sb.auth.getUser();if(!user){madaMessage('يرجى تسجيل الدخول','error');return;}
   const [{data:p,error},{data:me}]=await Promise.all([
    sb.from('posts').select('id,author_id,body,media_url,created_at,visibility,profiles!posts_author_id_fkey(display_name,avatar_url)').eq('id',id).maybeSingle(),
@@ -28,23 +28,36 @@
   if(error||!p){madaMessage('تعذر تحميل المنشور للمشاركة.','error');return;}
   targetPost=p;const original=p.profiles||{};const currentName=me?.display_name||user.email?.split('@')[0]||'مستخدم Mada';$('share-user-name').textContent=currentName;$('share-user-avatar').textContent=currentName.trim().charAt(0);$('share-privacy-btn').textContent='الموجز 🌐 ▾';$('share-quote').value='';$('original-post-preview').innerHTML=`<div class="original-label">المنشور الأصلي</div><div class="original-author">${esc(original.display_name||'مستخدم Mada')}</div><div class="original-text">${esc(p.body||'منشور بصورة')}</div>${p.media_url?`<img src="${esc(p.media_url)}" alt="المنشور الأصلي">`:''}`;$('share-modal').hidden=false;setTimeout(()=>$('share-quote')?.focus(),100);
  }
- function closeShareModal(){if($('share-modal'))$('share-modal').hidden=true;targetPostId=null;targetPost=null;shareVisibility='public';}
+ function closeShareModal(){if($('share-modal'))$('share-modal').hidden=true;targetPostId=null;targetPost=null;shareVisibility='public';shareBusy=false;}
  async function executeProfileShare(){
-  if(!targetPostId)return;
+  if(!targetPostId||shareBusy)return;
   const {data:{user}}=await sb.auth.getUser();if(!user){madaMessage('يرجى تسجيل الدخول','error');return;}
-  const btn=$('execute-profile-share');btn.disabled=true;btn.textContent='جارٍ النشر…';
+  shareBusy=true;const btn=$('execute-profile-share');if(btn){btn.disabled=true;btn.textContent='جارٍ النشر…';}
   try{
    const quote=$('share-quote').value.trim();
    const body=quote||'🔁 تمت مشاركة منشور';
-   const {error}=await sb.from('posts').insert({author_id:user.id,body,visibility:shareVisibility,shared_post_id:targetPostId});
+   const {data:newPost,error}=await sb.from('posts').insert({author_id:user.id,body,visibility:shareVisibility,shared_post_id:targetPostId}).select('id,author_id,body,media_url,created_at,shared_post_id,profiles!posts_author_id_fkey(display_name,avatar_url)').single();
    if(error)throw error;
-   // Record the share and notify the original author through the existing social-event trigger.
    try { await sb.from('post_shares').insert({post_id:targetPostId,user_id:user.id,target_user_id:targetPost.author_id}); } catch (shareError) { console.warn('share tracking unavailable',shareError); }
    const message=shareVisibility==='private'?'تمت المشاركة وحفظها في ملفك — أنت فقط تستطيع رؤيتها.':'تمت مشاركة المنشور في ملفك الشخصي وظهرت في الموجز.';
    closeShareModal();madaMessage('✓ '+message,'success');
-   if(location.pathname.endsWith('index.html')||location.pathname.endsWith('/')){const feed=document.getElementById('feed');if(feed&&typeof window.loadFeed==='function')window.loadFeed();else location.reload();}
+   // Update the current feed without a full page reload. If the enhanced feed is available,
+   // let it ingest the new card immediately; otherwise fall back to the existing loader.
+   if(location.pathname.endsWith('index.html')||location.pathname.endsWith('/')){
+    const feed=document.getElementById('feed');
+    if(feed&&newPost){
+      const exists=feed.querySelector(`article.post[data-post-id="${CSS.escape(newPost.id)}"]`);
+      if(!exists&&typeof window.renderPost==='function'){
+       try{
+        const card=window.renderPost(newPost,[],[]);
+        if(card instanceof HTMLElement)feed.prepend(card);
+        else if(typeof card==='string')feed.insertAdjacentHTML('afterbegin',card);
+       }catch(e){console.warn('instant shared card render unavailable',e);window.loadFeed?.();}
+      }
+    } else if(typeof window.loadFeed==='function')window.loadFeed();
+   }
   }catch(e){madaMessage('حدث خطأ أثناء المشاركة: '+(e.message||e),'error');}
-  finally{if($('execute-profile-share')){btn.disabled=false;btn.textContent='مشاركة الآن';}}
+  finally{shareBusy=false;if($('execute-profile-share')){btn.disabled=false;btn.textContent='مشاركة الآن';}}
  }
  function goToMyProfile(){sb.auth.getUser().then(({data})=>{if(data?.user)location.href=`profile.html?id=${encodeURIComponent(data.user.id)}`;});}
  document.addEventListener('click',e=>{const share=e.target.closest('.share');if(share){e.preventDefault();e.stopImmediatePropagation();openShareModal(share.dataset.id);return;}if(e.target.closest('#profileNav')){e.preventDefault();e.stopImmediatePropagation();goToMyProfile();return;}if($('share-privacy-menu')&&!e.target.closest('.share-privacy'))$('share-privacy-menu').hidden=true;},true);
