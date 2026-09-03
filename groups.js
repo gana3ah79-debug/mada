@@ -1,0 +1,40 @@
+/* Mada Groups UI */
+(function(){
+  let overlay=null, currentGroup=null;
+  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+  const toast=m=>window.madaToast?window.madaToast(m):console.log(m);
+  async function openGroups(){
+    if(!window.sb){toast('جاري تجهيز المجموعات…');return}
+    overlay?.remove(); overlay=document.createElement('div'); overlay.className='groups-overlay';
+    overlay.innerHTML='<div class="groups-shell"><header><div><h2>👥 المجموعات</h2><small>اكتشف مجموعاتك وانضم لمجتمعات جديدة</small></div><div class="groups-head-actions"><button id="groupCreate">＋ إنشاء</button><button id="groupClose">×</button></div></header><div class="groups-search"><input id="groupsSearch" placeholder="ابحث عن مجموعة…"></div><div id="groupsContent" class="groups-content"><div class="groups-loading">جاري التحميل…</div></div></div>';
+    document.body.appendChild(overlay); overlay.querySelector('#groupClose').onclick=closeGroups; overlay.onclick=e=>{if(e.target===overlay)closeGroups()}; overlay.querySelector('#groupCreate').onclick=showCreate;
+    overlay.querySelector('#groupsSearch').oninput=e=>loadGroups(e.target.value.trim()); await loadGroups();
+  }
+  function closeGroups(){overlay?.remove();overlay=null;currentGroup=null}
+  async function loadGroups(search=''){
+    const box=overlay?.querySelector('#groupsContent'); if(!box)return;
+    let q=sb.from('groups').select('id,owner_id,name,description,avatar_url,created_at').order('created_at',{ascending:false}).limit(60);
+    if(search)q=q.ilike('name','%'+search.replace(/[%_]/g,'')+'%'); const {data,error}=await q; if(error){box.innerHTML='<div class="groups-empty">تعذر تحميل المجموعات.</div>';return}
+    const ids=(data||[]).map(g=>g.id); let members=[]; if(ids.length){const r=await sb.from('group_members').select('group_id,user_id,role').in('group_id',ids);members=r.data||[]}
+    const mine=new Set(members.filter(m=>window.user&&m.user_id===user.id).map(m=>m.group_id)); const counts=new Map();members.forEach(m=>counts.set(m.group_id,(counts.get(m.group_id)||0)+1));
+    box.innerHTML=(data||[]).map(g=>`<article class="group-card" data-id="${esc(g.id)}"><div class="group-avatar">${g.avatar_url?`<img src="${esc(g.avatar_url)}">`:'👥'}</div><div class="group-info"><h3>${esc(g.name)}</h3><p>${esc(g.description||'مجتمع جديد على Mada')}</p><small>👤 ${counts.get(g.id)||0} عضو</small></div><button class="group-action" data-action="${mine.has(g.id)?'open':'join'}">${mine.has(g.id)?'فتح':'انضمام'}</button></article>`).join('')||'<div class="groups-empty">لا توجد مجموعات.</div>';
+    box.querySelectorAll('.group-card').forEach(c=>c.onclick=e=>{if(e.target.closest('.group-action'))return;openGroup(c.dataset.id)}); box.querySelectorAll('.group-action').forEach(b=>b.onclick=async e=>{e.stopPropagation();const id=b.closest('.group-card').dataset.id;if(b.dataset.action==='join'){const {error}=await sb.from('group_members').insert({group_id:id,user_id:user.id,role:'member'});if(error&&error.code!=='23505'){toast('تعذر الانضمام');return}toast('تم الانضمام للمجموعة');b.textContent='فتح';b.dataset.action='open';}else openGroup(id)});
+  }
+  function showCreate(){
+    const box=document.createElement('div');box.className='groups-modal';box.innerHTML='<div class="groups-dialog"><button class="gm-close">×</button><h2>إنشاء مجموعة</h2><input id="gmName" placeholder="اسم المجموعة"><textarea id="gmDesc" placeholder="وصف المجموعة"></textarea><button id="gmSave" class="gm-primary">إنشاء المجموعة</button></div>';document.body.appendChild(box);box.querySelector('.gm-close').onclick=()=>box.remove();box.onclick=e=>{if(e.target===box)box.remove()};box.querySelector('#gmSave').onclick=async()=>{const name=box.querySelector('#gmName').value.trim();if(!name){toast('اكتب اسم المجموعة');return}const {data,error}=await sb.rpc('create_group_and_join',{p_name:name,p_description:box.querySelector('#gmDesc').value.trim(),p_avatar_url:null});if(error){toast('تعذر إنشاء المجموعة');console.error(error);return}box.remove();toast('تم إنشاء المجموعة 🎉');loadGroups();openGroup(data?.id)};
+  }
+  async function openGroup(id){
+    const {data:g,error}=await sb.from('groups').select('id,owner_id,name,description,avatar_url,created_at').eq('id',id).single();if(error)return;
+    currentGroup=g; const {data:members}=await sb.from('group_members').select('user_id,role').eq('group_id',id);const isMember=(members||[]).some(m=>window.user&&m.user_id===user.id); const isOwner=g.owner_id===window.user?.id;
+    const {data:posts}=await sb.from('posts').select('id,author_id,body,media_url,created_at,profiles!posts_author_id_fkey(display_name,avatar_url)').eq('group_id',id).order('created_at',{ascending:false}).limit(50);
+    overlay.querySelector('.groups-shell').innerHTML=`<header><div class="group-detail-head"><button id="groupBack">‹</button><div class="group-avatar big">${g.avatar_url?`<img src="${esc(g.avatar_url)}">`:'👥'}</div><div><h2>${esc(g.name)}</h2><small>${(members||[]).length} عضو</small></div></div><button id="groupClose">×</button></header><div class="group-cover"><p>${esc(g.description||'لا يوجد وصف للمجموعة.')}</p><div class="group-buttons">${isMember?`<button id="groupLeave">مغادرة</button>`:`<button id="groupJoin" class="gm-primary">انضمام</button>`}${isOwner?'<button id="groupDelete">حذف المجموعة</button>':''}</div></div>${isMember?'<div class="group-composer"><textarea id="groupPostText" placeholder="اكتب منشورًا للمجموعة…"></textarea><button id="groupPostSend">نشر</button></div>':'<div class="group-join-note">انضم للمجموعة لرؤية وكتابة منشوراتها.</div>'}<div id="groupPosts" class="group-posts">${renderPosts(posts||[])}</div>`;
+    overlay.querySelector('#groupBack').onclick=loadGroups;overlay.querySelector('#groupClose').onclick=closeGroups;
+    overlay.querySelector('#groupJoin')?.addEventListener('click',async()=>{const r=await sb.from('group_members').insert({group_id:id,user_id:user.id,role:'member'});if(r.error&&r.error.code!=='23505'){toast('تعذر الانضمام');return}openGroup(id)});
+    overlay.querySelector('#groupLeave')?.addEventListener('click',async()=>{await sb.from('group_members').delete().eq('group_id',id).eq('user_id',user.id);toast('غادرت المجموعة');loadGroups()});
+    overlay.querySelector('#groupDelete')?.addEventListener('click',async()=>{if(!confirm('حذف المجموعة نهائيًا؟'))return;await sb.from('groups').delete().eq('id',id);toast('تم حذف المجموعة');loadGroups()});
+    overlay.querySelector('#groupPostSend')?.addEventListener('click',async()=>{const body=overlay.querySelector('#groupPostText').value.trim();if(!body)return;const r=await sb.from('posts').insert({author_id:user.id,body,media_url:null,visibility:'public',group_id:id});if(r.error){toast('تعذر نشر المنشور');console.error(r.error);return}overlay.querySelector('#groupPostText').value='';openGroup(id)});
+  }
+  function renderPosts(posts){return posts.map(p=>`<article class="group-post"><div class="gp-author"><span>${esc((p.profiles?.display_name||'م').charAt(0))}</span><div><b>${esc(p.profiles?.display_name||'مستخدم Mada')}</b><small>${esc(new Date(p.created_at).toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'}))}</small></div></div><p>${esc(p.body||'')}</p>${p.media_url?`<img src="${esc(p.media_url)}" loading="lazy">`:''}</article>`).join('')||'<div class="groups-empty">لا توجد منشورات في المجموعة بعد.</div>'}
+  function addButton(){const top=document.querySelector('.top-actions');if(!top||top.querySelector('#groupsBtn'))return;const b=document.createElement('button');b.id='groupsBtn';b.type='button';b.textContent='👥';b.title='المجموعات';b.setAttribute('aria-label','المجموعات');b.onclick=openGroups;top.insertBefore(b,document.querySelector('#exploreBtn')?.nextSibling||top.firstChild)}
+  document.addEventListener('DOMContentLoaded',()=>{addButton();new MutationObserver(addButton).observe(document.body,{childList:true,subtree:true})});window.openGroups=openGroups;
+})();
