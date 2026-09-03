@@ -30,3 +30,9 @@ window.openMessages=window.openMessages||function(){
   const css=document.createElement('link');css.rel='stylesheet';css.href='share-sheet-force.css?v=20260903-01';document.head.appendChild(css);
   const s=document.createElement('script');s.src='share-actions-fix.js?v=20260903-02';s.async=false;document.head.appendChild(s);
 })();
+
+/* Facebook-style navigation: hide the bottom bar while scrolling down and show it when scrolling up. */
+(function(){
+  const css=document.createElement('link');css.rel='stylesheet';css.href='bottom-nav-scroll.css?v=20260903-01';document.head.appendChild(css);
+  const s=document.createElement('script');s.src='bottom-nav-scroll.js?v=20260903-01';s.async=false;document.head.appendChild(s);
+})();
