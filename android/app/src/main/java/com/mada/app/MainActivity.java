@@ -1,7 +1,11 @@
 package com.mada.app;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -9,6 +13,54 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
   private WebView web;
-  @Override public void onCreate(Bundle b){super.onCreate(b); web=new WebView(this); setContentView(web); WebSettings s=web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setMediaPlaybackRequiresUserGesture(false); s.setAllowFileAccess(false); s.setAllowContentAccess(false); web.setWebViewClient(new WebViewClient()); web.setWebChromeClient(new WebChromeClient()); web.loadUrl("https://gana3ah79-debug.github.io/mada/");}
-  @Override public void onBackPressed(){ if(web.canGoBack()) web.goBack(); else super.onBackPressed(); }
+  private ValueCallback<Uri[]> fileCallback;
+  private static final int FILE_CHOOSER_REQUEST = 1001;
+
+  @Override public void onCreate(Bundle b) {
+    super.onCreate(b);
+    web = new WebView(this);
+    setContentView(web);
+
+    WebSettings s = web.getSettings();
+    s.setJavaScriptEnabled(true);
+    s.setDomStorageEnabled(true);
+    s.setMediaPlaybackRequiresUserGesture(false);
+    s.setAllowFileAccess(false);
+    s.setAllowContentAccess(true);
+
+    web.setWebViewClient(new WebViewClient());
+    web.setWebChromeClient(new WebChromeClient() {
+      @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+        if (fileCallback != null) fileCallback.onReceiveValue(null);
+        fileCallback = callback;
+
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("video/*");
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
+        startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+        return true;
+      }
+    });
+
+    web.loadUrl("https://gana3ah79-debug.github.io/mada/");
+  }
+
+  @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (requestCode == FILE_CHOOSER_REQUEST) {
+      Uri[] results = null;
+      if (resultCode == RESULT_OK && data != null) {
+        Uri uri = data.getData();
+        if (uri != null) results = new Uri[]{uri};
+      }
+      if (fileCallback != null) fileCallback.onReceiveValue(results);
+      fileCallback = null;
+    }
+  }
+
+  @Override public void onBackPressed() {
+    if (web.canGoBack()) web.goBack();
+    else super.onBackPressed();
+  }
 }
