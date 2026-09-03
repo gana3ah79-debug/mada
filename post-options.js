@@ -16,7 +16,6 @@ async function openPostOptions(postId, postAuthorId) {
   const ownerActions = document.getElementById('owner-actions');
   if (!overlay) return;
   if (ownerActions) ownerActions.style.display = 'none';
-
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (user) {
@@ -26,7 +25,6 @@ async function openPostOptions(postId, postAuthorId) {
       if (ownerActions && (isOwner || isAdmin)) ownerActions.style.display = 'block';
     }
   } catch (e) { console.warn('post options permission check failed', e); }
-
   overlay.style.display = 'flex';
   document.body.classList.add('post-sheet-open');
 }
@@ -44,11 +42,7 @@ async function handleInterest(isInterested) {
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return postOptionsMessage('يجب تسجيل الدخول أولاً.', 'error');
-    const { error } = await sb.from('post_interests').upsert({
-      post_id: currentSelectedPostId,
-      user_id: user.id,
-      is_interested: !!isInterested
-    }, { onConflict: 'post_id,user_id' });
+    const { error } = await sb.from('post_interests').upsert({ post_id: currentSelectedPostId, user_id: user.id, is_interested: !!isInterested }, { onConflict: 'post_id,user_id' });
     if (error) throw error;
     postOptionsMessage(isInterested ? 'تم تسجيل اهتمامك بالمنشور.' : 'تم تسجيل أنك غير مهتم بهذا المنشور.');
     closePostOptions();
@@ -80,11 +74,7 @@ async function handleReportPost() {
   try {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return postOptionsMessage('يجب تسجيل الدخول أولاً.', 'error');
-    const { error } = await sb.from('post_reports').upsert({
-      post_id: currentSelectedPostId,
-      reporter_id: user.id,
-      reason: 'إبلاغ من قائمة خيارات المنشور'
-    }, { onConflict: 'post_id,reporter_id' });
+    const { error } = await sb.from('post_reports').upsert({ post_id: currentSelectedPostId, reporter_id: user.id, reason: 'إبلاغ من قائمة خيارات المنشور' }, { onConflict: 'post_id,reporter_id' });
     if (error) throw error;
     postOptionsMessage('تم إرسال البلاغ إلى مسؤولي Mada. شكرًا لمساعدتنا.');
     closePostOptions();
@@ -115,7 +105,7 @@ function installPostOptionButtons(root = document) {
     const postId = card.dataset.postId;
     if (!postId) return;
     let ownerId = card.dataset.authorId || '';
-    try { ownerId = ownerId || window.feedPosts?.get?.(postId)?.author_id || ''; } catch (_) {}
+    try { ownerId = ownerId || feedPosts?.get?.(postId)?.author_id || ''; } catch (_) {}
     card.dataset.authorId = ownerId;
     const head = card.querySelector('.post-head');
     if (!head) return;
@@ -138,5 +128,4 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   installPostOptionButtons();
   postOptionsObserver.observe(document.body, { childList: true, subtree: true });
 }
-
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePostOptions(); });
