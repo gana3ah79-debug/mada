@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -27,6 +26,8 @@ public class MainActivity extends Activity {
     s.setMediaPlaybackRequiresUserGesture(false);
     s.setAllowFileAccess(false);
     s.setAllowContentAccess(true);
+    s.setBuiltInZoomControls(false);
+    s.setDisplayZoomControls(false);
 
     web.setWebViewClient(new WebViewClient());
     web.setWebChromeClient(new WebChromeClient() {
@@ -36,9 +37,15 @@ public class MainActivity extends Activity {
 
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("video/*");
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "video/*"});
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
-        startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+        try {
+          startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+        } catch (Exception e) {
+          fileCallback.onReceiveValue(null);
+          fileCallback = null;
+        }
         return true;
       }
     });
