@@ -14,3 +14,9 @@ window.openMessages=window.openMessages||function(){
   const css=document.createElement('link');css.rel='stylesheet';css.href='home-feed-enhance.css?v=20260903-01';css.dataset.madaHomeFeed='1';document.head.appendChild(css);
   const s=document.createElement('script');s.src='home-feed-enhance.js?v=20260903-01';s.async=false;document.head.appendChild(s);
 })();
+
+// Reaction enhancement: voter list, request dedupe guard and subtle feedback animation.
+(function(){
+  const css=document.createElement('link');css.rel='stylesheet';css.href='post-reactions-enhance.css?v=20260903-01';document.head.appendChild(css);
+  const s=document.createElement('script');s.src='post-reactions-enhance.js?v=20260903-01';s.async=false;document.head.appendChild(s);
+})();
