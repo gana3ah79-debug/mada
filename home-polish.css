@@ -1,0 +1,28 @@
+/* Mada Home v3 — polished social home */
+.home-polish-installed{display:none}
+@media (max-width:600px){
+  .topbar{height:64px!important;padding:0 10px!important;gap:8px}
+  .topbar .brand{font-size:28px!important;font-weight:900;letter-spacing:-.8px}
+  .top-actions{gap:4px!important;flex:1;justify-content:flex-start}
+  .top-actions button{width:38px!important;height:38px!important;flex-basis:38px!important;font-size:18px!important;background:#f2f4f8!important}
+  .container{max-width:680px!important;padding:8px 10px 94px!important}
+  .stories{margin:0 -2px 12px!important;padding:3px 2px 8px!important;gap:8px!important}
+  .story{min-width:88px!important;width:88px!important;height:128px!important;border-radius:17px!important}
+  .add-story{min-width:88px!important;width:88px!important}
+  .card.composer{padding:12px!important;border-radius:19px!important}
+  .composer-row{gap:8px!important}
+  .composer-row .avatar{width:42px!important;height:42px!important;flex-basis:42px!important}
+  .composer input{height:44px!important;padding:10px 14px!important;font-size:14px!important}
+  .composer-actions{margin-top:10px!important;padding-top:8px!important}
+  .composer-actions button{height:38px!important;padding:7px 2px!important;font-size:11px!important}
+  .feed{margin-top:10px!important;gap:10px!important}
+  .post{padding:13px 12px 9px!important;border-radius:19px!important}
+  .post-head{gap:9px!important}
+  .post-text{font-size:14px!important;line-height:1.75!important;margin:10px 0!important}
+  .post-actions{margin-top:8px!important;padding-top:5px!important}
+  .post-actions button{font-size:11px!important;padding:9px 2px!important}
+}
+@media (min-width:601px){
+  .container{max-width:720px!important}
+  .stories,.card.composer,.feed{max-width:700px;margin-left:auto!important;margin-right:auto!important}
+}
