@@ -28,11 +28,11 @@
   const btn=$('execute-profile-share');btn.disabled=true;btn.textContent='جارٍ النشر…';
   try{
    const quote=$('share-quote').value.trim();
-   // posts_check requires body or media_url. A shared post without a quote still gets a valid body.
    const body=quote||'🔁 تمت مشاركة منشور';
    const {error}=await sb.from('posts').insert({author_id:user.id,body,visibility:shareVisibility,shared_post_id:targetPostId});
    if(error)throw error;
-   await sb.from('post_shares').insert({post_id:targetPostId,user_id:user.id}).catch(()=>{});
+   // post_shares is optional analytics; never let a missing/failed table break a successful share.
+   try{await sb.from('post_shares').insert({post_id:targetPostId,user_id:user.id});}catch(_e){console.warn('post_shares insert skipped',_e);}
    const message=shareVisibility==='private'?'تمت المشاركة وحفظها في ملفك — أنت فقط تستطيع رؤيتها.':'تمت مشاركة المنشور في ملفك الشخصي وظهرت في الموجز.';
    closeShareModal();alert(message);
    if(location.pathname.endsWith('index.html')||location.pathname.endsWith('/')){const feed=document.getElementById('feed');if(feed&&typeof window.loadFeed==='function')window.loadFeed();else location.reload();}
