@@ -11,12 +11,10 @@
     el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3200);
   }
   function setBadge(count){
-    ['msgBtn'].forEach(id=>{
-      const el=document.getElementById(id);if(!el)return;
-      el.dataset.messageCount=String(count);
-      el.classList.toggle('has-message-badge',count>0);
-      el.setAttribute('aria-label',count?`الرسائل، ${count} جديدة`:'الرسائل');
-    });
+    const el=document.getElementById('msgBtn');if(!el)return;
+    el.dataset.messageCount=String(count);
+    el.classList.toggle('has-message-badge',count>0);
+    el.setAttribute('aria-label',count?`الرسائل، ${count} جديدة`:'الرسائل');
   }
   let unread=0;
   function clearUnread(){unread=0;setBadge(0);}
@@ -28,13 +26,10 @@
       channels.forEach(c=>sb.removeChannel(c));channels=[];
       (members||[]).forEach(m=>{
         const cid=m.conversation_id;
-        if(seen.has(cid))return;
-        seen.add(cid);
         const ch=sb.channel('mada-msg-watch-'+cid).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`conversation_id=eq.${cid}`},payload=>{
           if(payload.new.sender_id===user.id)return;
-          const open=document.getElementById('chatList');
-          const active=window.activeConversationId;
-          if(open&&active===cid)return;
+          // When a chat is open, its own realtime handler already renders the message.
+          if(document.getElementById('chatList'))return;
           unread++;setBadge(unread);
           toast('وصلتك رسالة جديدة 💬');
         }).subscribe();
