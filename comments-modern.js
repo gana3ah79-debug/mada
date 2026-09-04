@@ -1,160 +1,41 @@
-/* Mada Comments Modern v5 — reliable comments, live counts, replies, delete and realtime. */
+/* Mada Comments Modern v6 — dedicated comment sheet, replies, delete and reactions. */
 (function(){
   const get=id=>document.getElementById(id), db=()=>window.sb||null, me=()=>window.user||null;
-  const pending=new Set(); let replyTarget=null, realtime=null;
-
-  function toast(msg){
-    if(window.showToast)return window.showToast(msg);
-    let t=get('madaCommentToast');
-    if(!t){t=document.createElement('div');t.id='madaCommentToast';t.className='mada-comment-toast';document.body.appendChild(t)}
-    t.textContent=msg;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),2200);
-  }
-  function findPost(id){return document.querySelector(`article.post[data-post-id="${CSS.escape(id)}"]`)}
-  function commentsHost(post){return post?.querySelector('.comment-list')||post?.querySelector('.comments')||null}
-
-  function ensureReplyBar(){
-    if(get('commentReplyBar'))return;
-    const b=document.createElement('div');b.id='commentReplyBar';b.className='comment-reply-bar';b.hidden=true;
-    b.innerHTML='<span>↩️ الرد على <b id="commentReplyName"></b></span><button type="button" id="cancelCommentReply">×</button>';
-    document.body.appendChild(b);get('cancelCommentReply').onclick=clearReply;
-  }
-  function clearReply(){
-    replyTarget=null;const b=get('commentReplyBar');if(b)b.hidden=true;
-    document.querySelectorAll('.comment-box input').forEach(i=>i.placeholder='اكتب تعليقًا...');
-  }
-  function startReply(c){
-    ensureReplyBar();
-    replyTarget={id:c.dataset.commentId,name:c.dataset.authorName||'مستخدم',postId:c.closest('.post')?.dataset.postId};
-    get('commentReplyName').textContent=replyTarget.name;get('commentReplyBar').hidden=false;
-    const i=c.closest('.post')?.querySelector('.comment-box input');
-    if(i){i.placeholder=`الرد على ${replyTarget.name}...`;i.focus()}
-  }
-
-  function updateCount(postId,count){
-    const post=findPost(postId);if(!post)return;
-    const btn=post.querySelector('.comment-toggle');
-    if(btn)btn.textContent=`💬 تعليق ${Number(count)||0}`;
-  }
-  async function refreshPostStats(postId){
-    const d=db();if(!d||!postId)return;
-    const {count,error}=await d.from('comments').select('id',{count:'exact',head:true}).eq('post_id',postId);
-    if(!error)updateCount(postId,count||0);
-  }
-  window.madaRefreshPostStats=refreshPostStats;
-
-  function makeComment(row,name,currentUserId){
-    const c=document.createElement('div');c.className='comment mada-live-comment';
-    c.dataset.commentId=row.id;c.dataset.parentId=row.parent_id||'';c.dataset.authorName=name||'مستخدم';
-    const body=document.createElement('span');body.className='comment-body';
-    const b=document.createElement('b');b.textContent=name||'مستخدم';
-    const txt=document.createElement('span');txt.textContent=row.body||'';body.append(b,txt);
-    const meta=document.createElement('small');meta.className='comment-time';meta.textContent=row.created_at?new Date(row.created_at).toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'}):'';
-    const tools=document.createElement('span');tools.className='comment-tools';
-    const reply=document.createElement('button');reply.type='button';reply.textContent='رد';reply.onclick=e=>{e.stopPropagation();startReply(c)};tools.appendChild(reply);
-    if(row.author_id===currentUserId){
-      const del=document.createElement('button');del.type='button';del.className='comment-delete';del.textContent='حذف';
-      del.onclick=e=>{e.stopPropagation();deleteComment(c)};tools.appendChild(del);
-    }
-    c.append(body,meta,tools);return c;
-  }
-
-  function renderRows(postId,rows,profiles,limit){
-    const post=findPost(postId),host=commentsHost(post);if(!post||!host)return;
-    host.replaceChildren();
-    const pmap=new Map((profiles||[]).map(p=>[p.id,p]));
-    const shown=rows.slice(Math.max(0,rows.length-(limit||20)));
-    shown.forEach(r=>{
-      const p=pmap.get(r.author_id)||{};host.appendChild(makeComment(r,p.display_name||'مستخدم',me()?.id));
-    });
-    if(rows.length>(limit||20)){
-      const more=document.createElement('button');more.type='button';more.className='comments-more';more.textContent=`عرض كل التعليقات (${rows.length})`;
-      more.onclick=()=>renderRows(postId,rows,profiles,rows.length);host.insertBefore(more,host.firstChild);
-    }
-    updateCount(postId,rows.length);
-  }
-
-  async function loadPostComments(postId,limit=20){
-    const d=db();if(!d||!postId)return;
-    const {data,error}=await d.from('comments').select('id,post_id,author_id,body,parent_id,created_at').eq('post_id',postId).order('created_at',{ascending:true});
-    if(error){console.warn('comments load failed',error);return}
-    const rows=data||[];
-    const ids=[...new Set(rows.map(r=>r.author_id).filter(Boolean))];
-    const {data:profiles}=ids.length?await d.from('profiles').select('id,display_name').in('id',ids):{data:[]};
-    renderRows(postId,rows,profiles,limit);
-  }
-
-  async function deleteComment(c){
-    const d=db(),u=me(),id=c?.dataset.commentId,key='del:'+id;
-    if(!d||!u||!id||pending.has(key))return;
-    if(!confirm('حذف هذا التعليق؟'))return;
-    pending.add(key);const btn=c.querySelector('.comment-delete');if(btn)btn.disabled=true;
-    try{
-      const{error}=await d.from('comments').delete().eq('id',id).eq('author_id',u.id);if(error)throw error;
-      const pid=c.closest('.post')?.dataset.postId;c.remove();if(pid)await refreshPostStats(pid);toast('تم حذف التعليق ✓');
-    }catch(e){console.error(e);toast('تعذر حذف التعليق')}
-    finally{pending.delete(key);if(btn)btn.disabled=false}
-  }
-
-  async function addComment(postId){
-    const d=db(),u=me(),key='add:'+postId;
-    if(!d||!u||!postId||pending.has(key))return;
-    const box=document.querySelector(`#feed [data-comment="${CSS.escape(postId)}"]`),text=box?.value.trim();if(!text)return;
-    if(text.length>1000){toast('التعليق طويل جدًا');return}
-    const send=document.querySelector(`#feed [data-send="${CSS.escape(postId)}"]`);
-    pending.add(key);if(send){send.disabled=true;send.textContent='…'}
-    try{
-      const parentId=replyTarget&&replyTarget.postId===postId?replyTarget.id:null;
-      const{data,error}=await d.from('comments').insert({post_id:postId,author_id:u.id,body:text,parent_id:parentId}).select('id,post_id,author_id,body,parent_id,created_at').single();
-      if(error)throw error;
-      if(box)box.value='';clearReply();
-      const host=commentsHost(findPost(postId));
-      if(host){
-        const row=makeComment(data,u.display_name||u.email||'أنت',u.id);
-        if(parentId){const parent=host.querySelector(`[data-comment-id="${CSS.escape(parentId)}"]`);if(parent)parent.insertAdjacentElement('afterend',row);else host.appendChild(row)}else host.appendChild(row);
-      }
-      await refreshPostStats(postId);toast(parentId?'تم نشر الرد ✓':'تم نشر التعليق ✓');
-    }catch(e){console.error(e);toast('تعذر إضافة التعليق: '+(e?.message||''))}
-    finally{pending.delete(key);if(send){send.disabled=false;send.textContent='إرسال'}}
-  }
-
-  function startRealtime(){
-    const d=db(),u=me();if(!d||!u||realtime)return;
-    realtime=d.channel('mada-comments-'+u.id)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'comments'},async payload=>{
-        const r=payload.new;if(!r?.post_id)return;
-        await refreshPostStats(r.post_id);
-        if(r.author_id===u.id)return;
-        const post=findPost(r.post_id);if(!post)return;
-        const host=commentsHost(post);if(!host||host.querySelector(`[data-comment-id="${CSS.escape(r.id)}"]`))return;
-        const{data:p}=await d.from('profiles').select('display_name').eq('id',r.author_id).maybeSingle();
-        const row=makeComment(r,p?.display_name||'مستخدم',u.id);host.appendChild(row);toast('تعليق جديد 💬');
-      })
-      .on('postgres_changes',{event:'DELETE',schema:'public',table:'comments'},async payload=>{
-        const id=payload.old?.id,pid=payload.old?.post_id;
-        if(id)document.querySelector(`[data-comment-id="${CSS.escape(id)}"]`)?.remove();
-        if(pid)await refreshPostStats(pid);
-      }).subscribe();
-  }
-
-  function enhancePost(post){
-    const pid=post?.dataset.postId;if(!pid)return;
-    const toggle=post.querySelector('.comment-toggle');
-    if(toggle&&!toggle.dataset.commentEnhanced){
-      toggle.dataset.commentEnhanced='1';
-      toggle.addEventListener('click',()=>{const box=post.querySelector('.comment-box input');box?.focus();post.querySelector('.comments')?.scrollIntoView({behavior:'smooth',block:'nearest'})});
-    }
-    loadPostComments(pid,20);
-  }
-  function enhanceAll(){document.querySelectorAll('#feed article.post').forEach(enhancePost)}
-
-  function init(){
-    ensureReplyBar();
-    const feed=get('feed');if(!feed)return;
-    const observer=new MutationObserver(()=>{clearTimeout(window.__commentEnhanceTimer);window.__commentEnhanceTimer=setTimeout(enhanceAll,120)});
-    observer.observe(feed,{childList:true,subtree:true});
-    setTimeout(enhanceAll,300);setTimeout(startRealtime,1000);
-    feed.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.shiftKey)return;const input=e.target.closest('[data-comment]');if(input){e.preventDefault();window.addComment?.(input.dataset.comment)}});
-  }
-  window.addComment=addComment;
+  let replyTarget=null, activePostId=null, realtime=null, loading=false;
+  const reactions=[['like','👍'],['love','❤️'],['haha','😂'],['wow','😮'],['sad','😢'],['angry','😡']];
+  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+  const fmt=v=>{try{return new Date(v).toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'})}catch{return ''}};
+  function toast(msg){if(window.showToast)return window.showToast(msg);let t=get('madaCommentToast');if(!t){t=document.createElement('div');t.id='madaCommentToast';t.className='mada-comment-toast';document.body.appendChild(t)}t.textContent=msg;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),2200)}
+  function injectStyle(){if(get('mada-comments-sheet-css'))return;const s=document.createElement('style');s.id='mada-comments-sheet-css';s.textContent=`
+    .post .comments{display:none!important}
+    .post .comment-box{display:none!important}
+    .mada-comments-overlay{position:fixed;inset:0;background:rgba(10,18,32,.48);z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;padding:0}
+    .mada-comments-sheet{width:min(620px,100%);max-height:88vh;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.22);display:flex;flex-direction:column;overflow:hidden;direction:rtl}
+    .mada-comments-head{display:flex;align-items:center;justify-content:space-between;padding:14px 17px;border-bottom:1px solid #edf0f4;background:#fff;position:sticky;top:0;z-index:2}
+    .mada-comments-head strong{font-size:17px}.mada-comments-close{border:0;background:#f1f3f6;width:36px;height:36px;border-radius:50%;font-size:23px;cursor:pointer}
+    .mada-comments-list{overflow:auto;flex:1;padding:13px 13px 90px}.mada-comment-row{display:flex;gap:9px;margin:0 0 13px;align-items:flex-start}.mada-comment-avatar{width:36px;height:36px;border-radius:50%;background:#e8eef8;display:grid;place-items:center;font-weight:800;flex:0 0 36px;color:#2563b9}.mada-comment-main{min-width:0;flex:1}.mada-comment-bubble{background:#f1f3f6;border-radius:17px;padding:9px 12px;display:inline-block;max-width:100%;overflow-wrap:anywhere}.mada-comment-name{font-weight:800;font-size:13px;margin-bottom:2px}.mada-comment-text{font-size:13px;line-height:1.6}.mada-comment-time{display:block;color:#8993a3;font-size:10px;margin-top:4px}
+    .mada-comment-row.reply{margin-right:43px}.mada-comment-tools{display:flex;gap:11px;align-items:center;margin-top:4px;padding:0 5px}.mada-comment-tools button{border:0;background:transparent;padding:2px;color:#667085;font-size:11px;font-weight:800;cursor:pointer}.mada-comment-tools .delete{color:#c84e59}
+    .mada-reactions{display:flex;gap:4px;align-items:center;margin-top:5px;padding:3px 5px}.mada-reaction{border:1px solid transparent;background:transparent;border-radius:14px;padding:2px 5px;font-size:16px;cursor:pointer}.mada-reaction.active{background:#e9f2ff;border-color:#bdd7ff}.mada-reaction-count{font-size:10px;color:#667085;margin-right:1px}
+    .mada-comment-compose{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e7ebf0;padding:10px 11px;display:flex;gap:7px;align-items:center}.mada-comment-compose input{flex:1;min-width:0;height:43px;border:1px solid #dfe4ea;border-radius:22px;background:#f7f8fa;padding:0 15px;font:inherit;font-size:13px;outline:none}.mada-comment-compose input:focus{border-color:#1877f2;background:#fff}.mada-comment-compose button{height:43px;min-width:43px;border:0;border-radius:50%;background:#1877f2;color:#fff;font-weight:900;font-size:17px;cursor:pointer}.mada-comment-compose .cancel-reply{background:#f0f2f5;color:#5f6877;display:none}.mada-comment-compose.replying .cancel-reply{display:block}.mada-comment-replying{position:absolute;bottom:63px;left:12px;right:12px;background:#fff;border:1px solid #e1e6ed;border-radius:12px;padding:7px 10px;font-size:11px;box-shadow:0 4px 18px rgba(0,0,0,.1);display:flex;justify-content:space-between}.mada-comment-replying button{border:0;background:transparent;color:#777;font-size:16px}.mada-comments-empty{text-align:center;color:#8993a3;padding:45px 10px}
+    @media(prefers-color-scheme:dark){.mada-comments-sheet,.mada-comments-head,.mada-comment-compose{background:#171d27;color:#f5f7fa}.mada-comments-head{border-color:#303846}.mada-comments-close{background:#252c37;color:#fff}.mada-comment-bubble{background:#252c37}.mada-comment-tools button,.mada-reaction-count{color:#aab4c3}.mada-comment-compose{border-color:#303846}.mada-comment-compose input{background:#202731;color:#fff;border-color:#353e4b}.mada-comment-compose .cancel-reply{background:#2b3340;color:#dce2ea}.mada-comment-replying{background:#202731;border-color:#353e4b}}
+  `;document.head.appendChild(s)}
+  function ensureSheet(){if(get('madaCommentsOverlay'))return;const o=document.createElement('div');o.id='madaCommentsOverlay';o.className='mada-comments-overlay';o.hidden=true;o.innerHTML=`<div class="mada-comments-sheet" onclick="event.stopPropagation()"><div class="mada-comments-head"><strong id="madaCommentsTitle">💬 التعليقات</strong><button class="mada-comments-close" type="button" aria-label="إغلاق">×</button></div><div id="madaCommentsList" class="mada-comments-list"></div><div id="madaCommentReplying" class="mada-comment-replying" hidden><span>↩️ الرد على <b id="madaReplyName"></b></span><button type="button">×</button></div><div id="madaCommentCompose" class="mada-comment-compose"><button class="cancel-reply" type="button">×</button><input id="madaCommentInput" maxlength="1000" placeholder="اكتب تعليقًا..." autocomplete="off"><button id="madaCommentSend" type="button">➤</button></div></div>`;document.body.appendChild(o);o.addEventListener('click',closeSheet);o.querySelector('.mada-comments-close').onclick=closeSheet;o.querySelector('.cancel-reply').onclick=clearReply;o.querySelector('#madaCommentsTitle').textContent='💬 التعليقات';o.querySelector('#madaCommentReplying button').onclick=clearReply;o.querySelector('#madaCommentSend').onclick=()=>sendComment();o.querySelector('#madaCommentInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendComment()}})}
+  function closeSheet(){const o=get('madaCommentsOverlay');if(o)o.hidden=true;replyTarget=null;activePostId=null;clearReply(true)}
+  function clearReply(silent){replyTarget=null;const bar=get('madaCommentReplying'),compose=get('madaCommentCompose'),input=get('madaCommentInput');if(bar)bar.hidden=true;if(compose)compose.classList.remove('replying');if(input){input.placeholder='اكتب تعليقًا...';if(!silent)input.focus()}}
+  function startReply(row){replyTarget={id:row.dataset.commentId,postId:activePostId,name:row.dataset.authorName||'مستخدم'};const n=get('madaReplyName');if(n)n.textContent=replyTarget.name;const b=get('madaCommentReplying');if(b)b.hidden=false;const c=get('madaCommentCompose');if(c)c.classList.add('replying');const i=get('madaCommentInput');if(i){i.placeholder=`الرد على ${replyTarget.name}...`;i.focus()}}
+  function avatar(name){return esc((name||'م').trim().charAt(0))}
+  function renderComments(rows,profiles,reactionsRows){const list=get('madaCommentsList');if(!list)return;list.replaceChildren();const pmap=new Map((profiles||[]).map(p=>[p.id,p]));const rmap=new Map();(reactionsRows||[]).forEach(r=>{if(!rmap.has(r.comment_id))rmap.set(r.comment_id,[]);rmap.get(r.comment_id).push(r)});if(!rows.length){list.innerHTML='<div class="mada-comments-empty">لا توجد تعليقات بعد.<br>كن أول من يكتب تعليقًا 👋</div>';return}const children=new Map();rows.forEach(r=>{if(r.parent_id){if(!children.has(r.parent_id))children.set(r.parent_id,[]);children.get(r.parent_id).push(r)}});const roots=rows.filter(r=>!r.parent_id);const draw=(r,level)=>{const p=pmap.get(r.author_id)||{};const rr=rmap.get(r.id)||[];const mine=rr.find(x=>x.user_id===me()?.id);const el=document.createElement('div');el.className='mada-comment-row'+(level?' reply':'');el.dataset.commentId=r.id;el.dataset.authorName=p.display_name||'مستخدم';const counts={};rr.forEach(x=>counts[x.reaction_type]=(counts[x.reaction_type]||0)+1);const reactionsHtml=reactions.map(([type,emoji])=>`<button type="button" class="mada-reaction ${mine?.reaction_type===type?'active':''}" data-reaction="${type}" title="${type}">${emoji}${counts[type]?`<span class="mada-reaction-count">${counts[type]}</span>`:''}</button>`).join('');el.innerHTML=`<div class="mada-comment-avatar">${avatar(p.display_name)}</div><div class="mada-comment-main"><div class="mada-comment-bubble"><div class="mada-comment-name">${esc(p.display_name||'مستخدم')}</div><div class="mada-comment-text">${esc(r.body)}</div><small class="mada-comment-time">${fmt(r.created_at)}</small></div><div class="mada-comment-tools"><button type="button" class="reply-comment">رد</button>${r.author_id===me()?.id?'<button type="button" class="delete">حذف</button>':''}</div><div class="mada-reactions">${reactionsHtml}</div></div>`;el.querySelector('.reply-comment').onclick=e=>{e.stopPropagation();startReply(el)};const del=el.querySelector('.delete');if(del)del.onclick=e=>{e.stopPropagation();deleteComment(el)};el.querySelectorAll('.mada-reaction').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleReaction(r.id,b.dataset.reaction)});list.appendChild(el);(children.get(r.id)||[]).forEach(ch=>draw(ch,level+1))};roots.forEach(r=>draw(r,0))}
+  async function loadComments(postId){const d=db();if(!d)return;loading=true;const list=get('madaCommentsList');if(list)list.innerHTML='<div class="mada-comments-empty">جاري تحميل التعليقات…</div>';try{const {data:rows,error}=await d.from('comments').select('id,post_id,author_id,body,parent_id,created_at').eq('post_id',postId).order('created_at',{ascending:true});if(error)throw error;const ids=[...new Set((rows||[]).map(r=>r.author_id).filter(Boolean))];const [{data:profiles},{data:reactionsRows,reactionError}]=await Promise.all([ids.length?d.from('profiles').select('id,display_name').in('id',ids):Promise.resolve({data:[]}), (rows||[]).length?d.from('comment_reactions').select('comment_id,user_id,reaction_type').in('comment_id',(rows||[]).map(r=>r.id)):Promise.resolve({data:[]})]);if(reactionError)console.warn(reactionError);renderComments(rows||[],profiles||[],reactionsRows||[]);const btn=document.querySelector(`article.post[data-post-id="${CSS.escape(postId)}"] .comment-toggle`);if(btn)btn.textContent=`💬 تعليق ${(rows||[]).length}`}catch(e){console.error(e);if(list)list.innerHTML='<div class="mada-comments-empty">تعذر تحميل التعليقات.</div>'}finally{loading=false}}
+  async function openComments(postId){injectStyle();ensureSheet();activePostId=postId;replyTarget=null;const o=get('madaCommentsOverlay');o.hidden=false;document.body.style.overflow='hidden';await loadComments(postId);setTimeout(()=>get('madaCommentInput')?.focus(),50)}
+  function syncPostCount(postId,count){const b=document.querySelector(`article.post[data-post-id="${CSS.escape(postId)}"] .comment-toggle`);if(b)b.textContent=`💬 تعليق ${Number(count)||0}`}
+  async function refreshCount(postId){const d=db();if(!d)return;const {count}=await d.from('comments').select('id',{count:'exact',head:true}).eq('post_id',postId);syncPostCount(postId,count||0)}
+  async function sendComment(){const d=db(),u=me(),input=get('madaCommentInput'),text=input?.value.trim();if(!d||!u||!activePostId||!text||loading)return;if(text.length>1000)return toast('التعليق طويل جدًا');const send=get('madaCommentSend');if(send)send.disabled=true;try{const parentId=replyTarget?.postId===activePostId?replyTarget.id:null;const {data,error}=await d.from('comments').insert({post_id:activePostId,author_id:u.id,body:text,parent_id:parentId}).select('id,post_id,author_id,body,parent_id,created_at').single();if(error)throw error;if(input)input.value='';clearReply(true);await loadComments(activePostId);await refreshCount(activePostId);toast(parentId?'تم نشر الرد ✓':'تم نشر التعليق ✓')}catch(e){console.error(e);toast('تعذر إضافة التعليق: '+(e?.message||''))}finally{if(send)send.disabled=false}}
+  async function deleteComment(row){const d=db(),u=me(),id=row?.dataset.commentId;if(!d||!u||!id)return;if(!confirm('حذف هذا التعليق؟'))return;try{const{error}=await d.from('comments').delete().eq('id',id).eq('author_id',u.id);if(error)throw error;await loadComments(activePostId);await refreshCount(activePostId);toast('تم حذف التعليق ✓')}catch(e){console.error(e);toast('تعذر حذف التعليق')}}
+  async function toggleReaction(commentId,type){const d=db(),u=me();if(!d||!u||!commentId)return;try{const{data:mine}=await d.from('comment_reactions').select('reaction_type').eq('comment_id',commentId).eq('user_id',u.id).maybeSingle();if(mine?.reaction_type===type){const{error}=await d.from('comment_reactions').delete().eq('comment_id',commentId).eq('user_id',u.id);if(error)throw error}else{const{error}=await d.from('comment_reactions').upsert({comment_id:commentId,user_id:u.id,reaction_type:type},{onConflict:'comment_id,user_id'});if(error)throw error}await loadComments(activePostId)}catch(e){console.error(e);toast('تعذر تحديث التفاعل')}}
+  function startRealtime(){const d=db(),u=me();if(!d||!u||realtime)return;realtime=d.channel('mada-comment-reactions-'+u.id).on('postgres_changes',{event:'*',schema:'public',table:'comments'},p=>{if(activePostId&&p.new?.post_id===activePostId||activePostId&&p.old?.post_id===activePostId)loadComments(activePostId)}).on('postgres_changes',{event:'*',schema:'public',table:'comment_reactions'},p=>{if(activePostId)loadComments(activePostId)}).subscribe()}
+  document.addEventListener('click',e=>{const t=e.target.closest?.('.comment-toggle');if(t){e.preventDefault();e.stopPropagation();openComments(t.dataset.id)}});
+  const oldAdd=window.addComment;window.addComment=(postId)=>openComments(postId);
+  window.madaRefreshPostStats=refreshCount;
+  function init(){injectStyle();ensureSheet();document.body.addEventListener('wheel',()=>{}, {passive:true});setTimeout(startRealtime,1200)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
