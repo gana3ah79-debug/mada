@@ -66,4 +66,5 @@
     document.getElementById('premiumBanner')?.addEventListener('click',function(e){if(e.target.closest('.premium-btn'))document.getElementById('premiumBtn')?.click()});
     if(window.user)scalableLoadFeed(true);
   });
+  const modern=document.createElement('script');modern.src='mada-modern-social.js?v=20260904-1';modern.defer=false;document.head.appendChild(modern);
 })();
