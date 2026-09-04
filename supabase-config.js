@@ -1,7 +1,6 @@
 window.MADA_SUPABASE_URL='https://eclnddvupggxyythtpkv.supabase.co';
 window.MADA_SUPABASE_KEY='sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0';
 
-/* One durable Supabase auth configuration. Keep Supabase's default storage key so all Mada clients share the same session. */
 (function(){
   if(window.supabase?.createClient && !window.__madaCreateClientPatched){
     const original=window.supabase.createClient.bind(window.supabase);
@@ -22,8 +21,9 @@ window.openMessages=window.openMessages||function(){if(typeof window.madaMesseng
 (function(){const css=document.createElement('link');css.rel='stylesheet';css.href='share-sheet-force.css?v=20260903-01';document.head.appendChild(css);const s=document.createElement('script');s.src='share-actions-fix.js?v=20260903-02';s.async=false;document.head.appendChild(s)})();
 (function(){const css=document.createElement('link');css.rel='stylesheet';css.href='bottom-nav-scroll.css?v=20260903-01';document.head.appendChild(css);const s=document.createElement('script');s.src='bottom-nav-scroll.js?v=20260903-01';s.async=false;document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-comments-cleanup]'))return;const s=document.createElement('script');s.src='comments-ui-cleanup.js?v=20260903-01';s.async=false;s.dataset.madaCommentsCleanup='1';document.head.appendChild(s)})();
-/* Register the newest interaction handlers before index.html's legacy copies so their capture listeners win. */
 (function(){const s=document.createElement('script');s.src='comments-sheet-fix.js?v=20260904-07';s.async=false;document.head.appendChild(s)})();
 (function(){const s=document.createElement('script');s.src='comments-send-final.js?v=20260904-02';s.async=false;document.head.appendChild(s)})();
 (function(){const s=document.createElement('script');s.src='search-fix.js?v=20260904-02';s.async=false;document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-back-guard]'))return;const s=document.createElement('script');s.src='back-guard-fix.js?v=20260904-01';s.async=false;s.dataset.madaBackGuard='1';document.head.appendChild(s)})();
+(function(){const s=document.createElement('script');s.src='group-privacy-ui.js?v=20260904-01';s.async=false;s.dataset.madaGroupPrivacy='1';document.head.appendChild(s)})();
+(function(){const s=document.createElement('script');s.src='reels-fix.js?v=20260904-02';s.async=false;s.dataset.madaReelUpload='1';document.head.appendChild(s)})();
