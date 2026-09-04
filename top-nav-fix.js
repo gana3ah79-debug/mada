@@ -35,3 +35,8 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();[100,500,1000,2000,4000].forEach(ms=>setTimeout(bind,ms));
 })();
+(function(){
+  if(document.querySelector('script[data-mada-social-unified]'))return;
+  const css=document.createElement('link');css.rel='stylesheet';css.href='social-unified-fix.css?v=20260904-01';document.head.appendChild(css);
+  const s=document.createElement('script');s.src='social-unified-fix.js?v=20260904-01';s.async=false;s.dataset.madaSocialUnified='1';document.head.appendChild(s);
+})();
