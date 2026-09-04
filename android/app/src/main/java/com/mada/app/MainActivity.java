@@ -13,9 +13,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -26,6 +29,7 @@ public class MainActivity extends Activity {
   private static final int FILE_CHOOSER_REQUEST = 1001;
   private static final int NOTIFICATION_REQUEST = 2001;
   private static final String CHANNEL_ID = "mada_messages";
+  private static final String SUPABASE_ASSET = "mada/supabase.min.js";
 
   @Override public void onCreate(Bundle b) {
     super.onCreate(b);
@@ -41,9 +45,28 @@ public class MainActivity extends Activity {
     s.setBuiltInZoomControls(false);
     s.setDisplayZoomControls(false);
     s.setDatabaseEnabled(true);
+    s.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+    CookieManager cookies = CookieManager.getInstance();
+    cookies.setAcceptCookie(true);
+    if (Build.VERSION.SDK_INT >= 21) cookies.setAcceptThirdPartyCookies(web, true);
 
     web.addJavascriptInterface(new MadaNativeBridge(), "MadaNative");
-    web.setWebViewClient(new WebViewClient());
+    web.setWebViewClient(new WebViewClient() {
+      @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        String url = request == null || request.getUrl() == null ? "" : request.getUrl().toString();
+        // The web app normally requests Supabase from jsDelivr. Inside the APK we
+        // replace that network request with the exact SDK bundled in the APK.
+        if (url.contains("@supabase/supabase-js@") && url.contains("/dist/umd/")) {
+          try {
+            return new WebResourceResponse("application/javascript", "UTF-8", getAssets().open(SUPABASE_ASSET));
+          } catch (Exception ignored) {
+            // Fall through to the original network request if the asset is missing.
+          }
+        }
+        return super.shouldInterceptRequest(view, request);
+      }
+    });
     web.setWebChromeClient(new WebChromeClient() {
       @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
