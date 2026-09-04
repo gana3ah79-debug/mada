@@ -1,7 +1,7 @@
-/* Mada: emergency feed renderer. This is the final authority for #feed after app boot. */
+/* Mada: emergency feed renderer v2. Wait for auth before querying RLS-protected posts. */
 (function(){
   'use strict';
-  let busy=false, timer=null;
+  let busy=false, timer=null, authChannel=null;
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
   const initial=s=>(String(s||'م').trim().charAt(0)||'م');
@@ -16,6 +16,17 @@
     }
     throw new Error('supabase_not_ready');
   }
+  async function sessionReady(sb){
+    for(let i=0;i<30;i++){
+      try{
+        const r=await sb.auth.getSession();
+        const s=r.data?.session;
+        if(s?.user?.id){window.user=s.user;return s;}
+      }catch(_){ }
+      await sleep(300);
+    }
+    return null;
+  }
   async function query(make,ms){return Promise.race([make(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);}
   function render(p,a,likes,comments,uid){
     const mine=likes.find(x=>x.user_id===uid);
@@ -29,19 +40,18 @@
     busy=true;
     try{
       const sb=await client();
-      let session=null;
-      try{session=(await sb.auth.getSession()).data?.session||null;}catch(_){}
-      const uid=session?.user?.id||window.user?.id||null;
-      if(session)window.user=session.user;
+      const session=await sessionReady(sb);
+      if(!session)throw new Error('session_not_ready');
+      const uid=session.user.id;
       const r=await query(()=>sb.from('posts').select('id,author_id,body,media_url,created_at,visibility').eq('visibility','public').order('created_at',{ascending:false}).limit(20),15000);
       if(r.error)throw r.error;
       const posts=r.data||[];
       if(!posts.length){feed.innerHTML='<div class="card empty">لا توجد منشورات بعد. كن أول من ينشر في Mada 👋</div>';return true;}
       const ids=posts.map(p=>p.id), aids=[...new Set(posts.map(p=>p.author_id).filter(Boolean))];
       const [pr,lr,cr]=await Promise.allSettled([
-        aids.length?query(()=>sb.from('profiles').select('id,display_name,avatar_url').in('id',aids),8000):Promise.resolve({data:[]}),
-        query(()=>sb.from('post_likes').select('post_id,user_id,reaction_type').in('post_id',ids),8000),
-        query(()=>sb.from('comments').select('id,post_id,author_id,body,created_at,profiles!comments_author_id_fkey(display_name)').in('post_id',ids).order('created_at',{ascending:true}),8000)
+        aids.length?query(()=>sb.from('profiles').select('id,display_name,avatar_url').in('id',aids),7000):Promise.resolve({data:[]}),
+        query(()=>sb.from('post_likes').select('post_id,user_id,reaction_type').in('post_id',ids),7000),
+        query(()=>sb.from('comments').select('id,post_id,author_id,body,created_at,profiles!comments_author_id_fkey(display_name)').in('post_id',ids).order('created_at',{ascending:true}),7000)
       ]);
       const profiles=pr.status==='fulfilled'&&!pr.value.error?(pr.value.data||[]):[];
       const likes=lr.status==='fulfilled'&&!lr.value.error?(lr.value.data||[]):[];
@@ -53,20 +63,28 @@
       const frag=document.createDocumentFragment();posts.forEach(p=>frag.appendChild(render(p,amap.get(p.author_id),lm.get(p.id)||[],cm.get(p.id)||[],uid)));
       feed.replaceChildren(frag);feed.classList.remove('is-loading');
       return true;
-    }catch(e){console.warn('Mada emergency feed:',e);return false}
+    }catch(e){console.warn('Mada emergency feed v2:',e);return false}
     finally{busy=false;}
   }
   function install(){
     window.madaEmergencyFeed=load;
     const tryLoad=()=>{if(!document.hidden)load();};
-    [0,800,1800,3500,7000,12000,20000,30000].forEach(ms=>setTimeout(tryLoad,ms));
+    [0,1200,3000,6000,10000,16000,25000,40000].forEach(ms=>setTimeout(tryLoad,ms));
     clearInterval(timer);timer=setInterval(tryLoad,30000);
     window.addEventListener('pageshow',()=>setTimeout(tryLoad,500),{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(tryLoad,300);});
+    const sb=window.sb;
+    try{
+      if(sb?.auth?.onAuthStateChange){
+        authChannel=sb.auth.onAuthStateChange((event,session)=>{
+          if(session?.user?.id){window.user=session.user;setTimeout(tryLoad,100);}
+        });
+      }
+    }catch(_){ }
     const app=document.getElementById('app');
     if(app)new MutationObserver(()=>{if(!app.hidden)setTimeout(tryLoad,150);}).observe(app,{attributes:true,attributeFilter:['hidden']});
     const feed=document.getElementById('feed');
-    if(feed)new MutationObserver(()=>{if(!feed.querySelector('article.post')&&!feed.querySelector('.mada-emergency-loading')){clearTimeout(feed._emergencyTimer);feed._emergencyTimer=setTimeout(tryLoad,250);}}).observe(feed,{childList:true,subtree:true});
+    if(feed)new MutationObserver(()=>{if(!feed.querySelector('article.post')){clearTimeout(feed._emergencyTimer);feed._emergencyTimer=setTimeout(tryLoad,400);}}).observe(feed,{childList:true,subtree:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
