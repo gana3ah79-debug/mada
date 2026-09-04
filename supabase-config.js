@@ -11,9 +11,9 @@ window.MADA_SUPABASE_KEY='sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0';
     window.__madaCreateClientPatched=true;
   }
 })();
-(function(){if(document.querySelector('script[data-mada-login-hotfix]'))return;const s=document.createElement('script');s.src='login-hotfix.js?v=20260904-01';s.async=false;s.dataset.madaLoginHotfix='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-startup-recovery]'))return;const s=document.createElement('script');s.src='startup-recovery.js?v=20260904-01';s.async=false;s.dataset.madaStartupRecovery='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-auth-stability]'))return;const s=document.createElement('script');s.src='auth-stability-fix.js?v=20260903-01';s.async=false;s.dataset.madaAuthStability='1';document.head.appendChild(s)})();
+(function(){const load=()=>{if(document.querySelector('script[data-mada-auth-final]'))return;const s=document.createElement('script');s.src='auth-final.js?v=20260904-01';s.async=false;s.dataset.madaAuthFinal='1';document.head.appendChild(s)};if(document.readyState==='complete')setTimeout(load,0);else window.addEventListener('load',()=>setTimeout(load,0),{once:true})})();
 window.openMessages=window.openMessages||function(){if(typeof window.madaMessenger==='function')return window.madaMessenger();if(typeof window.showMessages==='function')return window.showMessages()};
 (function(){if(document.querySelector('link[data-mada-home-feed]'))return;const css=document.createElement('link');css.rel='stylesheet';css.href='home-feed-enhance.css?v=20260903-01';css.dataset.madaHomeFeed='1';document.head.appendChild(css);const s=document.createElement('script');s.src='home-feed-enhance.js?v=20260903-01';s.async=false;document.head.appendChild(s)})();
 (function(){const css=document.createElement('link');css.rel='stylesheet';css.href='post-reactions-enhance.css?v=20260903-02';document.head.appendChild(css);const s=document.createElement('script');s.src='post-reactions-enhance.js?v=20260903-02';s.async=false;document.head.appendChild(s)})();
