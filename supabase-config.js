@@ -1,6 +1,8 @@
 window.MADA_SUPABASE_URL='https://eclnddvupggxyythtpkv.supabase.co';
 window.MADA_SUPABASE_KEY='sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0';
 (function(){if(window.supabase?.createClient&&!window.__madaCreateClientPatched){const original=window.supabase.createClient.bind(window.supabase);window.supabase.createClient=function(url,key,options={}){options=Object.assign({},options,{auth:Object.assign({persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage},options.auth||{})});return original(url,key,options)};window.__madaCreateClientPatched=true}})();
+/* Boot the auth controller before app.js so a later app-script error can never make the login UI unresponsive. */
+(function(){if(document.querySelector('script[data-mada-auth-early]'))return;const s=document.createElement('script');s.src='auth-modern.js?v=20260904-08';s.async=false;s.dataset.madaAuthEarly='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-startup-recovery]'))return;const s=document.createElement('script');s.src='startup-recovery.js?v=20260904-01';s.async=false;s.dataset.madaStartupRecovery='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-auth-stability]'))return;const s=document.createElement('script');s.src='auth-stability-fix.js?v=20260903-01';s.async=false;s.dataset.madaAuthStability='1';document.head.appendChild(s)})();
 window.openMessages=window.openMessages||function(){if(typeof window.madaMessenger==='function')return window.madaMessenger();if(typeof window.showMessages==='function')return window.showMessages()};
