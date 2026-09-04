@@ -39,10 +39,10 @@ window.openMessages=window.openMessages||function(){
 (function(){const css=document.createElement('link');css.rel='stylesheet';css.href='share-sheet-force.css?v=20260903-01';document.head.appendChild(css);const s=document.createElement('script');s.src='share-actions-fix.js?v=20260903-02';s.async=false;document.head.appendChild(s)})();
 (function(){const css=document.createElement('link');css.rel='stylesheet';css.href='bottom-nav-scroll.css?v=20260903-01';css.dataset.madaBottomNav='1';document.head.appendChild(css);const s=document.createElement('script');s.src='bottom-nav-scroll.js?v=20260903-01';s.async=false;document.head.appendChild(s)})();
 
-/* Fresh comments UI build: compact like opens the full reaction picker. */
+/* Fresh comments UI build: reference layout with reactions on the left. */
 (function(){
   const s=document.createElement('script');
-  s.src='comments-modern.js?v=20260904-08';
+  s.src='comments-modern.js?v=20260904-09';
   s.async=false;
   document.head.appendChild(s);
 })();
