@@ -54,3 +54,11 @@ window.openMessages=window.openMessages||function(){
   s.dataset.madaCommentsCleanup='1';
   document.head.appendChild(s);
 })();
+(function(){
+  if(document.querySelector('script[data-mada-back-guard]'))return;
+  const s=document.createElement('script');
+  s.src='back-guard-fix.js?v=20260904-01';
+  s.async=false;
+  s.dataset.madaBackGuard='1';
+  document.head.appendChild(s);
+})();
