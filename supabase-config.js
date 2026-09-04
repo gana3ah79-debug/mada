@@ -37,24 +37,19 @@ window.openMessages=window.openMessages||function(){
 (function(){const css=document.createElement('link');css.rel='stylesheet';css.href='notifications-enhance.css?v=20260903-01';document.head.appendChild(css);const s=document.createElement('script');s.src='notifications-enhance.js?v=20260903-01';s.async=false;document.head.appendChild(s)})();
 (function(){const s=document.createElement('script');s.src='share-button-fix.js?v=20260903-03';s.async=false;document.head.appendChild(s)})();
 (function(){const css=document.createElement('link');css.rel='stylesheet';css.href='share-sheet-force.css?v=20260903-01';document.head.appendChild(css);const s=document.createElement('script');s.src='share-actions-fix.js?v=20260903-02';s.async=false;document.head.appendChild(s)})();
-(function(){const css=document.createElement('link');css.rel='stylesheet';css.href='bottom-nav-scroll.css?v=20260903-01';document.head.appendChild(css);const s=document.createElement('script');s.src='bottom-nav-scroll.js?v=20260903-01';s.async=false;document.head.appendChild(s)})();
+(function(){const css=document.createElement('link');css.rel='stylesheet';css.href='bottom-nav-scroll.css?v=20260903-01';css.dataset.madaBottomNav='1';document.head.appendChild(css);const s=document.createElement('script');s.src='bottom-nav-scroll.js?v=20260903-01';s.async=false;document.head.appendChild(s)})();
 
-/* Fresh comments UI build: hides the old inline composer and opens the new dedicated comments sheet. */
+/* Fresh comments UI build: compact like opens the full reaction picker. */
 (function(){
   const s=document.createElement('script');
-  s.src='comments-modern.js?v=20260904-01';
+  s.src='comments-modern.js?v=20260904-08';
   s.async=false;
   document.head.appendChild(s);
 })();
 
-/* Restore page scrolling whenever the dedicated comments sheet is closed. */
 document.addEventListener('click',function(e){
-  if(e.target.closest?.('.mada-comments-close') || e.target.classList?.contains('mada-comments-overlay')){
-    document.body.style.overflow='';
-  }
+  if(e.target.closest?.('.mada-comments-close') || e.target.classList?.contains('mada-comments-overlay')) document.body.style.overflow='';
 });
 document.addEventListener('keydown',function(e){
-  if(e.key==='Escape' && document.getElementById('madaCommentsOverlay') && !document.getElementById('madaCommentsOverlay').hidden){
-    document.body.style.overflow='';
-  }
+  if(e.key==='Escape' && document.getElementById('madaCommentsOverlay') && !document.getElementById('madaCommentsOverlay').hidden) document.body.style.overflow='';
 });
