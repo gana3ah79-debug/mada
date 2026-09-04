@@ -23,6 +23,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 public class MainActivity extends Activity {
   private WebView web;
   private ValueCallback<Uri[]> fileCallback;
@@ -55,14 +59,9 @@ public class MainActivity extends Activity {
     web.setWebViewClient(new WebViewClient() {
       @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         String url = request == null || request.getUrl() == null ? "" : request.getUrl().toString();
-        // The web app normally requests Supabase from jsDelivr. Inside the APK we
-        // replace that network request with the exact SDK bundled in the APK.
         if (url.contains("@supabase/supabase-js@") && url.contains("/dist/umd/")) {
-          try {
-            return new WebResourceResponse("application/javascript", "UTF-8", getAssets().open(SUPABASE_ASSET));
-          } catch (Exception ignored) {
-            // Fall through to the original network request if the asset is missing.
-          }
+          try { return new WebResourceResponse("application/javascript", "UTF-8", getAssets().open(SUPABASE_ASSET)); }
+          catch (Exception ignored) { }
         }
         return super.shouldInterceptRequest(view, request);
       }
@@ -84,7 +83,33 @@ public class MainActivity extends Activity {
 
     createNotificationChannel();
     requestNotificationPermission();
-    web.loadUrl("file:///android_asset/mada/index.html");
+    loadBundledPageWithInlineSupabase();
+  }
+
+  private void loadBundledPageWithInlineSupabase() {
+    try {
+      String html = readAsset("mada/index.html");
+      String sdk = readAsset(SUPABASE_ASSET);
+      String localTag = "<script src=\"supabase.min.js?v=2.57.4-local\"></script>";
+      String inlineTag = "<script>\n" + sdk + "\n</script>";
+      if (html.contains(localTag)) html = html.replace(localTag, inlineTag);
+      else {
+        String remoteTag = "<script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script>";
+        if (html.contains(remoteTag)) html = html.replace(remoteTag, inlineTag);
+        else throw new IllegalStateException("Supabase script tag not found");
+      }
+      web.loadDataWithBaseURL("file:///android_asset/mada/", html, "text/html", "UTF-8", null);
+    } catch (Exception e) {
+      web.loadUrl("file:///android_asset/mada/index.html");
+    }
+  }
+
+  private String readAsset(String path) throws Exception {
+    try (InputStream in = getAssets().open(path); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      byte[] buf = new byte[8192]; int n;
+      while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
+      return out.toString(StandardCharsets.UTF_8.name());
+    }
   }
 
   private void createNotificationChannel() {
@@ -108,34 +133,17 @@ public class MainActivity extends Activity {
     if (conversationId == null || conversationId.trim().isEmpty()) return;
     if (Build.VERSION.SDK_INT < 29) return;
     if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
-
     Intent intent = new Intent(this, MainActivity.class);
     intent.setAction("com.mada.app.OPEN_CONVERSATION");
     intent.putExtra("conversation_id", conversationId);
     intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    PendingIntent pending = PendingIntent.getActivity(this, conversationId.hashCode(), intent,
-        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-    Notification.Builder builder = Build.VERSION.SDK_INT >= 26
-        ? new Notification.Builder(this, CHANNEL_ID)
-        : new Notification.Builder(this);
-    builder.setSmallIcon(android.R.drawable.ic_dialog_email)
-        .setContentTitle(title == null || title.isEmpty() ? "Mada" : title)
-        .setContentText(message == null ? "رسالة جديدة" : message)
-        .setAutoCancel(true)
-        .setCategory(Notification.CATEGORY_MESSAGE)
-        .setContentIntent(pending)
-        .setPriority(Notification.PRIORITY_HIGH);
-
+    PendingIntent pending = PendingIntent.getActivity(this, conversationId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
+    builder.setSmallIcon(android.R.drawable.ic_dialog_email).setContentTitle(title == null || title.isEmpty() ? "Mada" : title).setContentText(message == null ? "رسالة جديدة" : message).setAutoCancel(true).setCategory(Notification.CATEGORY_MESSAGE).setContentIntent(pending).setPriority(Notification.PRIORITY_HIGH);
     if (Build.VERSION.SDK_INT >= 29) {
-      Notification.BubbleMetadata bubble = new Notification.BubbleMetadata.Builder(pending, getBubbleIcon())
-          .setDesiredHeight(600)
-          .setAutoExpandBubble(false)
-          .setSuppressNotification(false)
-          .build();
+      Notification.BubbleMetadata bubble = new Notification.BubbleMetadata.Builder(pending, getBubbleIcon()).setDesiredHeight(600).setAutoExpandBubble(false).setSuppressNotification(false).build();
       builder.setBubbleMetadata(bubble);
     }
-
     getSystemService(NotificationManager.class).notify(conversationId.hashCode(), builder.build());
   }
 
@@ -152,21 +160,11 @@ public class MainActivity extends Activity {
     web.evaluateJavascript("window.openMadaConversation && window.openMadaConversation('" + safe + "')", null);
   }
 
-  @Override protected void onNewIntent(Intent intent) {
-    super.onNewIntent(intent);
-    setIntent(intent);
-    openConversationFromIntent(intent);
-  }
+  @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); openConversationFromIntent(intent); }
 
   public class MadaNativeBridge {
-    @JavascriptInterface public void showMessageBubble(String conversationId, String title, String message) {
-      runOnUiThread(() -> MainActivity.this.showMessageBubble(conversationId, title, message));
-    }
-    @JavascriptInterface public void openNotificationSettings() {
-      Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
-      i.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
-      startActivity(i);
-    }
+    @JavascriptInterface public void showMessageBubble(String conversationId, String title, String message) { runOnUiThread(() -> MainActivity.this.showMessageBubble(conversationId, title, message)); }
+    @JavascriptInterface public void openNotificationSettings() { Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS); i.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName()); startActivity(i); }
   }
 
   @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -179,7 +177,5 @@ public class MainActivity extends Activity {
     }
   }
 
-  @Override public void onBackPressed() {
-    if (web.canGoBack()) web.goBack(); else super.onBackPressed();
-  }
+  @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
 }
