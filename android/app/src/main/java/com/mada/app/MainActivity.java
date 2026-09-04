@@ -23,33 +23,36 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import androidx.webkit.WebViewAssetLoader;
 
 public class MainActivity extends Activity {
   private WebView web;
   private ValueCallback<Uri[]> fileCallback;
+  private WebViewAssetLoader assetLoader;
   private static final int FILE_CHOOSER_REQUEST = 1001;
   private static final int NOTIFICATION_REQUEST = 2001;
   private static final String CHANNEL_ID = "mada_messages";
-  private static final String SUPABASE_ASSET = "mada/supabase.min.js";
 
   @Override public void onCreate(Bundle b) {
     super.onCreate(b);
     web = new WebView(this);
     setContentView(web);
 
+    assetLoader = new WebViewAssetLoader.Builder()
+        .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+        .build();
+
     WebSettings s = web.getSettings();
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
     s.setMediaPlaybackRequiresUserGesture(false);
-    s.setAllowFileAccess(true);
-    s.setAllowContentAccess(true);
+    s.setAllowFileAccess(false);
+    s.setAllowContentAccess(false);
     s.setBuiltInZoomControls(false);
     s.setDisplayZoomControls(false);
     s.setDatabaseEnabled(true);
     s.setCacheMode(WebSettings.LOAD_DEFAULT);
+    if (Build.VERSION.SDK_INT >= 21) s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
     CookieManager cookies = CookieManager.getInstance();
     cookies.setAcceptCookie(true);
@@ -58,14 +61,21 @@ public class MainActivity extends Activity {
     web.addJavascriptInterface(new MadaNativeBridge(), "MadaNative");
     web.setWebViewClient(new WebViewClient() {
       @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        String url = request == null || request.getUrl() == null ? "" : request.getUrl().toString();
-        if (url.contains("@supabase/supabase-js@") && url.contains("/dist/umd/")) {
-          try { return new WebResourceResponse("application/javascript", "UTF-8", getAssets().open(SUPABASE_ASSET)); }
-          catch (Exception ignored) { }
+        if (request != null && request.getUrl() != null) {
+          WebResourceResponse local = assetLoader.shouldInterceptRequest(request.getUrl());
+          if (local != null) return local;
         }
         return super.shouldInterceptRequest(view, request);
       }
+      @Override public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+        if (url != null) {
+          WebResourceResponse local = assetLoader.shouldInterceptRequest(Uri.parse(url));
+          if (local != null) return local;
+        }
+        return super.shouldInterceptRequest(view, url);
+      }
     });
+
     web.setWebChromeClient(new WebChromeClient() {
       @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
@@ -83,33 +93,7 @@ public class MainActivity extends Activity {
 
     createNotificationChannel();
     requestNotificationPermission();
-    loadBundledPageWithInlineSupabase();
-  }
-
-  private void loadBundledPageWithInlineSupabase() {
-    try {
-      String html = readAsset("mada/index.html");
-      String sdk = readAsset(SUPABASE_ASSET);
-      String localTag = "<script src=\"supabase.min.js?v=2.57.4-local\"></script>";
-      String inlineTag = "<script>\n" + sdk + "\n</script>";
-      if (html.contains(localTag)) html = html.replace(localTag, inlineTag);
-      else {
-        String remoteTag = "<script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script>";
-        if (html.contains(remoteTag)) html = html.replace(remoteTag, inlineTag);
-        else throw new IllegalStateException("Supabase script tag not found");
-      }
-      web.loadDataWithBaseURL("file:///android_asset/mada/", html, "text/html", "UTF-8", null);
-    } catch (Exception e) {
-      web.loadUrl("file:///android_asset/mada/index.html");
-    }
-  }
-
-  private String readAsset(String path) throws Exception {
-    try (InputStream in = getAssets().open(path); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-      byte[] buf = new byte[8192]; int n;
-      while ((n = in.read(buf)) != -1) out.write(buf, 0, n);
-      return out.toString(StandardCharsets.UTF_8.name());
-    }
+    web.loadUrl("https://appassets.androidplatform.net/assets/mada/index.html");
   }
 
   private void createNotificationChannel() {
