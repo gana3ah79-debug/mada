@@ -19,7 +19,30 @@
       if(!u){toast('سجّل الدخول أولاً ثم جرّب نشر الريلز');return;}
       if(file.size>25*1024*1024){toast('الفيديو أكبر من 25MB');return;}
       const v=document.createElement('video'); const url=URL.createObjectURL(file); v.preload='metadata';
-      v.onloadedmetadata=async()=>{ const d=v.duration; URL.revokeObjectURL(url); if(d>60){toast('مدة الريلز يجب ألا تتجاوز 60 ثانية');return;} toast('جاري رفع الريلز الآن…'); try { const path=`${u.id}/${crypto.randomUUID()}.mp4`; const {error}=await sb.storage.from('reels').upload(path,file,{contentType:'video/mp4',cacheControl:'3600',upsert:false}); if(error)throw error; toast('تم رفع الفيديو، جاري حفظ الريلز…'); const {data:p}=sb.storage.from('reels').getPublicUrl(path); const {error:e}=await sb.from('reels').insert({author_id:u.id,video_url:p.publicUrl,caption:null}); if(e)throw e; toast('تم نشر الريلز بنجاح 🎬'); if(typeof window.loadReels==='function')await window.loadReels(); } catch(e){ console.error(e); toast('فشل رفع الفيديو: '+(e.message||'خطأ غير معروف')); } };
+      v.onloadedmetadata=async()=>{
+        const d=v.duration; URL.revokeObjectURL(url);
+        if(!Number.isFinite(d)||d<=0){toast('تعذر قراءة مدة الفيديو');return;}
+        if(d>60){toast('مدة الريلز يجب ألا تتجاوز 60 ثانية');return;}
+        toast('جاري رفع الريلز الآن…');
+        let path=null;
+        try {
+          const ext=((file.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,''))||'mp4';
+          const safeExt=['mp4','webm','mov','m4v','3gp'].includes(ext)?ext:'mp4';
+          const contentType=file.type&&file.type.startsWith('video/')?file.type:'video/mp4';
+          path=`${u.id}/${crypto.randomUUID()}.${safeExt}`;
+          const {error}=await sb.storage.from('reels').upload(path,file,{contentType,cacheControl:'3600',upsert:false});
+          if(error)throw error;
+          toast('تم رفع الفيديو، جاري حفظ الريلز…');
+          const {data:p}=sb.storage.from('reels').getPublicUrl(path);
+          const {error:e}=await sb.from('reels').insert({author_id:u.id,video_url:p.publicUrl,caption:null});
+          if(e)throw e;
+          toast('تم نشر الريلز بنجاح 🎬');
+          if(typeof window.loadReels==='function')await window.loadReels();
+        } catch(e){
+          if(path){try{await sb.storage.from('reels').remove([path]);}catch(cleanErr){console.warn('reel cleanup:',cleanErr)}}
+          console.error(e); toast('فشل رفع الفيديو: '+(e.message||'خطأ غير معروف'));
+        }
+      };
       v.onerror=()=>{URL.revokeObjectURL(url);toast('الفيديو غير صالح');}; v.src=url;
     };
     input.click();
