@@ -1,18 +1,18 @@
-/* Independent mobile auth fallback. It intentionally does not depend on app.js. */
+/* Mada mobile auth event fallback. The main auth controller owns the action. */
 (function(){
   if(window.__madaAuthClickShield)return;
   window.__madaAuthClickShield=true;
-  function call(id){
-    const a=window.madaAuthFinal;
-    if(id==='loginBtn')return a?.login?.();
-    if(id==='signupBtn')return a?.setMode?.(document.getElementById('nameField')?.hidden?'signup':'login');
-    if(id==='forgotPasswordBtn')return a?.reset?.();
-  }
   function handler(e){
     const t=e.target?.closest?.('#loginBtn,#signupBtn,#forgotPasswordBtn');
     if(!t)return;
-    e.preventDefault();e.stopImmediatePropagation();
-    call(t.id);
+    if(e.type==='touchend'||e.type==='pointerup'){try{e.preventDefault()}catch(_){} }
+    const a=window.madaAuthFinal;if(!a)return;
+    if(t.id==='loginBtn')return void a.login?.();
+    if(t.id==='signupBtn'){
+      const hidden=document.getElementById('nameField')?.hidden;
+      return void a.setMode?.(hidden?'signup':'login');
+    }
+    return void a.reset?.();
   }
   window.addEventListener('click',handler,true);
   window.addEventListener('pointerup',handler,true);
@@ -24,5 +24,5 @@
     });
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
-  setInterval(wire,500);
+  setInterval(wire,1000);
 })();
