@@ -13,22 +13,16 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.webkit.WebViewAssetLoader;
-
 public class MainActivity extends Activity {
   private WebView web;
   private ValueCallback<Uri[]> fileCallback;
-  private WebViewAssetLoader assetLoader;
   private static final int FILE_CHOOSER_REQUEST = 1001;
   private static final int NOTIFICATION_REQUEST = 2001;
   private static final String CHANNEL_ID = "mada_messages";
@@ -38,44 +32,18 @@ public class MainActivity extends Activity {
     web = new WebView(this);
     setContentView(web);
 
-    assetLoader = new WebViewAssetLoader.Builder()
-        .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
-        .build();
-
     WebSettings s = web.getSettings();
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
     s.setMediaPlaybackRequiresUserGesture(false);
-    s.setAllowFileAccess(false);
-    s.setAllowContentAccess(false);
+    s.setAllowFileAccess(true);
+    s.setAllowContentAccess(true);
     s.setBuiltInZoomControls(false);
     s.setDisplayZoomControls(false);
     s.setDatabaseEnabled(true);
-    s.setCacheMode(WebSettings.LOAD_DEFAULT);
-    if (Build.VERSION.SDK_INT >= 21) s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-
-    CookieManager cookies = CookieManager.getInstance();
-    cookies.setAcceptCookie(true);
-    if (Build.VERSION.SDK_INT >= 21) cookies.setAcceptThirdPartyCookies(web, true);
 
     web.addJavascriptInterface(new MadaNativeBridge(), "MadaNative");
-    web.setWebViewClient(new WebViewClient() {
-      @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        if (request != null && request.getUrl() != null) {
-          WebResourceResponse local = assetLoader.shouldInterceptRequest(request.getUrl());
-          if (local != null) return local;
-        }
-        return super.shouldInterceptRequest(view, request);
-      }
-      @Override public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-        if (url != null) {
-          WebResourceResponse local = assetLoader.shouldInterceptRequest(Uri.parse(url));
-          if (local != null) return local;
-        }
-        return super.shouldInterceptRequest(view, url);
-      }
-    });
-
+    web.setWebViewClient(new WebViewClient());
     web.setWebChromeClient(new WebChromeClient() {
       @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
@@ -93,7 +61,7 @@ public class MainActivity extends Activity {
 
     createNotificationChannel();
     requestNotificationPermission();
-    web.loadUrl("https://appassets.androidplatform.net/assets/mada/index.html");
+    web.loadUrl("file:///android_asset/mada/index.html");
   }
 
   private void createNotificationChannel() {
@@ -117,17 +85,34 @@ public class MainActivity extends Activity {
     if (conversationId == null || conversationId.trim().isEmpty()) return;
     if (Build.VERSION.SDK_INT < 29) return;
     if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+
     Intent intent = new Intent(this, MainActivity.class);
     intent.setAction("com.mada.app.OPEN_CONVERSATION");
     intent.putExtra("conversation_id", conversationId);
     intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    PendingIntent pending = PendingIntent.getActivity(this, conversationId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-    Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
-    builder.setSmallIcon(android.R.drawable.ic_dialog_email).setContentTitle(title == null || title.isEmpty() ? "Mada" : title).setContentText(message == null ? "رسالة جديدة" : message).setAutoCancel(true).setCategory(Notification.CATEGORY_MESSAGE).setContentIntent(pending).setPriority(Notification.PRIORITY_HIGH);
+    PendingIntent pending = PendingIntent.getActivity(this, conversationId.hashCode(), intent,
+        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+    Notification.Builder builder = Build.VERSION.SDK_INT >= 26
+        ? new Notification.Builder(this, CHANNEL_ID)
+        : new Notification.Builder(this);
+    builder.setSmallIcon(android.R.drawable.ic_dialog_email)
+        .setContentTitle(title == null || title.isEmpty() ? "Mada" : title)
+        .setContentText(message == null ? "رسالة جديدة" : message)
+        .setAutoCancel(true)
+        .setCategory(Notification.CATEGORY_MESSAGE)
+        .setContentIntent(pending)
+        .setPriority(Notification.PRIORITY_HIGH);
+
     if (Build.VERSION.SDK_INT >= 29) {
-      Notification.BubbleMetadata bubble = new Notification.BubbleMetadata.Builder(pending, getBubbleIcon()).setDesiredHeight(600).setAutoExpandBubble(false).setSuppressNotification(false).build();
+      Notification.BubbleMetadata bubble = new Notification.BubbleMetadata.Builder(pending, getBubbleIcon())
+          .setDesiredHeight(600)
+          .setAutoExpandBubble(false)
+          .setSuppressNotification(false)
+          .build();
       builder.setBubbleMetadata(bubble);
     }
+
     getSystemService(NotificationManager.class).notify(conversationId.hashCode(), builder.build());
   }
 
@@ -144,11 +129,21 @@ public class MainActivity extends Activity {
     web.evaluateJavascript("window.openMadaConversation && window.openMadaConversation('" + safe + "')", null);
   }
 
-  @Override protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); openConversationFromIntent(intent); }
+  @Override protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    setIntent(intent);
+    openConversationFromIntent(intent);
+  }
 
   public class MadaNativeBridge {
-    @JavascriptInterface public void showMessageBubble(String conversationId, String title, String message) { runOnUiThread(() -> MainActivity.this.showMessageBubble(conversationId, title, message)); }
-    @JavascriptInterface public void openNotificationSettings() { Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS); i.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName()); startActivity(i); }
+    @JavascriptInterface public void showMessageBubble(String conversationId, String title, String message) {
+      runOnUiThread(() -> MainActivity.this.showMessageBubble(conversationId, title, message));
+    }
+    @JavascriptInterface public void openNotificationSettings() {
+      Intent i = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+      i.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+      startActivity(i);
+    }
   }
 
   @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -161,5 +156,7 @@ public class MainActivity extends Activity {
     }
   }
 
-  @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
+  @Override public void onBackPressed() {
+    if (web.canGoBack()) web.goBack(); else super.onBackPressed();
+  }
 }
