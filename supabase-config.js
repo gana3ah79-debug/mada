@@ -12,6 +12,14 @@ window.MADA_SUPABASE_KEY='sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0';
     window.__madaCreateClientPatched=true;
   }
 })();
+(function(){
+  if(document.querySelector('script[data-mada-startup-recovery]'))return;
+  const s=document.createElement('script');
+  s.src='startup-recovery.js?v=20260904-01';
+  s.async=false;
+  s.dataset.madaStartupRecovery='1';
+  document.head.appendChild(s);
+})();
 
 /* Load the auth recovery layer after the main app so transient session-null events cannot throw the user back to login. */
 (function(){
