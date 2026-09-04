@@ -18,7 +18,14 @@
 
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
   const client=()=>window.sb||window.MADA_SUPABASE_CLIENT;
-  const getUser=()=>window.user||null;
+
+  async function getUser(){
+    if(window.user?.id)return window.user;
+    const sb=client();
+    if(!sb?.auth?.getUser)return null;
+    const r=await sb.auth.getUser();
+    return r.data?.user||null;
+  }
 
   function postIdFrom(el){
     const raw=el?.dataset?.commentToggle||el?.dataset?.commentsOpen||el?.dataset?.id;
@@ -49,7 +56,7 @@
   }
 
   async function sendComment(postId,button){
-    const sb=client(),u=getUser(),input=document.querySelector(`[data-comment="${CSS.escape(postId)}"]`),body=input?.value.trim();
+    const sb=client(),u=await getUser(),input=document.querySelector(`[data-comment="${CSS.escape(postId)}"]`),body=input?.value.trim();
     if(!sb||!u){alert('سجّل الدخول أولاً لإضافة تعليق.');return}
     if(!body)return;
     button.disabled=true;button.textContent='جاري…';
