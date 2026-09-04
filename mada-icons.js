@@ -39,6 +39,9 @@
     if(!document.querySelector('script[data-mada-comment-social]')){
       const s=document.createElement('script');s.src='mada-comment-social.js?v=20260904-1';s.dataset.madaCommentSocial='1';document.body.appendChild(s)
     }
+    if(!document.querySelector('script[data-mada-notifications]')){
+      const s=document.createElement('script');s.src='mada-notifications.js?v=20260904-1';s.dataset.madaNotifications='1';document.body.appendChild(s)
+    }
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
 })();
