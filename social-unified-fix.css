@@ -1,0 +1,16 @@
+/* Mada social unified UI: notification bell, badges and media preview. */
+#notifyBtn,#notifyNav{position:relative;overflow:visible!important}
+#notifyBtn{border-radius:14px!important;transition:transform .16s ease,background .16s ease,box-shadow .16s ease}
+#notifyBtn.has-badge{background:#ffd21f!important;color:#111!important;box-shadow:0 0 0 3px rgba(255,210,31,.18)!important;animation:madaBellPulse 1.8s ease-in-out infinite}
+#notifyBtn.has-badge::after,#notifyNav.has-badge::after{content:attr(data-count);position:absolute;top:-6px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#e53935;color:#fff;font:800 11px/19px system-ui,sans-serif;text-align:center;box-shadow:0 2px 7px rgba(0,0,0,.22)}
+#notifyNav.has-badge::after{top:-3px;right:3px}
+#friendsNav.has-badge{position:relative;overflow:visible!important}
+#friendsNav.has-badge::after{content:attr(data-count);position:absolute;top:-5px;right:2px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:#e53935;color:#fff;font:800 10px/18px system-ui,sans-serif;text-align:center}
+.mada-photo-preview{position:relative;margin:10px 0;border-radius:18px;overflow:hidden;background:#eef2f7;max-height:280px}
+.mada-photo-preview img{display:block;width:100%;max-height:280px;object-fit:cover}
+.mada-photo-preview button{position:absolute;top:8px;left:8px;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.68);color:#fff;font-size:22px;line-height:34px;cursor:pointer}
+.mada-media-viewer{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.94);display:grid;place-items:center;padding:24px;box-sizing:border-box}
+.mada-media-viewer img{max-width:100%;max-height:92vh;object-fit:contain;border-radius:12px}
+.mada-media-viewer button{position:absolute;top:18px;right:18px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;font-size:28px;z-index:2}
+@keyframes madaBellPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@media(prefers-reduced-motion:reduce){#notifyBtn.has-badge{animation:none}}
