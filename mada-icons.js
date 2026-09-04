@@ -29,3 +29,9 @@
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
+
+// Keep the comments enhancement modular so the main app stays stable.
+(function(){
+  const load=()=>{if(document.querySelector('script[data-mada-comments-fix]'))return;const s=document.createElement('script');s.src='mada-comments-fix.js?v=20260904-1';s.dataset.madaCommentsFix='1';document.body.appendChild(s)};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
+})();
