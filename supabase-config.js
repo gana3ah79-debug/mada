@@ -1,8 +1,8 @@
 window.MADA_SUPABASE_URL='https://eclnddvupggxyythtpkv.supabase.co';
 window.MADA_SUPABASE_KEY='sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0';
 (function(){if(window.supabase?.createClient&&!window.__madaCreateClientPatched){const original=window.supabase.createClient.bind(window.supabase);window.supabase.createClient=function(url,key,options={}){options=Object.assign({},options,{auth:Object.assign({persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage},options.auth||{})});return original(url,key,options)};window.__madaCreateClientPatched=true}})();
-/* Synchronously boot auth before app.js. This keeps the login UI functional even if a later app script has a runtime/parse problem. */
-(function(){if(window.__madaAuthController||document.querySelector('script[data-mada-auth-early]'))return;document.write('<script src="auth-modern.js?v=20260904-11" data-mada-auth-early="1"><\/script>')})();
+/* Auth is intentionally booted before app.js so a broken feature script cannot disable the login screen. */
+(function(){if(document.querySelector('script[data-mada-auth-early]'))return;document.write('<script src="auth-modern.js?v=20260904-12" data-mada-auth-early="1"><\/script>')})();
 (function(){if(document.querySelector('script[data-mada-startup-recovery]'))return;const s=document.createElement('script');s.src='startup-recovery.js?v=20260904-01';s.async=false;s.dataset.madaStartupRecovery='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-auth-stability]'))return;const s=document.createElement('script');s.src='auth-stability-fix.js?v=20260903-01';s.async=false;s.dataset.madaAuthStability='1';document.head.appendChild(s)})();
 window.openMessages=window.openMessages||function(){if(typeof window.madaMessenger==='function')return window.madaMessenger();if(typeof window.showMessages==='function')return window.showMessages()};
