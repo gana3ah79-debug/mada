@@ -34,9 +34,20 @@ jobs:
 
       - name: Bundle Mada web app into APK assets
         run: |
+          set -e
           mkdir -p android/app/src/main/assets/mada
           find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.json' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.ico' \) -exec cp -f {} android/app/src/main/assets/mada/ \;
           if [ -d assets ]; then cp -R assets/. android/app/src/main/assets/mada/; fi
+
+          # Pin and bundle Supabase locally. MainActivity intercepts the CDN URL
+          # and serves this asset, so the APK never needs the Supabase JS library
+          # from the internet at runtime.
+          curl -fsSL --retry 3 --retry-delay 2 \
+            'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js' \
+            -o android/app/src/main/assets/mada/supabase.min.js
+          test -s android/app/src/main/assets/mada/supabase.min.js
+          grep -q 'createClient' android/app/src/main/assets/mada/supabase.min.js
+          echo "Local Supabase SDK: $(wc -c < android/app/src/main/assets/mada/supabase.min.js) bytes"
           test -f android/app/src/main/assets/mada/index.html
           echo "Bundled files: $(find android/app/src/main/assets/mada -type f | wc -l)"
 
