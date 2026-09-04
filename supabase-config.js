@@ -1,9 +1,21 @@
 window.MADA_SUPABASE_URL='https://eclnddvupggxyythtpkv.supabase.co';
 window.MADA_SUPABASE_KEY='sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0';
+/* Brave/mobile browsers can occasionally block jsDelivr. Load a second official package mirror synchronously before auth/app boot. */
+(function(){
+  if(window.supabase?.createClient)return;
+  const fallbacks=[
+    'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js',
+    'https://cdn.skypack.dev/@supabase/supabase-js@2'
+  ];
+  for(const src of fallbacks){
+    if(window.supabase?.createClient)break;
+    try{document.write('<script src="'+src+'"><\\/script>')}catch(e){console.warn('Mada Supabase fallback',src,e)}
+  }
+})();
 (function(){if(window.supabase?.createClient&&!window.__madaCreateClientPatched){const original=window.supabase.createClient.bind(window.supabase);window.supabase.createClient=function(url,key,options={}){options=Object.assign({},options,{auth:Object.assign({persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage},options.auth||{})});return original(url,key,options)};window.__madaCreateClientPatched=true}})();
 /* Auth is intentionally booted before app.js so a broken feature script cannot disable the login screen. */
-(function(){if(document.querySelector('script[data-mada-auth-early]'))return;document.write('<script src="auth-modern.js?v=20260904-15" data-mada-auth-early="1"><\/script>')})();
-(function(){if(document.querySelector('link[data-mada-auth-shield-css]'))return;const c=document.createElement('link');c.rel='stylesheet';c.href='auth-click-shield.css?v=20260904-03';c.dataset.madaAuthShieldCss='1';document.head.appendChild(c);const s=document.createElement('script');s.src='auth-click-shield.js?v=20260904-03';s.async=false;s.dataset.madaAuthShield='1';document.head.appendChild(s)})();
+(function(){if(document.querySelector('script[data-mada-auth-early]'))return;document.write('<script src="auth-modern.js?v=20260904-16" data-mada-auth-early="1"><\\/script>')})();
+(function(){if(document.querySelector('link[data-mada-auth-shield-css]'))return;const c=document.createElement('link');c.rel='stylesheet';c.href='auth-click-shield.css?v=20260904-04';c.dataset.madaAuthShieldCss='1';document.head.appendChild(c);const s=document.createElement('script');s.src='auth-click-shield.js?v=20260904-04';s.async=false;s.dataset.madaAuthShield='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-startup-recovery]'))return;const s=document.createElement('script');s.src='startup-recovery.js?v=20260904-01';s.async=false;s.dataset.madaStartupRecovery='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-auth-stability]'))return;const s=document.createElement('script');s.src='auth-stability-fix.js?v=20260903-01';s.async=false;s.dataset.madaAuthStability='1';document.head.appendChild(s)})();
 window.openMessages=window.openMessages||function(){if(typeof window.madaMessenger==='function')return window.madaMessenger();if(typeof window.showMessages==='function')return window.showMessages()};
