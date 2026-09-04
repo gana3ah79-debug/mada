@@ -1,4 +1,4 @@
-/* Mada: stable feed loader. It waits for auth, refreshes an expired session, then loads posts independently. */
+/* Mada: stable feed loader v2. Wait for auth and refresh stale sessions before loading the feed. */
 (function(){
   'use strict';
   let busy=false;
@@ -7,9 +7,17 @@
   const initial=n=>(String(n||'م').trim().charAt(0)||'م');
   const date=v=>{try{return new Date(v).toLocaleString('ar-EG',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
   async function getSession(sb){
-    for(let i=0;i<12;i++){
-      try{const r=await sb.auth.getSession();if(r.data?.session)return r.data.session;}catch(_){ }
-      await sleep(300);
+    for(let i=0;i<15;i++){
+      try{
+        const r=await sb.auth.getSession();
+        const s=r.data?.session;
+        if(s){
+          const exp=Number(s.expires_at||0)*1000;
+          if(!exp || exp>Date.now()+60000)return s;
+          try{const rr=await sb.auth.refreshSession();if(rr.data?.session)return rr.data.session;}catch(_){ }
+        }
+      }catch(_){ }
+      await sleep(400);
     }
     try{const r=await sb.auth.refreshSession();if(r.data?.session)return r.data.session;}catch(_){ }
     return null;
@@ -32,11 +40,14 @@
     try{
       const sb=window.sb||(window.supabase?.createClient&&window.MADA_SUPABASE_URL&&window.MADA_SUPABASE_KEY?window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY):null);
       if(!sb)throw new Error('supabase_not_ready');
-      const session=await getSession(sb);
+      let session=await getSession(sb);
       if(!session)throw new Error('no_session');
       const uid=session.user.id;
       window.user=session.user;
-      const postsRes=await query(sb,()=>sb.from('posts').select('id,author_id,body,media_url,created_at,visibility').eq('visibility','public').order('created_at',{ascending:false}).limit(20),12000);
+      let postsRes=await query(sb,()=>sb.from('posts').select('id,author_id,body,media_url,created_at,visibility').eq('visibility','public').order('created_at',{ascending:false}).limit(20),12000);
+      if(postsRes.error){
+        try{const rr=await sb.auth.refreshSession();if(rr.data?.session){session=rr.data.session;postsRes=await query(sb,()=>sb.from('posts').select('id,author_id,body,media_url,created_at,visibility').eq('visibility','public').order('created_at',{ascending:false}).limit(20),12000);}}catch(_){ }
+      }
       if(postsRes.error)throw postsRes.error;
       const posts=postsRes.data||[];
       if(!posts.length){feed.innerHTML='<div class="card empty">لا توجد منشورات بعد. كن أول من ينشر في Mada 👋</div>';return;}
@@ -56,14 +67,14 @@
       posts.forEach(p=>frag.appendChild(render(p,authors.get(p.author_id),lb.get(p.id)||[],cb.get(p.id)||[],uid)));
       feed.replaceChildren(frag);feed.classList.remove('is-loading');
     }catch(e){
-      console.error('Mada stable feed:',e);
-      if(!feed.querySelector('article.post'))feed.innerHTML='<div class="card empty">تعذر تحميل المنشورات الآن.<br><small>جاري إعادة المحاولة…</small></div>';
+      console.error('Mada stable feed v2:',e);
+      if(!feed.querySelector('article.post'))feed.innerHTML='<div class="card empty">جاري تجهيز المنشورات…</div>';
       setTimeout(load,2500);
     }finally{busy=false;}
   }
   function install(){
     window.loadFeed=load;
-    [800,2000,4000,8000].forEach(ms=>setTimeout(load,ms));
+    [700,1800,3500,7000,12000].forEach(ms=>setTimeout(load,ms));
     window.addEventListener('pageshow',()=>setTimeout(load,500),{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(load,500);});
   }
