@@ -46,3 +46,15 @@ window.openMessages=window.openMessages||function(){
   s.async=false;
   document.head.appendChild(s);
 })();
+
+/* Restore page scrolling whenever the dedicated comments sheet is closed. */
+document.addEventListener('click',function(e){
+  if(e.target.closest?.('.mada-comments-close') || e.target.classList?.contains('mada-comments-overlay')){
+    document.body.style.overflow='';
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape' && document.getElementById('madaCommentsOverlay') && !document.getElementById('madaCommentsOverlay').hidden){
+    document.body.style.overflow='';
+  }
+});
