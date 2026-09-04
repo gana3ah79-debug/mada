@@ -19,5 +19,9 @@
       if(g?.privacy==='private'){e.preventDefault();e.stopImmediatePropagation();await sendRequest(g.id)}
     },true);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',guard);else guard();
+  function forceLatestGroups(){
+    const s=document.createElement('script');s.src='groups.js?v=20260904-03';s.async=false;s.dataset.madaGroupsLatestForce='1';document.head.appendChild(s);
+    setTimeout(()=>{const b=document.getElementById('groupsBtn');if(b&&typeof window.openGroups==='function')b.onclick=window.openGroups},1200);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{guard();forceLatestGroups()});else{guard();forceLatestGroups()}
 })();
