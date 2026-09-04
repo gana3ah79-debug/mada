@@ -27,3 +27,4 @@ window.openMessages=window.openMessages||function(){if(typeof window.madaMesseng
 (function(){if(document.querySelector('script[data-mada-back-guard]'))return;const s=document.createElement('script');s.src='back-guard-fix.js?v=20260904-01';s.async=false;s.dataset.madaBackGuard='1';document.head.appendChild(s)})();
 (function(){const s=document.createElement('script');s.src='group-privacy-ui.js?v=20260904-01';s.async=false;s.dataset.madaGroupPrivacy='1';document.head.appendChild(s)})();
 (function(){const s=document.createElement('script');s.src='reels-fix.js?v=20260904-02';s.async=false;s.dataset.madaReelUpload='1';document.head.appendChild(s)})();
+(function(){if(document.querySelector('script[data-mada-top-nav-fix]'))return;const s=document.createElement('script');s.src='top-nav-fix.js?v=20260904-01';s.async=false;s.dataset.madaTopNavFix='1';document.head.appendChild(s)})();
