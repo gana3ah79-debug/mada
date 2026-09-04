@@ -34,41 +34,9 @@ jobs:
 
       - name: Bundle Mada web app into APK assets
         run: |
-          set -e
           mkdir -p android/app/src/main/assets/mada
           find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.json' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.ico' \) -exec cp -f {} android/app/src/main/assets/mada/ \;
           if [ -d assets ]; then cp -R assets/. android/app/src/main/assets/mada/; fi
-
-          # Bundle the pinned Supabase UMD SDK into the APK.
-          curl -fsSL --retry 3 --retry-delay 2 \
-            'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js' \
-            -o android/app/src/main/assets/mada/supabase.min.js
-          test -s android/app/src/main/assets/mada/supabase.min.js
-          grep -q 'createClient' android/app/src/main/assets/mada/supabase.min.js
-
-          # IMPORTANT: do not rely on WebView request interception or CDN loading.
-          # app.js executes immediately and expects window.supabase to exist.
-          # Replace the remote SDK tag in the APK copy with the local asset tag,
-          # guaranteeing the SDK is evaluated before supabase-config.js/app.js.
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('android/app/src/main/assets/mada/index.html')
-          s = p.read_text(encoding='utf-8')
-          remote = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'
-          local = '<script src="supabase.min.js?v=2.57.4-local"></script>'
-          if remote not in s:
-              raise SystemExit('Expected Supabase CDN tag was not found in index.html')
-          s = s.replace(remote, local, 1)
-          p.write_text(s, encoding='utf-8')
-          print('OK: APK index.html uses local Supabase SDK')
-          PY
-
-          grep -q '<script src="supabase.min.js?v=2.57.4-local"></script>' android/app/src/main/assets/mada/index.html
-          if grep -q '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>' android/app/src/main/assets/mada/index.html; then
-            echo 'ERROR: remote Supabase tag is still present'
-            exit 1
-          fi
-          echo "Local Supabase SDK: $(wc -c < android/app/src/main/assets/mada/supabase.min.js) bytes"
           test -f android/app/src/main/assets/mada/index.html
           echo "Bundled files: $(find android/app/src/main/assets/mada -type f | wc -l)"
 
