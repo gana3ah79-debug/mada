@@ -1,70 +1,10 @@
 // Final runtime bindings for the unified Mada frontend.
 (function(){
-  function updatePremiumUI(){
-    const b=document.getElementById('premiumBanner'),p=document.getElementById('premiumBtn');
-    const active=typeof premium!=='undefined'?!!premium:!!window.madaPremium;
-    window.madaPremium=active;
-    if(b)b.hidden=active;
-    if(p)p.title=active?'Mada Premium مفعل':'اشترك في Mada Premium';
-  }
-  window.updatePremiumUI=updatePremiumUI;
-  Object.defineProperty(window,'user',{configurable:true,get:function(){return typeof user!=='undefined'?user:null}});
-  Object.defineProperty(window,'sb',{configurable:true,get:function(){return typeof sb!=='undefined'?sb:null}});
-  window.openProfile=function(id){
-    const me=typeof user!=='undefined'?user:null;
-    if(window.ProfileUI&&window.ProfileUI.open)return window.ProfileUI.open(id||me?.id);
-  };
-
-  // Scalable feed: cursor pagination instead of loading the whole feed at once.
-  let feedCursor=null, feedLoading=false, feedDone=false;
-  const feedEsc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
-  const feedInitials=n=>(n||'م').trim().charAt(0);
-  async function scalableLoadFeed(reset=true){
-    const feed=document.getElementById('feed');
-    const me=window.user, s=window.sb;
-    if(!feed||!me||!s||feedLoading)return;
-    if(reset){feedCursor=null;feedDone=false;feed.innerHTML='<div class="card empty">جاري تحميل المنشورات…</div>';}
-    if(feedDone)return;
-    feedLoading=true;
-    let q=s.from('posts').select('id,author_id,body,media_url,visibility,created_at').eq('visibility','public').order('created_at',{ascending:false}).limit(20);
-    if(feedCursor)q=q.lt('created_at',feedCursor);
-    const r=await q;
-    if(r.error){if(reset)feed.innerHTML='<div class="card empty">تعذر تحميل المنشورات.<br><small>'+feedEsc(r.error.message)+'</small></div>';feedLoading=false;return;}
-    const posts=r.data||[];
-    if(!posts.length){feedDone=true;if(reset)feed.innerHTML='<div class="card empty">لا توجد منشورات بعد. كن أول من ينشر في Mada 👋</div>';feedLoading=false;return;}
-    feedCursor=posts[posts.length-1].created_at;
-    if(posts.length<20)feedDone=true;
-    const ids=posts.map(p=>p.id), authors=[...new Set(posts.map(p=>p.author_id).filter(Boolean))];
-    const [pr,lr,cr,sr]=await Promise.all([
-      s.from('profiles').select('id,display_name,avatar_url').in('id',authors),
-      s.from('post_likes').select('post_id,user_id').in('post_id',ids),
-      s.from('comments').select('id,post_id,author_id,body,created_at').in('post_id',ids).order('created_at',{ascending:true}),
-      s.from('post_shares').select('post_id').in('post_id',ids)
-    ]);
-    const pm=new Map((pr.data||[]).map(x=>[x.id,x]));
-    const likes=lr.data||[], comments=cr.data||[], shares=sr.data||[];
-    const cmIds=[...new Set(comments.map(c=>c.author_id).filter(Boolean))];
-    const cp=cmIds.length?await s.from('profiles').select('id,display_name').in('id',cmIds):{data:[]};
-    const cm=new Map((cp.data||[]).map(x=>[x.id,x]));
-    if(reset)feed.innerHTML='';
-    for(const p of posts){
-      const ls=likes.filter(x=>x.post_id===p.id), cs=comments.filter(x=>x.post_id===p.id), sc=shares.filter(x=>x.post_id===p.id).length;
-      const a=pm.get(p.author_id)||{}, liked=ls.some(x=>x.user_id===me.id), el=document.createElement('article');
-      el.className='card post';el.id='post-'+p.id;
-      el.innerHTML=`<div class="post-head"><button class="avatar" data-profile="${p.author_id}">${feedInitials(a.display_name)}</button><div><button class="post-name profile-link" data-profile="${p.author_id}">${feedEsc(a.display_name||'مستخدم Mada')}</button><div class="post-time">${new Date(p.created_at).toLocaleString('ar-EG')}</div></div></div><div class="post-text">${feedEsc(p.body||'')}</div>${p.media_url?`<img class="post-image" src="${feedEsc(p.media_url)}" alt="صورة المنشور" loading="lazy">`:''}<div class="post-meta"><span>👍 ${ls.length}</span><button class="meta-link" data-comments-open="${p.id}">${cs.length} تعليق</button><span>${sc} مشاركة</span></div><div class="post-actions"><button class="like ${liked?'liked':''}" data-id="${p.id}" data-liked="${liked}">${liked?'💙':'👍'} أعجبني</button><button class="comment-toggle" data-comment-toggle="${p.id}">💬 تعليق</button><button class="share" data-id="${p.id}">↗️ مشاركة</button></div><div class="comments" data-comments="${p.id}">${cs.map(c=>`<div class="comment"><b>${feedEsc(cm.get(c.author_id)?.display_name||'مستخدم')}</b> ${feedEsc(c.body)}</div>`).join('')}<div class="comment-box"><input data-comment="${p.id}" placeholder="اكتب تعليقًا…"><button data-send="${p.id}">إرسال</button></div></div>`;
-      feed.appendChild(el);
-    }
-    let more=feed.querySelector('.feed-more');
-    if(more)more.remove();
-    if(!feedDone){more=document.createElement('button');more.className='primary wide feed-more';more.type='button';more.textContent='تحميل منشورات أقدم';more.onclick=()=>scalableLoadFeed(false);feed.appendChild(more);}
-    feedLoading=false;
-  }
-  window.loadFeed=scalableLoadFeed;
-  try{updatePremiumUI()}catch(e){}
-  document.addEventListener('DOMContentLoaded',function(){
-    document.getElementById('premiumBannerAction')?.addEventListener('click',function(){document.getElementById('premiumBtn')?.click()});
-    document.getElementById('premiumBanner')?.addEventListener('click',function(e){if(e.target.closest('.premium-btn'))document.getElementById('premiumBtn')?.click()});
-    if(window.user)scalableLoadFeed(true);
-  });
-  const modern=document.createElement('script');modern.src='mada-modern-social.js?v=20260904-1';modern.defer=false;document.head.appendChild(modern);
+  function updatePremiumUI(){const b=document.getElementById('premiumBanner'),p=document.getElementById('premiumBtn');const active=typeof premium!=='undefined'?!!premium:!!window.madaPremium;window.madaPremium=active;if(b)b.hidden=active;if(p)p.title=active?'Mada Premium مفعل':'اشترك في Mada Premium'}
+  window.updatePremiumUI=updatePremiumUI;Object.defineProperty(window,'user',{configurable:true,get:function(){return typeof user!=='undefined'?user:null}});Object.defineProperty(window,'sb',{configurable:true,get:function(){return typeof sb!=='undefined'?sb:null}});
+  window.openProfile=function(id){const me=typeof user!=='undefined'?user:null;if(window.ProfileUI&&window.ProfileUI.open)return window.ProfileUI.open(id||me?.id)};
+  let feedCursor=null,feedLoading=false,feedDone=false;const feedEsc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c])),feedInitials=n=>(n||'م').trim().charAt(0);
+  async function scalableLoadFeed(reset=true){const feed=document.getElementById('feed'),me=window.user,s=window.sb;if(!feed||!me||!s||feedLoading)return;if(reset){feedCursor=null;feedDone=false;feed.innerHTML='<div class="card empty">جاري تحميل المنشورات…</div>'}if(feedDone)return;feedLoading=true;let q=s.from('posts').select('id,author_id,body,media_url,visibility,created_at').eq('visibility','public').order('created_at',{ascending:false}).limit(20);if(feedCursor)q=q.lt('created_at',feedCursor);const r=await q;if(r.error){if(reset)feed.innerHTML='<div class="card empty">تعذر تحميل المنشورات.<br><small>'+feedEsc(r.error.message)+'</small></div>';feedLoading=false;return}const posts=r.data||[];if(!posts.length){feedDone=true;if(reset)feed.innerHTML='<div class="card empty">لا توجد منشورات بعد. كن أول من ينشر في Mada 👋</div>';feedLoading=false;return}feedCursor=posts[posts.length-1].created_at;if(posts.length<20)feedDone=true;const ids=posts.map(p=>p.id),authors=[...new Set(posts.map(p=>p.author_id).filter(Boolean))];const [pr,lr,cr,sr]=await Promise.all([s.from('profiles').select('id,display_name,avatar_url').in('id',authors),s.from('post_likes').select('post_id,user_id,reaction_type').in('post_id',ids),s.from('comments').select('id,post_id,author_id,body,created_at').in('post_id',ids).order('created_at',{ascending:true}),s.from('post_shares').select('post_id').in('post_id',ids)]);const pm=new Map((pr.data||[]).map(x=>[x.id,x])),likes=lr.data||[],comments=cr.data||[],shares=sr.data||[];const cmIds=[...new Set(comments.map(c=>c.author_id).filter(Boolean))],cp=cmIds.length?await s.from('profiles').select('id,display_name').in('id',cmIds):{data:[]},cm=new Map((cp.data||[]).map(x=>[x.id,x]));if(reset)feed.innerHTML='';for(const p of posts){const ls=likes.filter(x=>x.post_id===p.id),cs=comments.filter(x=>x.post_id===p.id),sc=shares.filter(x=>x.post_id===p.id).length,a=pm.get(p.author_id)||{},liked=ls.some(x=>x.user_id===me.id),el=document.createElement('article');el.className='card post';el.id='post-'+p.id;el.innerHTML=`<div class="post-head"><button class="avatar" data-profile="${p.author_id}">${feedInitials(a.display_name)}</button><div><button class="post-name profile-link" data-profile="${p.author_id}">${feedEsc(a.display_name||'مستخدم Mada')}</button><div class="post-time">${new Date(p.created_at).toLocaleString('ar-EG')}</div></div></div><div class="post-text">${feedEsc(p.body||'')}</div>${p.media_url?`<img class="post-image" src="${feedEsc(p.media_url)}" alt="صورة المنشور" loading="lazy">`:''}<div class="post-meta"><span>👍 ${ls.length}</span><button class="meta-link" data-comments-open="${p.id}">${cs.length} تعليق</button><span>${sc} مشاركة</span></div><div class="post-actions"><button class="like ${liked?'liked':''}" data-id="${p.id}" data-liked="${liked}">${liked?'💙':'👍'} أعجبني</button><button class="comment-toggle" data-comment-toggle="${p.id}">💬 تعليق</button><button class="share" data-id="${p.id}">↗️ مشاركة</button></div><div class="comments" data-comments="${p.id}">${cs.map(c=>`<div class="comment"><b>${feedEsc(cm.get(c.author_id)?.display_name||'مستخدم')}</b> ${feedEsc(c.body)}</div>`).join('')}<div class="comment-box"><input data-comment="${p.id}" placeholder="اكتب تعليقًا…"><button data-send="${p.id}">إرسال</button></div></div>`;feed.appendChild(el)}let more=feed.querySelector('.feed-more');if(more)more.remove();if(!feedDone){more=document.createElement('button');more.className='primary wide feed-more';more.type='button';more.textContent='تحميل منشورات أقدم';more.onclick=()=>scalableLoadFeed(false);feed.appendChild(more)}feedLoading=false;window.MadaReactionsV2?.posts?.()}
+  window.loadFeed=scalableLoadFeed;try{updatePremiumUI()}catch(e){}document.addEventListener('DOMContentLoaded',function(){document.getElementById('premiumBannerAction')?.addEventListener('click',function(){document.getElementById('premiumBtn')?.click()});document.getElementById('premiumBanner')?.addEventListener('click',function(e){if(e.target.closest('.premium-btn'))document.getElementById('premiumBtn')?.click()});if(window.user)scalableLoadFeed(true)});
+  const modern=document.createElement('script');modern.src='mada-modern-social.js?v=20260904-2';modern.defer=false;document.head.appendChild(modern);const rx=document.createElement('script');rx.src='mada-reactions-v2.js?v=20260904-1';rx.defer=false;document.head.appendChild(rx);
 })();
