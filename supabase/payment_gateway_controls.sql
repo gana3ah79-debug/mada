@@ -1,0 +1,24 @@
+-- Mada payment gateway controls. Safe to rerun.
+alter table public.payment_settings add column if not exists online_payment_enabled boolean not null default false;
+alter table public.payment_settings add column if not exists gateway_provider text not null default 'paymob';
+alter table public.payment_settings add column if not exists gateway_mode text not null default 'test' check (gateway_mode in ('test','live'));
+alter table public.payment_settings add column if not exists updated_at timestamptz not null default now();
+update public.payment_settings set gateway_provider=coalesce(gateway_provider,'paymob'), gateway_mode=coalesce(gateway_mode,'test'), online_payment_enabled=coalesce(online_payment_enabled,false), updated_at=now() where id=true;
+create index if not exists payments_user_created_idx on public.payments(user_id,created_at desc);
+create index if not exists subscriptions_user_status_idx on public.subscriptions(user_id,status);
+create index if not exists admin_audit_log_admin_id_idx on public.admin_audit_log(admin_id);
+create index if not exists bans_admin_id_idx on public.bans(admin_id);
+create index if not exists bans_user_id_idx on public.bans(user_id);
+create index if not exists comments_author_id_idx on public.comments(author_id);
+create index if not exists conversation_members_user_id_idx on public.conversation_members(user_id);
+create index if not exists manual_payment_requests_reviewed_by_idx on public.manual_payment_requests(reviewed_by);
+create index if not exists payment_requests_reviewed_by_idx on public.payment_requests(reviewed_by);
+create index if not exists payment_requests_user_id_idx on public.payment_requests(user_id);
+create index if not exists payment_settings_updated_by_idx on public.payment_settings(updated_by);
+create index if not exists payments_subscription_id_idx on public.payments(subscription_id);
+create index if not exists post_likes_user_id_idx on public.post_likes(user_id);
+create index if not exists post_shares_user_id_idx on public.post_shares(user_id);
+create index if not exists reports_post_id_idx on public.reports(post_id);
+create index if not exists reports_reported_user_id_idx on public.reports(reported_user_id);
+create index if not exists reports_reporter_id_idx on public.reports(reporter_id);
+create index if not exists subscriptions_plan_id_idx on public.subscriptions(plan_id);

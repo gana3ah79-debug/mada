@@ -1,22 +1,25 @@
 name: Build Mada APK
 
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - 'android/**'
-      - '.github/workflows/build-apk.yml'
-      - '*.html'
-      - '*.css'
-      - '*.js'
-      - 'assets/**'
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check JavaScript syntax
+        run: |
+          for f in *.js; do node --check "$f"; done
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -30,28 +33,15 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.10.2'
+          gradle-version: '8.7'
 
-      - name: Bundle Mada web app into APK assets
-        run: |
-          mkdir -p android/app/src/main/assets/mada
-          find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.json' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.ico' \) -exec cp -f {} android/app/src/main/assets/mada/ \;
-          if [ -d assets ]; then cp -R assets/. android/app/src/main/assets/mada/; fi
-          test -f android/app/src/main/assets/mada/index.html
-          echo "Bundled files: $(find android/app/src/main/assets/mada -type f | wc -l)"
+      - name: Build debug APK
+        run: gradle -p android assembleDebug --no-daemon
 
-      - name: Build APK
-        working-directory: android
-        run: gradle assembleDebug --no-daemon
-
-      - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk Mada.apk
-
-      - name: Show APK size
-        run: ls -lh Mada.apk
-
-      - name: Upload Mada APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mada-APK-Full
-          path: Mada.apk
+          name: Mada-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
