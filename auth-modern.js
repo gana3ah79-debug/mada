@@ -7,11 +7,13 @@
   const client=()=>window.sb||window.__madaAuthClient||(window.supabase?.createClient&&window.MADA_SUPABASE_URL&&window.MADA_SUPABASE_KEY?(window.__madaAuthClient=window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY)):null);
   let mode='login',busy=false;
   function render(){
-    const name=$('nameInput'),login=$('loginBtn'),signup=$('signupBtn');
-    if(name){name.hidden=mode!=='signup';name.required=mode==='signup';name.setAttribute('aria-hidden',mode==='signup'?'false':'true');}
-    if(login){login.innerHTML=mode==='signup'?'<span>إنشاء الحساب</span><span class="arrow">✨</span>':'<span>تسجيل الدخول</span><span class="arrow">←</span>';}
-    if(signup){signup.textContent=mode==='signup'?'العودة لتسجيل الدخول':'إنشاء حساب جديد ✨';}
-    message(mode==='signup'?'أدخل الاسم والبريد الإلكتروني وكلمة المرور لإنشاء حساب جديد.':'أدخل البريد الإلكتروني وكلمة المرور لتسجيل الدخول.');
+    const name=$('nameInput'),nameField=$('nameField'),login=$('loginBtn'),signup=$('signupBtn');
+    const signupMode=mode==='signup';
+    if(nameField){nameField.hidden=!signupMode;nameField.style.display=signupMode?'':'none';nameField.setAttribute('aria-hidden',signupMode?'false':'true');}
+    if(name){name.hidden=!signupMode;name.required=signupMode;name.setAttribute('aria-hidden',signupMode?'false':'true');}
+    if(login){login.innerHTML=signupMode?'<span>إنشاء الحساب</span><span class="arrow">✨</span>':'<span>تسجيل الدخول</span><span class="arrow">←</span>';}
+    if(signup){signup.textContent=signupMode?'العودة لتسجيل الدخول':'إنشاء حساب جديد ✨';}
+    message(signupMode?'أدخل الاسم والبريد الإلكتروني وكلمة المرور لإنشاء حساب جديد.':'أدخل البريد الإلكتروني وكلمة المرور لتسجيل الدخول.');
   }
   async function finish(c,u){
     window.sb=c;window.user=u;window.__madaAuthClient=c;
@@ -55,7 +57,7 @@
     loginBtn.onclick=()=>mode==='login'?login():signup();
     signupBtn.onclick=()=>{mode=mode==='login'?'signup':'login';render()};
     $('passwordInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();mode==='login'?login():signup()}});
-    const forgot=document.querySelector('.btn-text');if(forgot)forgot.onclick=reset;
+    const forgot=document.querySelector('#forgotPasswordBtn,.btn-text');if(forgot)forgot.onclick=reset;
     render();
     return true;
   }
