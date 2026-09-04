@@ -11,6 +11,7 @@ window.MADA_SUPABASE_KEY='sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0';
     window.__madaCreateClientPatched=true;
   }
 })();
+(function(){if(document.querySelector('script[data-mada-login-hotfix]'))return;const s=document.createElement('script');s.src='login-hotfix.js?v=20260904-01';s.async=false;s.dataset.madaLoginHotfix='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-startup-recovery]'))return;const s=document.createElement('script');s.src='startup-recovery.js?v=20260904-01';s.async=false;s.dataset.madaStartupRecovery='1';document.head.appendChild(s)})();
 (function(){if(document.querySelector('script[data-mada-auth-stability]'))return;const s=document.createElement('script');s.src='auth-stability-fix.js?v=20260903-01';s.async=false;s.dataset.madaAuthStability='1';document.head.appendChild(s)})();
 window.openMessages=window.openMessages||function(){if(typeof window.madaMessenger==='function')return window.madaMessenger();if(typeof window.showMessages==='function')return window.showMessages()};
