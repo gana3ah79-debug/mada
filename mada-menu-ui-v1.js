@@ -30,5 +30,14 @@
     d.innerHTML='<div class="mada-drawer-head"><div class="mada-drawer-brand"><div class="mada-drawer-logo">M</div><div><b>MADA</b><small>كل ما تحتاجه في مكان واحد</small></div></div><button class="mada-drawer-close" type="button" aria-label="إغلاق">×</button></div><div class="mada-drawer-body"></div><div class="mada-drawer-footer">Mada • تواصل · شارك · اكتشف</div>';
     document.body.append(b,d); b.addEventListener('click',close); d.querySelector('.mada-drawer-close').addEventListener('click',close); render(); requestAnimationFrame(()=>{b.classList.add('open');d.classList.add('open')});
   }
+  // Prevent the old modal-style menu from opening alongside the modern drawer.
+  // Capture phase runs before legacy target/bubble handlers installed by older scripts.
+  document.addEventListener('click',function(e){
+    const trigger=e.target?.closest?.('#menuBtn,#menuBottom');
+    if(!trigger)return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    open();
+  },true);
   window.MadaMenuUI={open,close,settings};
 })();
