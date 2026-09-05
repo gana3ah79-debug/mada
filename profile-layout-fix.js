@@ -14,6 +14,10 @@
  function fix(){
   installBottomNavPerf();
   const p=page();if(!p)return;
+  /* Critical performance guard: never re-run the DOM reordering loop after the
+     profile has been normalized. MutationObserver callbacks from profile
+     enhancements must not continuously append the same nodes. */
+  if(p.dataset.madaLayoutFixed==='1')return;
   const details=dedupe(p,'.fb-profile-info');
   const friends=dedupe(p,'.fb-profile-friends');
   const composer=dedupe(p,'.fb-profile-composer');
@@ -31,17 +35,19 @@
  function loadWiring(){
   if(window.MadaProfileButtons)return;
   if(document.querySelector('script[data-mada-profile-buttons]'))return;
-  const s=document.createElement('script');s.src='profile-button-wiring-v4.js?v=20260902-2';s.dataset.madaProfileButtons='1';document.body.appendChild(s);
+  const s=document.createElement('script');s.src='profile-button-wiring-v4.js?v20260902-2';s.dataset.madaProfileButtons='1';document.body.appendChild(s);
  }
  function loadLikeFinal(){
   if(window.MadaFinalLikeFix)return;
   if(document.querySelector('script[data-mada-final-like]'))return;
-  const s=document.createElement('script');s.src='profile-like-final-fix.js?v=20260902-1';s.dataset.madaFinalLike='1';document.body.appendChild(s);
+  const s=document.createElement('script');s.src='profile-like-final-fix.js?v20260902-1';s.dataset.madaFinalLike='1';document.body.appendChild(s);
  }
  function watchModal(){
   const modal=document.getElementById('modal');
   if(modal){
-   const obs=new MutationObserver(()=>{clearTimeout(obs.t);obs.t=setTimeout(()=>{if(page()){fix();loadWiring();loadLikeFinal()}},80)});
+   const obs=new MutationObserver(()=>{
+    clearTimeout(obs.t);obs.t=setTimeout(()=>{if(page()){fix();loadWiring();loadLikeFinal()}},120)
+   });
    obs.observe(modal,{childList:true,subtree:true});
    return true;
   }
