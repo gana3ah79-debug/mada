@@ -17,15 +17,43 @@
   @media(prefers-color-scheme:dark){.mada-home-v3 .home-hero{background:linear-gradient(135deg,#111827,#172554);border-color:#273449}.mada-home-v3 .home-widget{background:#111827;border-color:#263244}.mada-home-v3 .home-tabs{background:#172033}.mada-home-v3 .home-tabs button.active{background:#243047;color:#a5b4fc}}
   `;
   function install(){if(document.getElementById('mada-home-v3-style'))return;const s=document.createElement('style');s.id='mada-home-v3-style';s.textContent=css;document.head.appendChild(s)}
-  function build(){install();const page=document.querySelector('.page-wrap');if(!page||page.dataset.homeV3)return;page.dataset.homeV3='1';page.classList.add('mada-home-v3');
+  function build(){
+    install();
+    const page=document.querySelector('.page-wrap');
+    if(!page||page.dataset.homeV3)return;
+    page.dataset.homeV3='1';page.classList.add('mada-home-v3');
     const stories=page.querySelector('.stories'),composer=page.querySelector('.composer'),feed=page.querySelector('#feed');
-    if(stories&&composer){const hero=document.createElement('section');hero.className='home-hero';hero.innerHTML='<div><h2>أهلاً بك في Mada 👋</h2><p>شارك لحظتك واكتشف ما يحدث حولك.</p></div><button class="home-create" type="button">＋ إنشاء</button>';hero.querySelector('.home-create').onclick=()=>document.getElementById('createNav')?.click();page.insertBefore(hero,stories)}
-    if(stories&&composer){const tabs=document.createElement('div');tabs.className='home-tabs';tabs.innerHTML='<button class="active" data-home-tab="all">لك</button><button data-home-tab="latest">الأحدث</button><button data-home-tab="friends">الأصدقاء</button>';composer.after(tabs);tabs.onclick=e=>{const b=e.target.closest('button');if(!b)return;tabs.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.homeTab==='latest')window.loadFeed?.(true);};}
-    if(feed){const title=document.createElement('div');title.className='feed-title';title.innerHTML='<h2>آخر المنشورات</h2><button type="button">تحديث ↻</button>';title.querySelector('button').onclick=()=>window.loadFeed?.(true);feed.before(title)}
-    const layout=document.createElement('div');layout.className='home-layout';const main=document.createElement('div');main.className='home-main';const side=document.createElement('aside');side.className='home-side';
-    if(feed){const title=feed.previousElementSibling;if(title?.classList.contains('feed-title'))main.appendChild(title);main.appendChild(feed)}
+    let hero=page.querySelector('.home-hero');
+    if(stories&&composer&&!hero){
+      hero=document.createElement('section');hero.className='home-hero';
+      hero.innerHTML='<div><h2>أهلاً بك في Mada 👋</h2><p>شارك لحظتك واكتشف ما يحدث حولك.</p></div><button class="home-create" type="button">＋ إنشاء</button>';
+      hero.querySelector('.home-create').onclick=()=>document.getElementById('createNav')?.click();
+      page.insertBefore(hero,stories);
+    }
+    let tabs=page.querySelector('.home-tabs');
+    if(stories&&composer&&!tabs){
+      tabs=document.createElement('div');tabs.className='home-tabs';
+      tabs.innerHTML='<button class="active" data-home-tab="all">لك</button><button data-home-tab="latest">الأحدث</button><button data-home-tab="friends">الأصدقاء</button>';
+      composer.after(tabs);
+      tabs.onclick=e=>{const b=e.target.closest('button');if(!b)return;tabs.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.homeTab==='latest')window.loadFeed?.(true);};
+    }
+    let title=page.querySelector('.feed-title');
+    if(feed&&!title){
+      title=document.createElement('div');title.className='feed-title';title.innerHTML='<h2>آخر المنشورات</h2><button type="button">تحديث ↻</button>';
+      title.querySelector('button').onclick=()=>window.loadFeed?.(true);feed.before(title);
+    }
+    const layout=document.createElement('div');layout.className='home-layout';
+    const main=document.createElement('div');main.className='home-main';
+    const side=document.createElement('aside');side.className='home-side';
+    if(title)main.appendChild(title);
+    if(feed)main.appendChild(feed);
     side.innerHTML='<div class="home-widget"><h3>اختصارات</h3><div class="quick-links"><button data-home-go="profile">👤 ملفي الشخصي</button><button data-home-go="friends">👥 الأصدقاء</button><button data-home-go="messages">💬 الرسائل</button><button data-home-go="notify">🔔 الإشعارات</button><button data-home-go="saved">🔖 المحفوظات</button><button data-home-go="privacy">🛡️ الخصوصية والأمان</button></div></div><div class="home-widget"><h3>اقتراحات سريعة</h3><p style="color:#64748b;font-size:13px;margin:0">اكتشف أشخاصًا جدد وشارك محتواك مع مجتمع Mada.</p><button class="home-create" style="margin-top:10px;width:100%" data-home-go="search">🔎 البحث عن أشخاص</button></div>';
-    const keep=[...page.children].filter(x=>x!==hero);page.innerHTML='';if(hero)page.appendChild(hero);page.appendChild(stories);page.appendChild(composer);const tabs=page.querySelector('.home-tabs');if(tabs)page.appendChild(tabs);layout.appendChild(main);layout.appendChild(side);page.appendChild(layout);
+    page.innerHTML='';
+    if(hero)page.appendChild(hero);
+    if(stories)page.appendChild(stories);
+    if(composer)page.appendChild(composer);
+    if(tabs)page.appendChild(tabs);
+    layout.appendChild(main);layout.appendChild(side);page.appendChild(layout);
     side.onclick=e=>{const b=e.target.closest('[data-home-go]');if(!b)return;const a=b.dataset.homeGo;({profile:()=>document.getElementById('profileNav')?.click(),friends:()=>document.getElementById('friendsNav')?.click(),messages:()=>document.getElementById('msgBtn2')?.click(),notify:()=>document.getElementById('notifyNav')?.click(),saved:()=>window.MadaNextSocial?.openSaved?.(),privacy:()=>window.MadaPrivacySettings?.open?.(),search:()=>window.MadaNextSocial?.openSearch?.()})[a]?.()};
   }
   function boot(){setTimeout(build,500)}
