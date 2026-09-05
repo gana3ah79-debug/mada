@@ -22,4 +22,5 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-reels-actions-fix-v1.js?v20260906-1','data-mada-reels-actions-fix');
   load('mada-reels-delete-v1.js?v20260906-1','data-mada-reels-delete');
   load('mada-reels-final-v1.js?v20260906-1','data-mada-reels-final');
+  load('mada-social-center-v1.js?v20260906-1','data-mada-social-center');
 })();
