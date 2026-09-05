@@ -1,0 +1,17 @@
+/* Mada Smart Notifications v2: dedupe + realtime delivery + precise routing. */
+(function(){'use strict';
+const S=()=>window.sb||null,U=()=>window.user||null;
+const seen=new Set();
+function key(n){const d=n?.data||n?.metadata||{};return n?.id||[n?.type,d.post_id,d.actor_id,n?.user_id].join(':')}
+function render(n){const d=n?.data||{};const icon={message:'💬',friend_request:'👥',friend_accept:'✅',follow:'👤',like:'👍',reaction:'❤️',comment:'💬',share:'↗️'}[n.type]||'🔔';
+ const btn=document.querySelector('#notifyBtn,#notifyNav,#notifyBottom'); if(btn&&!document.getElementById('mada-live-notify')){const b=document.createElement('span');b.id='mada-live-notify';b.textContent='1';b.title='إشعار جديد';b.style.cssText='position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:#e53935;color:#fff;font:700 11px/18px Arial;text-align:center;z-index:20';if(getComputedStyle(btn).position==='static')btn.style.position='relative';btn.appendChild(b)}
+ const root=document.querySelector('#notificationsModal .modal-body,#notificationsModal .modal-content,#notificationList'); if(root){const el=document.createElement('button');el.className='mada-live-notification';el.dataset.notificationId=n.id||'';el.dataset.postId=d.post_id||'';el.dataset.actorId=d.actor_id||'';el.style.cssText='display:flex;width:100%;gap:10px;text-align:right;padding:12px;border:0;border-bottom:1px solid rgba(127,127,127,.15);background:transparent;cursor:pointer';el.innerHTML=`<span style="font-size:22px">${icon}</span><span><b>${String(n.title||'إشعار جديد').replace(/[<>]/g,'')}</b><br><small>${String(n.body||'').replace(/[<>]/g,'')}</small></span>`;root.prepend(el)}
+}
+function route(n){const d=n?.data||{};if(n.type==='message'&&window.MadaMessengerPro?.open)return window.MadaMessengerPro.open(d.other_user_id||d.actor_id,d.conversation_id);if((n.type==='friend_request'||n.type==='friend_accept'||n.type==='follow')&&(d.actor_id||d.user_id))return window.ProfileUI?.open(d.actor_id||d.user_id);if(d.post_id){if(window.openPostComments)return window.openPostComments(d.post_id);const p=document.getElementById('post-'+d.post_id);if(p){p.scrollIntoView({behavior:'smooth',block:'center'});p.animate([{transform:'scale(1)'},{transform:'scale(1.02)'},{transform:'scale(1)'}],400)}}}
+async function mark(id){const s=S();if(s&&id)try{await s.from('notifications').update({read_at:new Date().toISOString()}).eq('id',id)}catch(e){} }
+function install(){const s=S(),me=U();if(!s||!me||window.__madaSmartV2)return;window.__madaSmartV2=true;
+ document.addEventListener('click',e=>{const el=e.target.closest('.mada-live-notification');if(!el)return;const id=el.dataset.notificationId;route({type:el.dataset.type,data:{post_id:el.dataset.postId,actor_id:el.dataset.actorId}});mark(id);el.remove()},false);
+ try{s.channel('mada-smart-notifications-v2-'+me.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+me.id},payload=>{const n=payload.new;if(seen.has(key(n)))return;seen.add(key(n));render(n);window.dispatchEvent(new CustomEvent('mada:notification',{detail:n}))}).subscribe()}catch(e){}
+}
+window.MadaSmartNotificationsV2={install,route,mark};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);else install();
+})();
