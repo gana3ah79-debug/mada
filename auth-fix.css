@@ -1,9 +1,11 @@
 /* Stable mobile auth sheet: lightweight, no blur, no animation, fully touchable. */
-#auth.auth-screen{position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;padding:0;background:rgba(9,19,36,.62);touch-action:auto;pointer-events:auto}
+#auth.auth-screen{position:fixed;inset:0;z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;background:rgba(9,19,36,.62);touch-action:auto;pointer-events:auto;isolation:isolate}
 #auth.auth-screen[hidden],#auth.auth-screen[aria-hidden="true"]{display:none!important;visibility:hidden!important;pointer-events:none!important}
-#auth .auth-card{width:min(720px,100%);max-height:90vh;overflow:auto;margin:0;border-radius:28px 28px 0 0;padding:28px 20px 30px;position:relative;box-shadow:0 -12px 45px rgba(12,25,48,.22);text-align:center;transform:none;opacity:1;touch-action:auto;pointer-events:auto;-webkit-overflow-scrolling:touch}
-#auth .auth-card input,#auth .auth-card button{pointer-events:auto;touch-action:manipulation}
-.auth-sheet-close{position:absolute;left:16px;top:14px;width:42px;height:42px;border:0;background:#eef1f5;color:#111827;border-radius:50%;font-size:28px;line-height:1;z-index:2}
+#auth .auth-card{width:min(720px,100%);max-height:90vh;overflow:auto;margin:0;border-radius:28px 28px 0 0;padding:28px 20px 30px;position:relative;z-index:100000;box-shadow:0 -12px 45px rgba(12,25,48,.22);text-align:center;transform:none;opacity:1;touch-action:auto;pointer-events:auto;-webkit-overflow-scrolling:touch}
+#auth .auth-card input,#auth .auth-card button{position:relative;z-index:100001;pointer-events:auto!important;touch-action:manipulation}
+#auth .auth-card input{user-select:text;-webkit-user-select:text;-webkit-touch-callout:default;caret-color:#2574df}
+#auth .auth-card input:focus{pointer-events:auto!important}
+.auth-sheet-close{position:absolute;left:16px;top:14px;width:42px;height:42px;border:0;background:#eef1f5;color:#111827;border-radius:50%;font-size:28px;line-height:1;z-index:100002}
 .auth-secondary{border:0;background:#edf3ff;color:#2567d8;min-height:50px;border-radius:16px;font-weight:900;margin-top:10px}
 #auth .link-btn{display:block;margin:12px auto 0}
 #auth .admin-action{display:none!important}
