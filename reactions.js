@@ -2,6 +2,8 @@
 (function(){
   const REACTIONS={like:{emoji:'👍',label:'إعجاب'},love:{emoji:'❤️',label:'أحببته'},haha:{emoji:'😂',label:'هاها'},wow:{emoji:'😮',label:'واو'},sad:{emoji:'😢',label:'حزين'},angry:{emoji:'😡',label:'غاضب'}};
   let openId=null;
+  const getSb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
+  const getUser=()=>window.user||null;
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
   const picker=id=>`<div class="mada-reaction-picker" data-picker="${id}" role="menu" aria-label="اختيار التفاعل"><div class="mada-reaction-title">اختر تفاعلك</div><div class="mada-reaction-list">${Object.entries(REACTIONS).map(([k,v])=>`<button type="button" class="mada-reaction" data-reaction="${k}" title="${v.label}" aria-label="${v.label}"><span>${v.emoji}</span></button>`).join('')}</div></div>`;
   function closeAll(except){document.querySelectorAll('.mada-reaction-picker').forEach(x=>{if(!except||x.dataset.picker!==except)x.remove()});openId=except||null}
@@ -9,7 +11,8 @@
   function setButton(btn,type,count){const r=REACTIONS[type]||REACTIONS.like;btn.innerHTML=`<span class="action-icon">${r.emoji}</span><span>${esc(r.label)}</span><b class="action-count">${Math.max(0,count)}</b>`;btn.dataset.reactionType=type;btn.dataset.liked='true';btn.classList.add('liked');}
   function setUnliked(btn,count){btn.innerHTML=`<span class="action-icon">👍</span><span>إعجاب</span><b class="action-count">${Math.max(0,count)}</b>`;delete btn.dataset.reactionType;btn.dataset.liked='false';btn.classList.remove('liked')}
   async function saveReaction(postId,type){
-    if(!window.user||!window.sb)return;
+    const sb=getSb(),user=getUser();
+    if(!sb||!user){alert('يرجى تسجيل الدخول أولاً');return}
     const btn=button(postId);if(!btn)return;
     const oldHtml=btn.innerHTML,oldType=btn.dataset.reactionType||'',oldLiked=btn.dataset.liked==='true';
     const oldCount=parseInt(btn.querySelector('.action-count')?.textContent||'0',10)||0;
@@ -31,7 +34,7 @@
     document.querySelectorAll('.post-actions .like[data-id]').forEach(btn=>{
       if(btn.dataset.reactionReady)return;btn.dataset.reactionReady='1';
       let timer=null,longPress=false;
-      btn.addEventListener('click',e=>{if(longPress){e.preventDefault();e.stopPropagation();longPress=false;return}e.preventDefault();e.stopPropagation();const liked=btn.dataset.liked==='true';saveReaction(btn.dataset.id,liked?'like':'like')},true);
+      btn.addEventListener('click',e=>{if(longPress){e.preventDefault();e.stopPropagation();longPress=false;return}e.preventDefault();e.stopPropagation();saveReaction(btn.dataset.id,'like')},true);
       btn.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();show(btn)},true);
       btn.addEventListener('touchstart',()=>{longPress=false;timer=setTimeout(()=>{longPress=true;show(btn)},500)},{passive:true});
       btn.addEventListener('touchend',()=>{clearTimeout(timer)},{passive:true});
