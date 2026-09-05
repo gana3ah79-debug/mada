@@ -1,13 +1,13 @@
-/* Mada phase 7.2 - reaction picker and interaction polish. */
+/* Mada - medium dynamic post reactions */
 .post-actions .like{position:relative;user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.mada-reaction-picker{position:absolute!important;z-index:500;right:0;bottom:calc(100% + 8px);min-width:250px;padding:10px 12px!important;border-radius:18px!important;background:rgba(255,255,255,.98)!important;box-shadow:0 18px 48px rgba(15,23,42,.22)!important;border:1px solid rgba(148,163,184,.2)!important;animation:madaRxIn .16s ease-out;transform-origin:bottom right}
-.mada-reaction-title{font-size:11px;font-weight:800;color:#64748b;text-align:center;margin-bottom:6px}
-.mada-reaction-list{display:flex;align-items:center;justify-content:center;gap:5px;direction:ltr}
-.mada-reaction{width:34px!important;height:34px!important;min-width:34px!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;font-size:22px!important;display:grid!important;place-items:center!important;transition:transform .14s ease,background .14s ease!important}
-.mada-reaction:hover{transform:translateY(-4px) scale(1.1)!important;background:rgba(241,245,249,.9)!important}
+.mada-reaction-picker{position:absolute!important;z-index:500;right:0;bottom:calc(100% + 7px);min-width:220px;padding:8px 10px!important;border-radius:16px!important;background:rgba(255,255,255,.98)!important;box-shadow:0 14px 36px rgba(15,23,42,.20)!important;border:1px solid rgba(148,163,184,.18)!important;animation:madaRxIn .16s ease-out;transform-origin:bottom right}
+.mada-reaction-title{font-size:10px;font-weight:800;color:#64748b;text-align:center;margin-bottom:5px}
+.mada-reaction-list{display:flex;align-items:center;justify-content:center;gap:3px;direction:ltr}
+.mada-reaction{width:32px!important;height:32px!important;min-width:32px!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;font-size:21px!important;display:grid!important;place-items:center!important;transition:transform .14s ease,background .14s ease!important}
+.mada-reaction:hover{transform:translateY(-3px) scale(1.08)!important;background:rgba(241,245,249,.9)!important}
 .mada-reaction:active{transform:scale(.9)!important}
 .post-actions .like.liked{font-weight:800!important}
 .post-actions .action-count{font-variant-numeric:tabular-nums}
 @keyframes madaRxIn{from{opacity:0;transform:translateY(5px) scale(.94)}to{opacity:1;transform:none}}
-@media(max-width:600px){.mada-reaction-picker{position:fixed!important;right:8px;left:8px;bottom:78px;min-width:0;padding:11px!important;border-radius:20px!important}.mada-reaction-list{gap:7px}.mada-reaction{width:38px!important;height:38px!important;min-width:38px!important;font-size:24px!important}.mada-reaction-title{font-size:10px}}
+@media(max-width:600px){.mada-reaction-picker{position:fixed!important;right:auto;left:auto;bottom:82px;min-width:0;width:max-content;max-width:calc(100vw - 24px);padding:8px 9px!important;border-radius:18px!important}.mada-reaction-list{gap:4px}.mada-reaction{width:34px!important;height:34px!important;min-width:34px!important;font-size:22px!important}.mada-reaction-title{font-size:9px;margin-bottom:4px}}
 body.dark .mada-reaction-picker{background:rgba(17,29,49,.98)!important;border-color:rgba(100,116,139,.3)!important}.dark .mada-reaction-title{color:#94a3b8}.dark .mada-reaction:hover{background:rgba(51,65,85,.7)!important}
