@@ -15,4 +15,5 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-reels-fullscreen-v1.js?v20260906-1','data-mada-reels-fullscreen');
   load('mada-reels-comments-v1.js?v20260906-1','data-mada-reels-comments');
   load('mada-reels-polish-v1.js?v20260906-1','data-mada-reels-polish');
+  load('mada-reels-follow-stats-v1.js?v20260906-1','data-mada-reels-follow-stats');
 })();
