@@ -1,6 +1,6 @@
 /* Mada reactions: instant Facebook-style interactions, no feed refresh/flicker. */
 (function(){
-  const REACTIONS={like:{emoji:'👍',label:'إعجاب'},love:{emoji:'❤️',label:'أحببته'},haha:{emoji:'😂',label:'هاها'},wow:{emoji:'😮',label:'واو'},sad:{emoji:'😢',label:'حزين'},angry:{emoji:'😡',label:'غاضب'},care:{emoji:'🤗',label:'دعم'}};
+  const REACTIONS={like:{emoji:'👍',label:'إعجاب'},love:{emoji:'❤️',label:'أحببته'},haha:{emoji:'😂',label:'هاها'},wow:{emoji:'😮',label:'واو'},sad:{emoji:'😢',label:'حزين'},angry:{emoji:'😡',label:'غاضب'}};
   let openId=null;
   const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
   const picker=id=>`<div class="mada-reaction-picker" data-picker="${id}" role="menu" aria-label="اختيار التفاعل"><div class="mada-reaction-title">اختر تفاعلك</div><div class="mada-reaction-list">${Object.entries(REACTIONS).map(([k,v])=>`<button type="button" class="mada-reaction" data-reaction="${k}" title="${v.label}" aria-label="${v.label}"><span>${v.emoji}</span></button>`).join('')}</div></div>`;
