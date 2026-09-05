@@ -1,0 +1,15 @@
+/* Mada Share Pro — native sharing, copy link, repost/share counters and profile/feed repost cards */
+(function(){
+'use strict';
+const S=()=>window.sb||window.MADA_SUPABASE_CLIENT,U=()=>window.user||null;
+const esc=x=>String(x??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+const modal=(t,b)=>window.showModal?window.showModal(t,b):null;
+async function link(id){return location.origin+location.pathname+'?post='+encodeURIComponent(id)}
+async function share(id){const s=S(),u=U();if(!id||!u)return;const url=await link(id);if(navigator.share){try{await navigator.share({title:'Mada',text:'شاهد هذا المنشور على Mada',url})}catch(e){if(e.name==='AbortError')return}}else{try{await navigator.clipboard.writeText(url);alert('تم نسخ رابط المنشور ✓')}catch(e){prompt('انسخ الرابط:',url)}}try{await s.from('post_shares').insert({post_id:id,user_id:u.id})}catch(e){}updateCount(id)}
+async function repost(id){const s=S(),u=U();if(!s||!u||!id)return;const r=await s.from('posts').select('id,body,media_url').eq('id',id).maybeSingle();if(!r.data)return;const text=prompt('أضف تعليقًا للمشاركة (اختياري):','');if(text===null)return;const ins=await s.from('posts').insert({author_id:u.id,body:text.trim()+(text.trim()?'\n\n':'')+'↪ مشاركة من منشور على Mada',media_url:r.data.media_url||null,visibility:'public'});if(ins.error){alert('تعذر إعادة المشاركة: '+ins.error.message);return}try{await s.from('post_shares').insert({post_id:id,user_id:u.id})}catch(e){}window.loadFeed?.(true);modal('✓ تمت المشاركة','<div class="card empty">تم نشر المنشور في ملفك/الخلاصة بنجاح.</div>')}
+async function updateCount(id){const s=S();if(!s)return;const r=await s.from('post_shares').select('id',{count:'exact',head:true}).eq('post_id',id);document.querySelectorAll(`[data-share-count="${id}"]`).forEach(x=>x.textContent=`${r.count||0} مشاركة`)}
+function menu(id){modal('↗️ مشاركة المنشور',`<div class="msp-menu"><button data-msp-share="${esc(id)}">📤 مشاركة خارجية</button><button data-msp-repost="${esc(id)}">🔁 إعادة نشر على Mada</button><button data-msp-copy="${esc(id)}">🔗 نسخ رابط المنشور</button></div>`);const b=document.getElementById('modalBody');b?.addEventListener('click',async e=>{const x=e.target.closest('button');if(!x)return;const i=x.dataset.mspShare||x.dataset.mspRepost||x.dataset.mspCopy;if(!i)return;if(x.dataset.mspShare)share(i);else if(x.dataset.mspRepost)repost(i);else{const u=await link(i);await navigator.clipboard?.writeText(u);alert('تم نسخ الرابط ✓')}})}
+const css=`.msp-menu{display:grid;gap:6px}.msp-menu button{border:0;background:rgba(127,127,127,.08);padding:14px;border-radius:13px;color:inherit;text-align:right;font-weight:800;cursor:pointer}.msp-menu button:active{transform:scale(.98)}`;if(!document.getElementById('msp-style')){const st=document.createElement('style');st.id='msp-style';st.textContent=css;document.head.appendChild(st)}
+document.addEventListener('click',e=>{const b=e.target.closest('.share,[data-share]');if(!b)return;const id=b.dataset.id||b.dataset.share;if(id){e.preventDefault();menu(id)}});
+window.MadaSharePro={share,repost,menu,updateCount};
+})();
