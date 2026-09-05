@@ -19,4 +19,5 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-reels-performance-v1.js?v20260906-1','data-mada-reels-performance');
   load('mada-reels-stage7-v1.js?v20260906-1','data-mada-reels-stage7');
   load('mada-reels-actions-fix-v1.js?v20260906-1','data-mada-reels-actions-fix');
+  load('mada-reels-delete-v1.js?v20260906-1','data-mada-reels-delete');
 })();
