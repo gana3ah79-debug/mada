@@ -1,0 +1,71 @@
+/* Mada Light Surfaces v1 — restore white UI surfaces without touching media/video stages */
+:root{
+  --mada-bg:#f0f2f5!important;
+  --mada-card:#fff!important;
+  --mada-text:#1c1e21!important;
+  --mada-muted:#65676b!important;
+  --mada-border:#e4e6eb!important;
+}
+html,body,#app{background:#f0f2f5!important;color:#1c1e21!important;}
+body.dark{background:#f0f2f5!important;color:#1c1e21!important;}
+body.dark #app{background:#f0f2f5!important;color:#1c1e21!important;}
+body.dark .topbar,
+body.dark .bottom-nav,
+body.dark .card,
+body.dark .stories,
+body.dark .composer,
+body.dark .modal-card,
+body.dark .profile-page,
+body.dark .profile-header,
+body.dark .profile-content,
+body.dark .profile-post,
+body.dark .profile-tabs,
+body.dark .quick-grid,
+body.dark .premium-banner{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important;}
+/* Modal/backdrop containers used by profile, friends, admin and social center */
+.modal-card,
+.mada-modal-card,
+.mada-social-modal,
+.mada-social-center,
+.mada-friends-modal,
+.mada-admin-modal,
+.mssc-modal,
+.mssc-panel,
+.mssc-chat,
+.mada-panel,
+.mada-sheet,
+.profile-modal,
+.profile-sheet,
+.friends-modal,
+.admin-modal{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important;}
+/* Common inner surfaces */
+.modal-card > *,
+.mada-social-center > *,
+.mada-social-modal > *,
+.mssc-modal > *,
+.mssc-panel > *,
+.mada-panel > *,
+.mada-sheet > *,
+.profile-sheet > *,
+.friends-modal > *,
+.admin-modal > *{color:#1c1e21;}
+/* Explicit dark-theme descendants */
+body.dark .modal-card *,
+body.dark .mada-social-modal *,
+body.dark .mada-social-center *,
+body.dark .mada-friends-modal *,
+body.dark .mada-admin-modal *,
+body.dark .mssc-modal *,
+body.dark .mssc-panel *,
+body.dark .mada-panel *{color:#1c1e21!important;}
+/* White controls in all light-restored overlays */
+.modal-card input,
+.modal-card textarea,
+.modal-card select,
+.mada-social-center input,
+.mada-social-center textarea,
+.mada-social-center select,
+.mssc-modal input,
+.mssc-modal textarea,
+.mssc-modal select{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important;}
+/* Keep media/video canvases intentionally black; this file only fixes UI surfaces. */
