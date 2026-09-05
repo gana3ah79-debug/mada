@@ -41,5 +41,5 @@
   try{updatePremiumUI()}catch(e){}
   document.addEventListener('DOMContentLoaded',function(){document.getElementById('premiumBannerAction')?.addEventListener('click',function(){document.getElementById('premiumBtn')?.click()});document.getElementById('premiumBanner')?.addEventListener('click',function(e){if(e.target.closest('.premium-btn'))document.getElementById('premiumBtn')?.click()});if(window.user)scalableLoadFeed(true)});
   /* Lightweight enhancement modules: no duplicate DOM rebuilds or global observers. */
-  ['mada-page-refresh.js?v20260905-1','mada-homepage-v3.js?v20260905-3','mada-home-modern-v2.js?v20260905-1'].forEach(src=>{if(document.querySelector(`script[src^="${src.split('?')[0]}"]`))return;const x=document.createElement('script');x.src=src;x.defer=false;document.head.appendChild(x)});
+  ['mada-page-refresh.js?v20260905-1','mada-homepage-v3.js?v20260905-3','mada-home-modern-v2.js?v20260905-1','mada-comments-pro.js?v20260905-1'].forEach(src=>{if(document.querySelector(`script[src^="${src.split('?')[0]}"]`))return;const x=document.createElement('script');x.src=src;x.defer=false;document.head.appendChild(x)});
 })();
