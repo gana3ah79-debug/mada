@@ -1,0 +1,9 @@
+/* Mada Reels — owner-only delete */
+(function(){'use strict';
+const sb=()=>window.MADA_SUPABASE_CLIENT||window.sb,me=()=>window.madaUser?.()||window.user;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+function addButton(card){if(!card||card.dataset.mrdBound)return;const u=me();const author=card.dataset.author||card.dataset.madaAuthor;if(!u||!author||String(u.id)!==String(author))return;card.dataset.mrdBound='1';const actions=card.querySelector('.mr-actions');if(!actions)return;const b=document.createElement('button');b.type='button';b.className='mrd-delete';b.innerHTML='🗑️<b>حذف</b>';b.onclick=async e=>{e.preventDefault();e.stopPropagation();if(!confirm('هل تريد حذف هذا الريلز نهائيًا؟'))return;b.disabled=true;b.innerHTML='⏳<b>حذف…</b>';const r=await sb().from('posts').delete().eq('id',card.dataset.reel).eq('author_id',u.id);if(r.error){alert('تعذر حذف الريلز: '+r.error.message);b.disabled=false;b.innerHTML='🗑️<b>حذف</b>';return}card.remove()};actions.appendChild(b)}
+function enhance(){document.querySelectorAll('.mada-reels-v3 .mr-reel').forEach(c=>{if(!c.dataset.author&&c.dataset.madaAuthor)c.dataset.author=c.dataset.madaAuthor;addButton(c)})}
+function boot(){const s=document.createElement('style');s.textContent='.mrd-delete{border:0!important;background:rgba(180,30,30,.72)!important;color:#fff!important}.mrd-delete:disabled{opacity:.6}';document.head.appendChild(s);enhance();new MutationObserver(enhance).observe(document.documentElement,{childList:true,subtree:true})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
