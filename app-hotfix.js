@@ -31,8 +31,6 @@
         const [pr,lr]=await Promise.all([s.from('profiles').select('id,display_name,avatar_url').in('id',authors),s.from('post_likes').select('post_id,user_id,reaction_type').in('post_id',ids)]);
         const pm=new Map((pr.data||[]).map(x=>[x.id,x]));
         renderFeedPosts(feed,posts,pm,lr.data||[],me,reset);
-        setTimeout(()=>{try{window.MadaPrivacyEnforcement?.filterFeed?.(posts)}catch(e){}},0);
-        setTimeout(()=>{try{window.MadaReactionsV2?.posts?.()}catch(e){}},50);
         Promise.all([s.from('comments').select('id,post_id').in('post_id',ids),s.from('post_shares').select('post_id').in('post_id',ids)]).then(([cr,sr])=>{const cc=new Map(),sc=new Map();(cr.data||[]).forEach(x=>cc.set(x.post_id,(cc.get(x.post_id)||0)+1));(sr.data||[]).forEach(x=>sc.set(x.post_id,(sc.get(x.post_id)||0)+1));ids.forEach(id=>{const p=document.getElementById('post-'+id);if(!p)return;const c=p.querySelector('[data-comments-open]');if(c)c.textContent=`${cc.get(id)||0} تعليق`;const sh=p.querySelector('[data-share-count]');if(sh)sh.textContent=`${sc.get(id)||0} مشاركة`})}).catch(()=>{});
       }catch(e){if(reset)feed.innerHTML='<div class="card empty">حدث خطأ أثناء تحميل المنشورات. حاول مرة أخرى.</div>'}
       finally{feedLoading=false}
@@ -42,5 +40,7 @@
   window.loadFeed=scalableLoadFeed;
   try{updatePremiumUI()}catch(e){}
   document.addEventListener('DOMContentLoaded',function(){document.getElementById('premiumBannerAction')?.addEventListener('click',function(){document.getElementById('premiumBtn')?.click()});document.getElementById('premiumBanner')?.addEventListener('click',function(e){if(e.target.closest('.premium-btn'))document.getElementById('premiumBtn')?.click()});if(window.user)scalableLoadFeed(true)});
-  ['mada-modern-social.js?v20260904-2','mada-reply-reactions.js?v20260904-1','mada-reactions-local.js?v20260904-1','mada-messaging-notifications.js?v20260905-2','mada-messaging-ui.js?v20260905-1','mada-stories-reels-v2.js?v20260905-2','mada-reels-comments-views.js?v20260905-1','mada-messenger-pro.js?v20260905-3','mada-messenger-list-pro.js?v20260905-1','mada-unified-search.js?v20260905-2','mada-profile-pro.js?v20260905-1','mada-next-social-suite.js?v20260905-1','mada-final-suite.js?v20260905-1','mada-posts-pro.js?v20260905-1','mada-comments-pro.js?v20260905-2','mada-share-pro.js?v20260905-2','mada-smart-notifications.js?v20260905-2','mada-privacy-block-pro.js?v20260905-2','mada-account-security-pro.js?v20260905-2','mada-privacy-settings-pro.js?v20260905-3','mada-mobile-navigation-pro-v2.js?v20260905-1','mada-homepage-v3.js?v20260905-3'].forEach(src=>{if(document.querySelector(`script[src^="${src.split('?')[0]}"]`))return;const x=document.createElement('script');x.src=src;x.defer=false;document.head.appendChild(x)});
+  /* Enhancement modules are intentionally paused here. The base app and index.html own the UI handlers.
+     This prevents duplicate listeners and competing DOM rebuilds from freezing the home page. */
+  ['mada-homepage-v3.js?v20260905-3'].forEach(src=>{if(document.querySelector(`script[src^="${src.split('?')[0]}"]`))return;const x=document.createElement('script');x.src=src;x.defer=false;document.head.appendChild(x)});
 })();
