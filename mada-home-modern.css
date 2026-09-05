@@ -1,0 +1,25 @@
+/* Mada Home Modern v1 */
+:root{--mh-bg:#f5f7fb;--mh-card:#fff;--mh-text:#172033;--mh-muted:#718096;--mh-line:#e7ebf2;--mh-blue:#1877f2;--mh-shadow:0 8px 28px rgba(25,45,80,.07)}
+body{background:var(--mh-bg)}
+.topbar{height:64px;padding:0 max(16px,calc((100vw - 1180px)/2));background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-bottom:1px solid rgba(220,226,236,.85)}
+.mada-wordmark{font-size:25px;letter-spacing:.5px}
+.top-actions{gap:6px}.top-actions .icon-btn,.top-actions .legacy-control{width:42px;height:42px;border-radius:50%;display:grid;place-items:center}
+.page-wrap{max-width:1180px;padding:18px 14px 28px;display:grid;grid-template-columns:260px minmax(0,680px) 220px;gap:18px;align-items:start}
+.page-wrap:before{content:'MADA';grid-column:1;grid-row:1;display:block;color:transparent}
+.stories,.composer,.quick-grid,.premium-banner,.feed{grid-column:2}
+.stories,.composer,.quick-grid,.premium-banner,.post,.card{border-color:var(--mh-line);box-shadow:var(--mh-shadow)}
+.stories{padding:14px;margin-bottom:14px;border-radius:18px}.stories-title{font-size:16px;margin-bottom:12px}.story-tools button{background:#f0f5ff;color:#2169d5;border-radius:10px;padding:7px 10px}
+.story-row{gap:10px}.story-card{min-width:104px;width:104px}.story-avatar{width:104px;height:164px;border-radius:15px}.story-card b{font-size:12px}
+.composer{padding:15px;border-radius:18px;margin-bottom:14px}.composer-row{gap:12px}.think-input{background:#f3f5f8;border:0;border-radius:24px;padding:13px 17px}.composer textarea{display:none}.composer-actions.reference-actions{border-top:1px solid var(--mh-line);padding-top:10px;margin-top:12px}.composer-actions.reference-actions button{background:transparent;padding:9px 5px;color:#536175}.publish-row{display:none}
+.quick-grid{display:none}.premium-banner{display:none}
+.feed{gap:14px}.post{border-radius:18px;background:#fff;padding:15px}.post-text{font-size:16px;line-height:1.75}.post-image{border-radius:14px;max-height:600px}
+.post-actions{margin-top:12px}.post-actions button{border-radius:10px}.post-actions button:hover{background:#f2f5f9}
+.bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(680px,calc(100% - 16px));bottom:8px;height:64px;border-radius:20px}
+/* desktop side rails */
+.page-wrap:after{content:'الرئيسية\A\A👥 الأصدقاء\A\A💬 الرسائل\A\A🔔 الإشعارات\A\A🔎 البحث\A\A👤 ملفي الشخصي';white-space:pre;grid-column:1;grid-row:1;position:sticky;top:84px;display:block;padding:20px;background:#fff;border:1px solid var(--mh-line);border-radius:18px;box-shadow:var(--mh-shadow);color:#344156;font-weight:800;line-height:1.25;text-align:right}
+@media(min-width:1050px){.page-wrap .stories{grid-column:2;grid-row:1}.page-wrap .composer{grid-column:2;grid-row:2}.page-wrap .feed{grid-column:2;grid-row:5}.page-wrap:after{grid-column:1;grid-row:1 / span 5}.page-wrap:before{grid-column:3;grid-row:1;content:'Mada\A\Aتواصل مع أصدقائك\A\Aاكتشف المحتوى الجديد\A\Aشارك لحظاتك';white-space:pre;padding:20px;background:linear-gradient(180deg,#eef5ff,#fff);border-radius:18px;color:#47617f;font-weight:800;line-height:2;text-align:right;position:sticky;top:84px}}
+@media(max-width:1049px){.page-wrap{display:block;max-width:760px}.page-wrap:before,.page-wrap:after{display:none}}
+@media(max-width:600px){body{padding-bottom:80px}.topbar{height:58px;padding:0 10px}.mada-wordmark{font-size:22px}.top-actions{gap:3px}.top-actions .icon-btn,.top-actions .legacy-control{width:38px;height:38px;font-size:18px}.page-wrap{padding:7px 7px 18px}.stories,.composer,.post{border-radius:16px}.stories{padding:11px}.story-card,.story-avatar{min-width:92px;width:92px}.story-avatar{height:145px}.story-row{gap:8px}.composer{padding:12px}.composer-actions.reference-actions{gap:2px}.composer-actions.reference-actions button{font-size:12px}.post{padding:12px}.post-text{font-size:15px}.post-image{border-radius:12px;max-height:470px}.bottom-nav{width:calc(100% - 10px);bottom:5px;height:62px;border-radius:18px}.bottom-nav button{margin:4px 2px}.bottom-nav span{font-size:9px}}
+body.dark{--mh-bg:#0b1320;--mh-card:#121d2d;--mh-text:#edf3ff;--mh-muted:#93a1b5;--mh-line:#27364b;background:var(--mh-bg)}
+body.dark .stories,body.dark .composer,body.dark .post,body.dark .card{background:var(--mh-card);border-color:var(--mh-line)}
+body.dark .think-input{background:#1a2940;color:#cbd6e6}.page-wrap:after{background:var(--mh-card);border-color:var(--mh-line);color:#d8e2f0}
