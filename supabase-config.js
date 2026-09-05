@@ -8,4 +8,5 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
   load('mada-reels-creator-v1.js?v20260906-1','data-mada-reels-creator');
   load('mada-reels-interactions-v1.js?v20260906-1','data-mada-reels-interactions');
+  load('mada-bottom-nav-smart-v1.js?v20260906-1','data-mada-bottom-nav-smart');
 })();
