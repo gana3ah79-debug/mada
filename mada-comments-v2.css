@@ -1,0 +1,18 @@
+/* Mada comments v2 */
+#feed .comments{padding:10px 12px 12px!important;border-top:1px solid rgba(148,163,184,.14)!important;background:rgba(248,250,252,.55)!important}
+#feed .mada-comment-v2{position:relative;display:grid!important;grid-template-columns:auto 1fr;column-gap:9px;align-items:start!important;margin:8px 0!important;padding:9px 10px 8px!important;border:1px solid rgba(148,163,184,.12)!important;border-radius:16px!important;background:#fff!important;line-height:1.7!important}
+#feed .mada-comment-v2 b{display:flex!important;align-items:center;gap:7px;font-size:13px!important;color:#172033!important}
+#feed .mada-comment-avatar{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#e0e7ff);color:#2563eb;font-weight:900;flex:0 0 30px}
+#feed .mada-comment-tools{grid-column:2;display:flex;gap:12px;margin-top:3px}
+#feed .mada-comment-tools button{border:0;background:transparent;color:#64748b;font-size:12px;font-weight:700;padding:2px 0;cursor:pointer}
+#feed .mada-comment-tools button:hover,#feed .mada-comment-tools button.active{color:#2563eb}
+#feed .mada-comment-tools button[data-comment-like].active{color:#e11d48}
+#feed .mada-comments-more{width:100%;border:0;background:transparent;color:#2563eb;font-weight:800;text-align:right;padding:7px 4px;cursor:pointer}
+#feed .mada-comment-input{min-height:44px!important;border-radius:22px!important;border:1px solid rgba(148,163,184,.22)!important;background:#fff!important;padding:10px 14px!important}
+#feed .mada-comment-send{min-width:68px!important;min-height:42px!important;border:0!important;border-radius:14px!important;font-weight:800!important;cursor:pointer}
+body.dark #feed .comments{background:rgba(15,23,42,.45)!important}
+body.dark #feed .mada-comment-v2{background:#162238!important;border-color:rgba(100,116,139,.22)!important}
+body.dark #feed .mada-comment-v2 b{color:#e6edf7!important}
+body.dark #feed .mada-comment-tools button{color:#94a3b8}
+body.dark #feed .mada-comment-input{background:#111c2e!important;color:#e6edf7!important}
+@media(max-width:600px){#feed .comments{padding:8px 8px 10px!important}#feed .mada-comment-v2{border-radius:14px!important;padding:8px!important}#feed .mada-comment-avatar{width:28px;height:28px;flex-basis:28px}#feed .mada-comment-tools{gap:14px}}
