@@ -11,8 +11,14 @@
     s.id='mada-phase1-post-style';
     s.textContent=`
       #feed article.post{padding:14px 14px 8px!important;margin:8px 0!important;border-radius:18px!important;overflow:hidden}
-      #feed article.post .post-head{min-height:46px!important;margin-bottom:10px!important}
-      #feed article.post .post-head .avatar{width:42px!important;height:42px!important;flex:0 0 42px!important}
+      #feed article.post .post-head{min-height:50px!important;margin-bottom:10px!important;display:flex!important;align-items:center!important;gap:10px!important;position:relative!important}
+      #feed article.post .post-head .avatar{width:44px!important;height:44px!important;flex:0 0 44px!important;padding:0!important;overflow:hidden!important;border-radius:50%!important;display:grid!important;place-items:center!important}
+      #feed article.post .post-head .avatar img{width:100%!important;height:100%!important;display:block!important;object-fit:cover!important;border-radius:50%!important}
+      #feed article.post .post-author-block{min-width:0!important;display:flex!important;flex-direction:column!important;justify-content:center!important;gap:2px!important}
+      #feed article.post .post-name{font-weight:800!important;line-height:1.25!important;text-align:right!important}
+      #feed article.post .post-time{font-size:11px!important;color:#8a94a6!important;line-height:1.3!important}
+      #feed article.post .post-more-wrap{margin-inline-start:auto!important;align-self:center!important}
+      #feed article.post .post-more{width:40px!important;height:40px!important;border-radius:12px!important;font-size:24px!important;line-height:1!important}
       #feed article.post .post-text{font-size:16px!important;line-height:1.75!important;margin:4px 2px 10px!important;white-space:pre-wrap;overflow-wrap:anywhere}
       #feed article.post .post-image{display:block;width:calc(100% + 28px)!important;max-width:none!important;margin:8px -14px 10px!important;max-height:520px!important;object-fit:cover!important;border-radius:0!important}
       #feed article.post .mada-post-stats{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;padding:4px 2px 7px;color:#64748b;font-size:12px;border-bottom:1px solid rgba(148,163,184,.22)}
@@ -29,11 +35,15 @@
       @media(max-width:600px){
         #feed article.post{padding:12px 12px 7px!important;margin:7px 0!important;border-radius:16px!important}
         #feed article.post .post-image{width:calc(100% + 24px)!important;margin-left:-12px!important;margin-right:-12px!important;max-height:460px!important}
+        #feed article.post .post-head .avatar{width:42px!important;height:42px!important;flex-basis:42px!important}
+        #feed article.post .post-time{font-size:10px!important}
+        #feed article.post .post-more{width:38px!important;height:38px!important}
         #feed article.post .mada-counts{gap:7px}
         #feed article.post .post-actions button{min-height:38px!important;font-size:12px!important}
       }
       body.dark #feed article.post .mada-post-stats{border-color:rgba(148,163,184,.18);color:#94a3b8}
       body.dark #feed article.post .post-actions button{color:#dbeafe!important}
+      body.dark #feed article.post .post-time{color:#94a3b8!important}
     `;
     document.head.appendChild(s);
   }
@@ -59,72 +69,24 @@
     const likeCount=rows.length;
     const commentCount=comments.count||0;
     const shareCount=shares.count||0;
-
     const reactionOrder=['love','like','care','haha','wow','sad','angry'];
     const reactionEmojis=[];
     for(const key of reactionOrder){
       if(rows.some(x=>(x.reaction_type||'like')===key))reactionEmojis.push(window.MadaReactions?.REACTIONS?.[key]?.emoji||({love:'❤️',like:'👍',care:'🥰',haha:'😂',wow:'😮',sad:'😢',angry:'😡'}[key]));
     }
     if(!reactionEmojis.length&&likeCount)reactionEmojis.push('👍');
-
     let stats=article.querySelector('.mada-post-stats');
-    if(!stats){
-      stats=document.createElement('div');
-      stats.className='mada-post-stats';
-      const actions=article.querySelector('.post-actions');
-      if(actions)actions.before(stats);
-    }
+    if(!stats){stats=document.createElement('div');stats.className='mada-post-stats';const actions=article.querySelector('.post-actions');if(actions)actions.before(stats)}
     stats.innerHTML=`<div class="mada-reaction-summary" aria-label="التفاعلات">${reactionEmojis.slice(0,3).map(x=>`<i>${x}</i>`).join('')}</div><div class="mada-counts"><span>👍 ${likeCount}</span><span>💬 ${commentCount}</span><span>↗️ ${shareCount}</span></div>`;
-
-    const nextLike=`${emoji}|${label}|${likeCount}`;
-    const nextShare=`↗️|مشاركة|${shareCount}`;
-    const nextComment=`💬|تعليق|${commentCount}`;
-    if(likeBtn.dataset.madaValue!==nextLike){
-      likeBtn.innerHTML=`<span class="action-icon">${emoji}</span><span>${esc(label)}</span><b class="action-count">${likeCount}</b>`;
-      likeBtn.dataset.madaValue=nextLike;
-    }
-    if(shareBtn.dataset.madaValue!==nextShare){
-      shareBtn.innerHTML=`<span class="action-icon">↗️</span><span>مشاركة</span><b class="action-count">${shareCount}</b>`;
-      shareBtn.dataset.madaValue=nextShare;
-    }
-    if(commentBtn&&commentBtn.dataset.madaValue!==nextComment){
-      commentBtn.innerHTML=`<span class="action-icon">💬</span><span>تعليق</span><b class="action-count">${commentCount}</b>`;
-      commentBtn.dataset.madaValue=nextComment;
-    }
-    likeBtn.dataset.liked=mine?'true':'false';
-    likeBtn.classList.toggle('liked',!!mine);
-    article.querySelector('.post-meta')?.remove();
+    const nextLike=`${emoji}|${label}|${likeCount}`,nextShare=`↗️|مشاركة|${shareCount}`,nextComment=`💬|تعليق|${commentCount}`;
+    if(likeBtn.dataset.madaValue!==nextLike){likeBtn.innerHTML=`<span class="action-icon">${emoji}</span><span>${esc(label)}</span><b class="action-count">${likeCount}</b>`;likeBtn.dataset.madaValue=nextLike}
+    if(shareBtn.dataset.madaValue!==nextShare){shareBtn.innerHTML=`<span class="action-icon">↗️</span><span>مشاركة</span><b class="action-count">${shareCount}</b>`;shareBtn.dataset.madaValue=nextShare}
+    if(commentBtn&&commentBtn.dataset.madaValue!==nextComment){commentBtn.innerHTML=`<span class="action-icon">💬</span><span>تعليق</span><b class="action-count">${commentCount}</b>`;commentBtn.dataset.madaValue=nextComment}
+    likeBtn.dataset.liked=mine?'true':'false';likeBtn.classList.toggle('liked',!!mine);article.querySelector('.post-meta')?.remove();
   }
 
-  async function scan(){
-    if(running){queued=true;return;}
-    running=true;
-    try{
-      ensureStyles();
-      const articles=[...document.querySelectorAll('#feed article.post')];
-      await Promise.all(articles.map(refreshPost));
-    }finally{
-      running=false;
-      if(queued){queued=false;setTimeout(scan,120);}
-    }
-  }
-
-  function boot(){
-    ensureStyles();
-    const feed=document.getElementById('feed');
-    if(!feed)return;
-    let timer=0;
-    const obs=new MutationObserver(()=>{
-      clearTimeout(timer);
-      timer=setTimeout(()=>{
-        obs.disconnect();
-        scan().finally(()=>obs.observe(feed,{childList:true,subtree:true}));
-      },180);
-    });
-    obs.observe(feed,{childList:true,subtree:true});
-    setTimeout(scan,300);
-  }
-
+  async function scan(){if(running){queued=true;return}running=true;try{ensureStyles();const articles=[...document.querySelectorAll('#feed article.post')];await Promise.all(articles.map(refreshPost))}finally{running=false;if(queued){queued=false;setTimeout(scan,120)}}}
+  function boot(){ensureStyles();const feed=document.getElementById('feed');if(!feed)return;let timer=0;const obs=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(()=>{obs.disconnect();scan().finally(()=>obs.observe(feed,{childList:true,subtree:true}))},180)});obs.observe(feed,{childList:true,subtree:true});setTimeout(scan,300)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
   window.MadaPostLayout={refresh:refreshPost,scan};
 })();
