@@ -1,18 +1,30 @@
-/* Mada comments v2 */
+/* Mada comments v3 */
 #feed .comments{padding:10px 12px 12px!important;border-top:1px solid rgba(148,163,184,.14)!important;background:rgba(248,250,252,.55)!important}
+#feed .comments.mada-comments-collapsed{display:none!important}
+#feed article.post.mada-comments-open .comments{animation:madaCommentsIn .18s ease-out}
+@keyframes madaCommentsIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 #feed .mada-comment-v2{position:relative;display:grid!important;grid-template-columns:auto 1fr;column-gap:9px;align-items:start!important;margin:8px 0!important;padding:9px 10px 8px!important;border:1px solid rgba(148,163,184,.12)!important;border-radius:16px!important;background:#fff!important;line-height:1.7!important}
 #feed .mada-comment-v2 b{display:flex!important;align-items:center;gap:7px;font-size:13px!important;color:#172033!important}
 #feed .mada-comment-avatar{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#e0e7ff);color:#2563eb;font-weight:900;flex:0 0 30px}
-#feed .mada-comment-tools{grid-column:2;display:flex;gap:12px;margin-top:3px}
+#feed .mada-comment-tools{grid-column:2;display:flex;gap:14px;margin-top:3px}
 #feed .mada-comment-tools button{border:0;background:transparent;color:#64748b;font-size:12px;font-weight:700;padding:2px 0;cursor:pointer}
 #feed .mada-comment-tools button:hover,#feed .mada-comment-tools button.active{color:#2563eb}
 #feed .mada-comment-tools button[data-comment-like].active{color:#e11d48}
-#feed .mada-comments-more{width:100%;border:0;background:transparent;color:#2563eb;font-weight:800;text-align:right;padding:7px 4px;cursor:pointer}
 #feed .mada-comment-input{min-height:44px!important;border-radius:22px!important;border:1px solid rgba(148,163,184,.22)!important;background:#fff!important;padding:10px 14px!important}
 #feed .mada-comment-send{min-width:68px!important;min-height:42px!important;border:0!important;border-radius:14px!important;font-weight:800!important;cursor:pointer}
+#feed .mada-comment-emoji-bar{position:relative;display:flex;align-items:center;gap:6px;margin:5px 0 2px}
+#feed .mada-emoji-toggle{border:0;background:transparent;font-size:22px;cursor:pointer;padding:4px 7px}
+#feed .mada-emoji-picker{position:absolute;z-index:20;bottom:40px;right:0;display:grid;grid-template-columns:repeat(6,1fr);gap:3px;padding:8px;border:1px solid rgba(148,163,184,.2);border-radius:16px;background:#fff;box-shadow:0 12px 35px rgba(15,23,42,.18)}
+#feed .mada-emoji-picker[hidden]{display:none!important}
+#feed .mada-emoji-picker button{border:0;background:transparent;border-radius:10px;font-size:22px;padding:5px;cursor:pointer}
+#feed .mada-emoji-picker button:hover{background:rgba(37,99,235,.08);transform:scale(1.08)}
+#feed .mada-comment-pending{opacity:.65}
+#feed .mada-comment-sent{animation:madaCommentSent .22s ease-out}
+@keyframes madaCommentSent{from{transform:scale(.98);opacity:.65}to{transform:none;opacity:1}}
 body.dark #feed .comments{background:rgba(15,23,42,.45)!important}
 body.dark #feed .mada-comment-v2{background:#162238!important;border-color:rgba(100,116,139,.22)!important}
 body.dark #feed .mada-comment-v2 b{color:#e6edf7!important}
 body.dark #feed .mada-comment-tools button{color:#94a3b8}
 body.dark #feed .mada-comment-input{background:#111c2e!important;color:#e6edf7!important}
-@media(max-width:600px){#feed .comments{padding:8px 8px 10px!important}#feed .mada-comment-v2{border-radius:14px!important;padding:8px!important}#feed .mada-comment-avatar{width:28px;height:28px;flex-basis:28px}#feed .mada-comment-tools{gap:14px}}
+body.dark #feed .mada-emoji-picker{background:#162238;color:#fff}
+@media(max-width:600px){#feed .comments{padding:8px 8px 10px!important}#feed .mada-comment-v2{border-radius:14px!important;padding:8px!important}#feed .mada-comment-avatar{width:28px;height:28px;flex-basis:28px}#feed .mada-emoji-picker{grid-template-columns:repeat(6,1fr);max-width:calc(100vw - 32px)}}
