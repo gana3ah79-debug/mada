@@ -36,7 +36,16 @@
       .profile-page .mada-profile-actions-modern{margin-top:8px!important}
       .profile-page .mada-profile-tabs-modern button{position:relative!important}
       .profile-page .mada-profile-tabs-modern button.active{font-weight:900!important}
-      @media(max-width:600px){.profile-page .mada-profile-username{font-size:12px}.profile-page .mada-profile-stats-modern{margin-left:0!important;margin-right:0!important}}
+      /* Option 2: large profile photo overlapping the cover */
+      .profile-page .cover{position:relative!important;overflow:visible!important}
+      .profile-page .profile-main{position:relative!important;padding-top:0!important}
+      .profile-page .profile-avatar{width:108px!important;height:108px!important;margin:-54px 0 8px auto!important;border:5px solid #fff!important;border-radius:50%!important;overflow:hidden!important;background:#e9edf5!important;box-shadow:0 3px 14px rgba(0,0,0,.20),0 0 0 2px rgba(24,119,242,.10)!important;position:relative!important;z-index:4!important}
+      .profile-page .profile-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;border-radius:50%!important}
+      @media(max-width:600px){
+        .profile-page .mada-profile-username{font-size:12px}
+        .profile-page .mada-profile-stats-modern{margin-left:0!important;margin-right:0!important}
+        .profile-page .profile-avatar{width:100px!important;height:100px!important;margin:-50px 0 8px auto!important;border-width:4px!important;box-shadow:0 3px 12px rgba(0,0,0,.20),0 0 0 2px rgba(24,119,242,.10)!important}
+      }
     `;document.head.appendChild(s);
   }
   function boot(){style();enhance();const modal=document.getElementById('modal');if(modal&&!modal.dataset.madaModernWatch){modal.dataset.madaModernWatch='1';new MutationObserver(()=>setTimeout(enhance,50)).observe(modal,{childList:true,subtree:true})}}
