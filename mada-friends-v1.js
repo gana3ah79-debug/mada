@@ -1,0 +1,15 @@
+/* Mada Friends v1 — stable friends, requests and people search */
+(function(){'use strict';
+if(window.__MADA_FRIENDS_V1)return;window.__MADA_FRIENDS_V1=1;
+const sb=window.MADA_SUPABASE_CLIENT||window.supabase?.createClient?.(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
+const user=()=>window.madaUser?.();
+const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+async function people(q){const u=user();if(!u||q.trim().length<2)return[];const term=q.trim();const [byName,byUser]=await Promise.all([
+ sb.from('profiles').select('id,display_name,username,avatar_url,bio').ilike('display_name',`%${term}%`).neq('id',u.id).limit(20),
+ sb.from('profiles').select('id,display_name,username,avatar_url,bio').ilike('username',`%${term}%`).neq('id',u.id).limit(20)
+]);const map=new Map();[...(byName.data||[]),...(byUser.data||[])].forEach(x=>map.set(x.id,x));return [...map.values()].slice(0,30)}
+async function searchModal(){if(typeof showModal!=='function')return;showModal('🔎 البحث عن أشخاص',`<div class="social-search-v1"><input id="mfPeopleQ" class="social-input" placeholder="ابحث بالاسم أو اسم المستخدم…" autocomplete="off"><div id="mfPeopleResults" class="results"><div class="empty">اكتب اسمًا أو اسم مستخدم للبحث.</div></div></div>`);const input=document.getElementById('mfPeopleQ'),box=document.getElementById('mfPeopleResults');let timer=0;const render=async()=>{const q=input.value.trim();if(q.length<2){box.innerHTML='<div class="empty">اكتب حرفين على الأقل.</div>';return}box.innerHTML='<div class="empty">جاري البحث…</div>';const rows=await people(q);box.innerHTML=rows.length?rows.map(x=>`<div class="user-row"><button class="avatar" data-mf-profile="${x.id}">${x.avatar_url?`<img src="${esc(x.avatar_url)}" alt="">`:esc((x.display_name||'م').charAt(0))}</button><div class="user-info"><b>${esc(x.display_name||'مستخدم')}</b><small>${x.username?'@'+esc(x.username):esc(x.bio||'عضو في Mada')}</small></div><button class="social-btn" data-mf-add="${x.id}">👥 إضافة</button></div>`).join(''):'<div class="empty">لم نجد أشخاصًا مطابقين.</div>'};input.oninput=()=>{clearTimeout(timer);timer=setTimeout(render,280)};box.onclick=async e=>{const p=e.target.closest('[data-mf-profile]');if(p&&window.Social?.openProfile)return window.Social.openProfile(p.dataset.mfProfile);const a=e.target.closest('[data-mf-add]');if(a&&window.Social?.sendRequest){await window.Social.sendRequest(a.dataset.mfAdd);a.textContent='✓ تم الإرسال';a.disabled=true}};input.focus()}
+function bind(){const ids=['searchBtn','friendsNav','friendsBottom'];ids.forEach(id=>{const el=document.getElementById(id);if(!el||el.dataset.mfBound)return;el.dataset.mfBound='1';el.addEventListener('click',e=>{if(id==='searchBtn'){e.preventDefault();e.stopImmediatePropagation();searchModal()}},true)});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+window.MadaFriendsV1={search:searchModal,people};
+})();
