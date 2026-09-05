@@ -30,4 +30,5 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge');
   load('mada-friends-v1.js?v20260906-1','data-mada-friends-v1');
   load('mada-messages-v1.js?v20260906-1','data-mada-messages-v1');
+  load('mada-profile-photo-edit-v1.js?v20260906-1','data-mada-profile-photo-edit-v1');
 })();
