@@ -1,6 +1,6 @@
 /* Mada reaction UI: counts belong beside the action buttons only. */
 (function(){
-  const MAP={angry:'😡',sad:'😢',wow:'😮',haha:'😂',care:'🤗',love:'❤️',like:'👍'};
+  const MAP={angry:'😡',sad:'😢',wow:'😮',haha:'😂',love:'❤️',like:'👍'};
   const getSb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
   const getUser=()=>window.user||null;
   async function refreshCounts(){
@@ -19,8 +19,10 @@
       if(meta)meta.style.display='none';
       if(likeBtn){
         const icon=mine?(MAP[mine.reaction_type]||'👍'):'👍';
-        const label=mine?(window.MadaReactions?.REACTIONS?.[mine.reaction_type]?.label||'تفاعل'):'أعجبني';
-        likeBtn.innerHTML=`${icon} ${label} <b class="action-count">${ls.length}</b>`;
+        const label=mine?(window.MadaReactions?.REACTIONS?.[mine.reaction_type]?.label||'تفاعل'):'إعجاب';
+        likeBtn.innerHTML=`<span class="action-icon">${icon}</span><span>${label}</span> <b class="action-count">${ls.length}</b>`;
+        likeBtn.dataset.liked=mine?'true':'false';
+        if(mine)likeBtn.dataset.reactionType=mine.reaction_type;else delete likeBtn.dataset.reactionType;
       }
       if(shareBtn)shareBtn.innerHTML=`↗️ مشاركة <b class="action-count">${sc}</b>`;
     }
