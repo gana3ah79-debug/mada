@@ -7,13 +7,13 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   function load(src,attr){if(document.querySelector('script['+attr+']'))return;const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.async=false;document.head.appendChild(s)}
   load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
   load('mada-reels-creator-v1.js?v20260906-1','data-mada-reels-creator');
-  load('mada-reels-interactions-v1.js?v20260906-1','data-mada-reels-interactions');
+  load('mada-reels-interactions-v1.js?v20260906-3','data-mada-reels-interactions');
   load('mada-bottom-nav-smart-v1.js?v20260906-1','data-mada-bottom-nav-smart');
   load('mada-reels-layout-v2.js?v20260906-1','data-mada-reels-layout');
   load('mada-reels-side-actions-v1.js?v20260906-1','data-mada-reels-side-actions');
   load('mada-reels-reaction-dock-v1.js?v20260906-2','data-mada-reels-reaction-dock');
-  load('mada-reels-fullscreen-v1.js?v20260906-1','data-mada-reels-fullscreen');
-  load('mada-reels-comments-v1.js?v20260906-1','data-mada-reels-comments');
+  load('mada-reels-fullscreen-v1.js?v20260906-3','data-mada-reels-fullscreen');
+  load('mada-reels-comments-v1.js?v20260906-3','data-mada-reels-comments');
   load('mada-reels-polish-v1.js?v20260906-1','data-mada-reels-polish');
   load('mada-reels-follow-stats-v1.js?v20260906-1','data-mada-reels-follow-stats');
   load('mada-reels-performance-v1.js?v20260906-1','data-mada-reels-performance');
