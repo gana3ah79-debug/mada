@@ -1,61 +1,32 @@
-/* Mada Homepage v3 — modern social home experience */
+/* Mada Homepage Safe Layer — performance only, never rebuilds page DOM. */
 (function(){
   'use strict';
-  const css=`
-  .mada-home-v3{max-width:1180px;margin:0 auto;padding:0 12px 100px}
-  .mada-home-v3 .home-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;margin:12px 0;background:linear-gradient(135deg,#fff,#f5f7ff);border:1px solid rgba(99,102,241,.10);border-radius:22px;box-shadow:0 8px 30px rgba(15,23,42,.06)}
-  .mada-home-v3 .home-hero h2{margin:0;font-size:22px}.mada-home-v3 .home-hero p{margin:5px 0 0;color:#64748b;font-size:13px}
-  .mada-home-v3 .home-tabs{display:flex;gap:6px;padding:5px;background:#f1f5f9;border-radius:15px;margin:10px 0 14px;overflow:auto}
-  .mada-home-v3 .home-tabs button{border:0;background:transparent;border-radius:12px;padding:10px 16px;white-space:nowrap;font-weight:700;color:#64748b;cursor:pointer}.mada-home-v3 .home-tabs button.active{background:#fff;color:#4f46e5;box-shadow:0 2px 8px rgba(15,23,42,.08)}
-  .mada-home-v3 .home-layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:18px;align-items:start}.mada-home-v3 .home-main{min-width:0}.mada-home-v3 .home-side{position:sticky;top:82px;display:grid;gap:12px}
-  .mada-home-v3 .home-widget{background:#fff;border:1px solid #eef2f7;border-radius:18px;padding:15px;box-shadow:0 6px 24px rgba(15,23,42,.045)}
-  .mada-home-v3 .home-widget h3{margin:0 0 12px;font-size:15px}.mada-home-v3 .quick-links{display:grid;gap:4px}.mada-home-v3 .quick-links button{border:0;background:transparent;text-align:right;padding:10px;border-radius:12px;font-weight:700;cursor:pointer}.mada-home-v3 .quick-links button:hover{background:#f8fafc}
-  .mada-home-v3 .feed-title{display:flex;align-items:center;justify-content:space-between;margin:18px 3px 10px}.mada-home-v3 .feed-title h2{font-size:18px;margin:0}.mada-home-v3 .feed-title button{border:0;background:transparent;color:#4f46e5;font-weight:700;cursor:pointer}
-  .mada-home-v3 .composer{border-radius:20px!important}.mada-home-v3 .composer-actions button{transition:.18s}.mada-home-v3 .composer-actions button:hover{transform:translateY(-1px);background:#eef2ff}
-  .mada-home-v3 .home-create{border:0;border-radius:14px;padding:10px 15px;background:#4f46e5;color:#fff;font-weight:800;cursor:pointer}.mada-home-v3 .home-create:hover{filter:brightness(.96);transform:translateY(-1px)}
-  @media(max-width:850px){.mada-home-v3{padding:0 8px 88px}.mada-home-v3 .home-layout{display:block}.mada-home-v3 .home-side{display:none}.mada-home-v3 .home-hero{border-radius:18px;padding:13px 14px}.mada-home-v3 .home-hero h2{font-size:19px}.mada-home-v3 .home-tabs{margin-left:0;margin-right:0}.mada-home-v3 .feed-title{margin-top:14px}}
-  @media(prefers-color-scheme:dark){.mada-home-v3 .home-hero{background:linear-gradient(135deg,#111827,#172554);border-color:#273449}.mada-home-v3 .home-widget{background:#111827;border-color:#263244}.mada-home-v3 .home-tabs{background:#172033}.mada-home-v3 .home-tabs button.active{background:#243047;color:#a5b4fc}}
-  `;
-  function install(){if(document.getElementById('mada-home-v3-style'))return;const s=document.createElement('style');s.id='mada-home-v3-style';s.textContent=css;document.head.appendChild(s)}
-  function build(){
-    install();
-    const page=document.querySelector('.page-wrap');
-    if(!page||page.dataset.homeV3)return;
-    page.dataset.homeV3='1';page.classList.add('mada-home-v3');
-    const stories=page.querySelector('.stories'),composer=page.querySelector('.composer'),feed=page.querySelector('#feed');
-    let hero=page.querySelector('.home-hero');
-    if(stories&&composer&&!hero){
-      hero=document.createElement('section');hero.className='home-hero';
-      hero.innerHTML='<div><h2>أهلاً بك في Mada 👋</h2><p>شارك لحظتك واكتشف ما يحدث حولك.</p></div><button class="home-create" type="button">＋ إنشاء</button>';
-      hero.querySelector('.home-create').onclick=()=>document.getElementById('createNav')?.click();
-      page.insertBefore(hero,stories);
-    }
-    let tabs=page.querySelector('.home-tabs');
-    if(stories&&composer&&!tabs){
-      tabs=document.createElement('div');tabs.className='home-tabs';
-      tabs.innerHTML='<button class="active" data-home-tab="all">لك</button><button data-home-tab="latest">الأحدث</button><button data-home-tab="friends">الأصدقاء</button>';
-      composer.after(tabs);
-      tabs.onclick=e=>{const b=e.target.closest('button');if(!b)return;tabs.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(b.dataset.homeTab==='latest')window.loadFeed?.(true);};
-    }
-    let title=page.querySelector('.feed-title');
-    if(feed&&!title){
-      title=document.createElement('div');title.className='feed-title';title.innerHTML='<h2>آخر المنشورات</h2><button type="button">تحديث ↻</button>';
-      title.querySelector('button').onclick=()=>window.loadFeed?.(true);feed.before(title);
-    }
-    const layout=document.createElement('div');layout.className='home-layout';
-    const main=document.createElement('div');main.className='home-main';
-    const side=document.createElement('aside');side.className='home-side';
-    if(title)main.appendChild(title);
-    if(feed)main.appendChild(feed);
-    side.innerHTML='<div class="home-widget"><h3>اختصارات</h3><div class="quick-links"><button data-home-go="profile">👤 ملفي الشخصي</button><button data-home-go="friends">👥 الأصدقاء</button><button data-home-go="messages">💬 الرسائل</button><button data-home-go="notify">🔔 الإشعارات</button><button data-home-go="saved">🔖 المحفوظات</button><button data-home-go="privacy">🛡️ الخصوصية والأمان</button></div></div><div class="home-widget"><h3>اقتراحات سريعة</h3><p style="color:#64748b;font-size:13px;margin:0">اكتشف أشخاصًا جدد وشارك محتواك مع مجتمع Mada.</p><button class="home-create" style="margin-top:10px;width:100%" data-home-go="search">🔎 البحث عن أشخاص</button></div>';
-    page.innerHTML='';
-    if(hero)page.appendChild(hero);
-    if(stories)page.appendChild(stories);
-    if(composer)page.appendChild(composer);
-    if(tabs)page.appendChild(tabs);
-    layout.appendChild(main);layout.appendChild(side);page.appendChild(layout);
-    side.onclick=e=>{const b=e.target.closest('[data-home-go]');if(!b)return;const a=b.dataset.homeGo;({profile:()=>document.getElementById('profileNav')?.click(),friends:()=>document.getElementById('friendsNav')?.click(),messages:()=>document.getElementById('msgBtn2')?.click(),notify:()=>document.getElementById('notifyNav')?.click(),saved:()=>window.MadaNextSocial?.openSaved?.(),privacy:()=>window.MadaPrivacySettings?.open?.(),search:()=>window.MadaNextSocial?.openSearch?.()})[a]?.()};
+  const STYLE='mada-home-safe-style';
+  function install(){
+    if(document.getElementById(STYLE))return;
+    const s=document.createElement('style');s.id=STYLE;s.textContent=`
+      .page-wrap{contain:layout style;}
+      #feed{min-width:0;}
+      #feed>.post{content-visibility:auto;contain-intrinsic-size:420px;}
+      .mada-feed-loading{padding:22px;text-align:center;color:#64748b}
+      @media(max-width:700px){#feed>.post{contain-intrinsic-size:360px}.page-wrap{padding-bottom:82px}}
+    `;document.head.appendChild(s);
   }
-  function boot(){setTimeout(build,500)}
-  document.addEventListener('DOMContentLoaded',boot);window.addEventListener('load',boot);new MutationObserver(()=>{if(document.querySelector('.page-wrap')&&!document.querySelector('.mada-home-v3'))boot()}).observe(document.documentElement,{childList:true,subtree:true});
+  function videos(){return document.querySelectorAll('#feed video:not([data-mada-video])');}
+  function setupVideos(){
+    const list=videos(); if(!list.length)return;
+    list.forEach(v=>{v.dataset.madaVideo='1';v.preload='metadata';v.setAttribute('playsinline','');});
+    if(!window.IntersectionObserver)return;
+    const io=new IntersectionObserver(entries=>entries.forEach(e=>{
+      const v=e.target;if(e.isIntersecting&&e.intersectionRatio>=.65){v.play().catch(()=>{});}else if(!v.paused)v.pause();
+    }),{threshold:[0,.65]});
+    list.forEach(v=>io.observe(v));
+  }
+  function boot(){install();setupVideos();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  let timer=0;
+  const feedObserver=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(setupVideos,120)});
+  function watch(){const f=document.getElementById('feed');if(f&&!f.dataset.madaSafeWatch){f.dataset.madaSafeWatch='1';feedObserver.observe(f,{childList:true});setupVideos();}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch,{once:true});else watch();
+  window.MadaHomeSafe={refresh:setupVideos};
 })();
