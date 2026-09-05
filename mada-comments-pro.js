@@ -16,5 +16,5 @@ async function handle(e){const b=e.target.closest('button');if(!b)return;const i
 async function updateCount(id){const s=S();if(!s)return;const r=await s.from('comments').select('id',{count:'exact',head:true}).eq('post_id',id);document.querySelectorAll(`[data-comments-open="${id}"], [data-comment-count="${id}"]`).forEach(x=>x.textContent=`${r.count||0} تعليق`)}
 function subscribe(){const s=S();if(!s||!currentPost)return;if(channel)s.removeChannel(channel);channel=s.channel('mcp-'+currentPost).on('postgres_changes',{event:'*',schema:'public',table:'comments',filter:'post_id=eq.'+currentPost},()=>refresh()).subscribe();if(likeChannel)s.removeChannel(likeChannel);likeChannel=s.channel('mcp-reactions-'+currentPost).on('postgres_changes',{event:'*',schema:'public',table:'comment_reactions'},()=>refresh()).subscribe()}
 window.MadaCommentsPro={open,refresh,updateCount};window.openPostComments=open;
-document.addEventListener('click',e=>{const b=e.target.closest('[data-comment-toggle],[data-comments-open]');if(b){e.preventDefault();open(b.dataset.commentToggle||b.dataset.commentsOpen)}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-comment-toggle],[data-comments-open]');if(b){e.preventDefault();e.stopPropagation();open(b.dataset.commentToggle||b.dataset.commentsOpen)}},true);
 })();
