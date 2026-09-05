@@ -1,0 +1,15 @@
+/* Mada Home Phase 4 — realtime new-post notice + viewport media playback + lightweight observers */
+(function(){'use strict';
+  const $=s=>document.querySelector(s);
+  let booted=false,channel=null,videoObserver=null,feedObserver=null,refreshTimer=0;
+  function installStyle(){if($('#mhp4-style'))return;const s=document.createElement('style');s.id='mhp4-style';s.textContent=`.mada-new-posts-bar{position:sticky;top:8px;z-index:20;display:none;margin:8px auto;max-width:680px}.mada-new-posts-bar button{width:100%;border:0;border-radius:14px;padding:11px 16px;background:#4f46e5;color:#fff;font-weight:800;box-shadow:0 8px 24px rgba(79,70,229,.22);cursor:pointer}.mada-new-posts-bar button:active{transform:scale(.98)}#feed .post{content-visibility:auto;contain-intrinsic-size:1px 420px}@media(max-width:600px){.mada-new-posts-bar{top:4px;margin:6px 8px}.mada-new-posts-bar button{border-radius:12px;padding:10px 14px}}`;document.head.appendChild(s)}
+  function ensureBar(){let b=$('#mada-new-posts-bar');if(b)return b;const feed=$('#feed');if(!feed)return null;b=document.createElement('div');b.id='mada-new-posts-bar';b.className='mada-new-posts-bar';b.innerHTML='<button type="button">منشور جديد • اضغط للتحديث</button>';feed.parentNode?.insertBefore(b,feed);b.querySelector('button').onclick=()=>{b.style.display='none';window.MadaHomePhase4.refresh()};return b}
+  function scheduleRefresh(){clearTimeout(refreshTimer);refreshTimer=setTimeout(()=>window.loadFeed?.(true),120)}
+  function setupRealtime(){const sb=window.sb;if(!sb||channel)return;channel=sb.channel('mada-home-posts-v4').on('postgres_changes',{event:'INSERT',schema:'public',table:'posts'},payload=>{const u=window.user;if(!u||payload?.new?.author_id===u.id)return;const bar=ensureBar();if(bar)bar.style.display='block'}).subscribe();}
+  function setupVideos(){if(videoObserver)videoObserver.disconnect();videoObserver=new IntersectionObserver(entries=>entries.forEach(e=>{const v=e.target;if(!v||v.tagName!=='VIDEO')return;if(e.isIntersecting&&e.intersectionRatio>=.65){v.preload='metadata';if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)v.play().catch(()=>{})}else{v.pause()}}),{threshold:[0,.65,.9]});document.querySelectorAll('#feed video').forEach(v=>{v.preload='metadata';videoObserver.observe(v)})}
+  function setupFeedObserver(){const feed=$('#feed');if(!feed)return;if(feedObserver)feedObserver.disconnect();let timer=0;feedObserver=new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(setupVideos,80)});feedObserver.observe(feed,{childList:true,subtree:true});setupVideos()}
+  function init(){if(booted)return;const feed=$('#feed');if(!feed)return;booted=true;installStyle();ensureBar();setupRealtime();setupFeedObserver();}
+  window.MadaHomePhase4={refresh:function(){const bar=$('#mada-new-posts-bar');if(bar)bar.style.display='none';scheduleRefresh()}};
+  function boot(){setTimeout(init,900)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
