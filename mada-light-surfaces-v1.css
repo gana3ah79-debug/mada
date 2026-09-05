@@ -1,71 +1,16 @@
-/* Mada Light Surfaces v1 — restore white UI surfaces without touching media/video stages */
-:root{
-  --mada-bg:#f0f2f5!important;
-  --mada-card:#fff!important;
-  --mada-text:#1c1e21!important;
-  --mada-muted:#65676b!important;
-  --mada-border:#e4e6eb!important;
-}
-html,body,#app{background:#f0f2f5!important;color:#1c1e21!important;}
-body.dark{background:#f0f2f5!important;color:#1c1e21!important;}
-body.dark #app{background:#f0f2f5!important;color:#1c1e21!important;}
-body.dark .topbar,
-body.dark .bottom-nav,
-body.dark .card,
-body.dark .stories,
-body.dark .composer,
-body.dark .modal-card,
-body.dark .profile-page,
-body.dark .profile-header,
-body.dark .profile-content,
-body.dark .profile-post,
-body.dark .profile-tabs,
-body.dark .quick-grid,
-body.dark .premium-banner{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important;}
-/* Modal/backdrop containers used by profile, friends, admin and social center */
-.modal-card,
-.mada-modal-card,
-.mada-social-modal,
-.mada-social-center,
-.mada-friends-modal,
-.mada-admin-modal,
-.mssc-modal,
-.mssc-panel,
-.mssc-chat,
-.mada-panel,
-.mada-sheet,
-.profile-modal,
-.profile-sheet,
-.friends-modal,
-.admin-modal{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important;}
-/* Common inner surfaces */
-.modal-card > *,
-.mada-social-center > *,
-.mada-social-modal > *,
-.mssc-modal > *,
-.mssc-panel > *,
-.mada-panel > *,
-.mada-sheet > *,
-.profile-sheet > *,
-.friends-modal > *,
-.admin-modal > *{color:#1c1e21;}
-/* Explicit dark-theme descendants */
-body.dark .modal-card *,
-body.dark .mada-social-modal *,
-body.dark .mada-social-center *,
-body.dark .mada-friends-modal *,
-body.dark .mada-admin-modal *,
-body.dark .mssc-modal *,
-body.dark .mssc-panel *,
-body.dark .mada-panel *{color:#1c1e21!important;}
-/* White controls in all light-restored overlays */
-.modal-card input,
-.modal-card textarea,
-.modal-card select,
-.mada-social-center input,
-.mada-social-center textarea,
-.mada-social-center select,
-.mssc-modal input,
-.mssc-modal textarea,
-.mssc-modal select{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important;}
-/* Keep media/video canvases intentionally black; this file only fixes UI surfaces. */
+/* Mada Light Surfaces v2 — force white UI surfaces for profile, friends and admin */
+:root{--mada-bg:#f0f2f5!important;--mada-card:#fff!important;--mada-text:#1c1e21!important;--mada-muted:#65676b!important;--mada-border:#e4e6eb!important}
+html,body,#app{background:#f0f2f5!important;color:#1c1e21!important}
+body.dark,body.dark #app{background:#f0f2f5!important;color:#1c1e21!important}
+body.dark .topbar,body.dark .bottom-nav,body.dark .card,body.dark .stories,body.dark .composer,body.dark .quick-grid,body.dark .premium-banner{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important}
+#modal{background:rgba(244,246,249,.94)!important;color:#1c1e21!important}
+#modal .modal-card,#modal .modal-card[style]{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important}
+#modal .modal-card h2{background:#fff!important;color:#1c1e21!important}
+#modal .profile-page,#modal .profile-main,#modal .profile-content,#modal .profile-tabs,#modal .profile-posts,#modal .profile-photos{background:#fff!important;color:#1c1e21!important}
+#modal .inline-admin,#modal .admin-inline-content,#modal .mssc-search,#modal .mssc-tabs,#modal .mssc-results,#modal .mssc-notifs,#modal .mssc-chat,#modal .mssc-compose,#modal #msscFriendPanel{background:#fff!important;color:#1c1e21!important}
+#modal .inline-admin .card,#modal .inline-admin-content .card,#modal .stat-card{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important}
+#modal .mssc-user,#modal .mssc-empty,#modal .mssc-notif,#modal .mssc-convo{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important}
+#modal .mssc-tabs button,#modal .admin-inline-nav button{background:#f1f4f8!important;color:#1c1e21!important;border-color:#e4e6eb!important}
+#modal input,#modal textarea,#modal select{background:#fff!important;color:#1c1e21!important;border-color:#e4e6eb!important}
+body.dark #modal,body.dark #modal .modal-card,body.dark #modal .profile-page,body.dark #modal .profile-main,body.dark #modal .profile-content,body.dark #modal .profile-tabs,body.dark #modal .inline-admin,body.dark #modal .admin-inline-content,body.dark #modal .mssc-search,body.dark #modal .mssc-tabs,body.dark #modal .mssc-results,body.dark #modal .mssc-notifs,body.dark #modal .mssc-chat,body.dark #modal .mssc-compose,body.dark #modal .mssc-user,body.dark #modal .mssc-empty,body.dark #modal .mssc-notif{background:#fff!important;color:#1c1e21!important}
+/* Preserve intentional black media stages. */
