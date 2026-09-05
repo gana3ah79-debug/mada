@@ -1,0 +1,13 @@
+/* Mada homepage header v2 — visual-only, safe drop-in. */
+.topbar{position:sticky;top:0;z-index:150;min-height:64px;height:64px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(30,45,70,.08);box-shadow:0 4px 18px rgba(20,35,60,.07)}
+.topbar>#menuBtn{order:3;flex:0 0 42px;width:42px;height:42px;border:0;border-radius:14px;background:#f2f5f8;color:#182338;font-size:24px;font-weight:900;display:grid;place-items:center;transition:transform .18s ease,background .18s ease}
+.topbar>#menuBtn:active{transform:scale(.94)}
+.topbar>.top-actions{order:1;display:flex;align-items:center;gap:6px}
+.topbar>.mada-wordmark{order:2;z-index:2;pointer-events:none;font-weight:900;letter-spacing:1.5px;font-size:27px;line-height:1}
+.topbar .icon-btn,.topbar .legacy-control{width:42px;height:42px;min-width:42px;padding:0;border:0;border-radius:14px;background:#f2f5f8;color:#182338;display:grid;place-items:center;font-size:21px;transition:transform .18s ease,background .18s ease}
+.topbar .icon-btn:active,.topbar .legacy-control:active{transform:scale(.93)}
+.topbar .icon-btn:hover,.topbar .legacy-control:hover{background:#e9eef4}
+.topbar #themeBtn,.topbar #premiumBtn{display:none}
+.bottom-nav{z-index:120}
+@media(max-width:520px){.topbar{min-height:60px;height:60px;padding:0 10px}.topbar>#menuBtn{width:40px;height:40px;min-width:40px;border-radius:13px}.topbar .icon-btn,.topbar .legacy-control{width:40px;height:40px;min-width:40px;border-radius:13px;font-size:20px}.topbar>.mada-wordmark{font-size:25px}.topbar>.top-actions{gap:5px}}
+@media(min-width:521px){.topbar #themeBtn{display:grid}.topbar #premiumBtn{display:grid}}
