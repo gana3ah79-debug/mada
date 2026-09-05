@@ -1,0 +1,24 @@
+/* Mada phase 4 - modern posts, reactions and comments. CSS only; existing behavior untouched. */
+.feed{gap:14px!important}
+.feed>.card,.feed .post,.feed .post-card{border-radius:22px!important;overflow:hidden!important;transition:transform .18s ease,box-shadow .18s ease!important}
+.feed .post:hover,.feed .post-card:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(15,23,42,.10),inset 0 1px 0 rgba(255,255,255,.9)!important}
+.feed .post-header,.feed .post-card .post-header{padding:15px 16px 9px!important;min-height:54px}
+.feed .post-header img,.feed .post-card .post-header img,.feed .post-avatar{width:48px!important;height:48px!important;border:2px solid #fff!important}
+.feed .post-body,.feed .post-content,.feed .post-text{padding:9px 16px 13px!important;font-size:15px!important;line-height:1.95!important;color:#172033}
+.feed .post-media,.feed .post-image,.feed .post-video{max-height:620px!important}
+.feed .post-actions{position:relative;grid-template-columns:repeat(3,1fr)!important;gap:5px!important;padding:8px 10px 10px!important;margin:0!important;border-top:1px solid rgba(148,163,184,.16)!important}
+.feed .post-actions button{min-height:46px!important;border-radius:14px!important;font-size:13px!important;color:#475467!important}
+.feed .post-actions button:hover{background:rgba(239,246,255,.9)!important;color:#2563eb!important}
+.feed .post-actions button:active{transform:scale(.95)!important}
+.feed .post-actions .action-icon{font-size:20px!important}
+.feed .comments,.feed .comment-list{padding:5px 13px 13px!important}
+.feed .comment-item,.feed .comment{display:block;border-radius:16px!important;background:rgba(241,245,249,.76)!important;margin:7px 0!important;padding:9px 11px!important;border:1px solid rgba(148,163,184,.10)!important;line-height:1.65}
+.feed .comment-input,.feed textarea{min-height:42px!important;padding:9px 12px!important;border-radius:20px!important;background:#f8fafc!important;outline:none!important}
+.feed .comment-input:focus,.feed textarea:focus{border-color:rgba(37,99,235,.30)!important;box-shadow:0 0 0 3px rgba(37,99,235,.07)!important}
+.feed [data-reaction]{transition:transform .15s ease,background .15s ease!important}
+.feed [data-reaction]:active{transform:scale(.94)!important}
+.feed .reaction-picker{border-radius:18px!important;box-shadow:0 18px 45px rgba(15,23,42,.18)!important;border:1px solid rgba(148,163,184,.16)!important;backdrop-filter:blur(16px)}
+@media(max-width:600px){.feed{gap:11px!important}.feed>.card,.feed .post,.feed .post-card{border-radius:18px!important}.feed .post-header{padding:12px 13px 8px!important}.feed .post-header img,.feed .post-card .post-header img,.feed .post-avatar{width:44px!important;height:44px!important}.feed .post-body,.feed .post-content,.feed .post-text{padding:8px 13px 11px!important;font-size:14px!important}.feed .post-media,.feed .post-image,.feed .post-video{max-height:560px!important}.feed .post-actions{padding:7px 7px 8px!important}.feed .post-actions button{min-height:42px!important;border-radius:12px!important;font-size:12px!important}.feed .comments,.feed .comment-list{padding:4px 9px 10px!important}}
+body.dark .feed .post-body,body.dark .feed .post-content,body.dark .feed .post-text{color:#e6edf7!important}
+body.dark .feed .comment-item,body.dark .feed .comment{background:rgba(30,45,70,.66)!important;border-color:rgba(100,116,139,.20)!important}
+body.dark .feed .comment-input,body.dark .feed textarea{background:#162238!important;color:#e6edf7!important;border-color:rgba(100,116,139,.25)!important}
