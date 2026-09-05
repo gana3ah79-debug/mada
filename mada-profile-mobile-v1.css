@@ -1,0 +1,53 @@
+/* Mada - item 7: mobile-first profile layout, tuned to the existing bottom navigation. */
+.mada-safe-profile-shell{width:100%;max-width:720px;margin:0 auto;border-radius:20px;overflow:hidden;box-sizing:border-box}
+.mada-safe-profile-shell *{box-sizing:border-box}
+.mada-safe-profile-shell .mada-safe-main{padding-inline:18px}
+.mada-safe-profile-shell .mada-safe-tabs{position:sticky;top:0;z-index:20;background:inherit}
+@media(max-width:600px){
+  #modal .modal-card{width:100%!important;max-width:none!important;margin:0!important;border-radius:0!important;min-height:100dvh;max-height:100dvh;padding-bottom:82px!important}
+  #modal .modal-card>.close{position:sticky;top:8px;z-index:40;float:right;margin:8px 8px 0 0}
+  #modal .modal-card>h2{padding:10px 52px 4px 14px;margin:0;font-size:18px}
+  #modal #modalBody{clear:both;padding:0 0 12px}
+  .mada-safe-profile-shell{width:100%;max-width:none;border-radius:0;min-height:100%;background:var(--card-bg,#fff)}
+  .mada-safe-cover{height:150px}
+  .mada-safe-main{padding:0 12px 12px!important}
+  .mada-safe-avatar{width:96px;height:96px;margin:-48px 0 8px auto;border-width:4px;font-size:34px}
+  .mada-safe-main h2{font-size:21px;line-height:1.3}
+  .mada-safe-username,.mada-safe-meta{font-size:12px}
+  .mada-safe-bio{font-size:13px;line-height:1.7;margin:7px 0}
+  .mada-safe-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}
+  .mada-safe-actions button{width:100%;min-height:44px!important;padding:8px 6px!important;font-size:12px}
+  .mada-safe-stats{margin-inline:-12px}
+  .mada-safe-stats button{padding:10px 3px;min-height:58px}
+  .mada-safe-stats b{font-size:17px}
+  .mada-safe-tabs{margin-inline:0;overflow-x:auto;scrollbar-width:none;border-top:1px solid #edf0f4}
+  .mada-safe-tabs::-webkit-scrollbar{display:none}
+  .mada-safe-tabs button{flex:0 0 auto;min-width:25%;min-height:46px;padding:10px 8px;font-size:12px}
+  .mada-safe-box,.mada-profile-panel{padding:8px!important}
+  .mada-safe-about{margin:8px 0;border-radius:13px}
+  .mada-safe-about-head{padding:11px 12px;font-size:13px}
+  .mada-safe-about-body{padding:0 12px 12px;font-size:13px}
+  .mada-safe-post{margin-bottom:8px;border-radius:13px;padding:10px}
+  .mada-safe-post .post-head{gap:7px}
+  .mada-safe-post .post-avatar{width:38px;height:38px}
+  .mada-safe-post .post-actions{gap:2px}
+  .mada-safe-post .post-actions button{min-height:40px;padding:8px 2px;font-size:12px}
+  .mada-safe-post img.post-image{max-height:62vh;border-radius:10px}
+  .mada-safe-comment.reply{margin-right:14px}
+  .mada-comment-compose{position:sticky;bottom:68px;z-index:15;background:inherit;padding:7px 0}
+  .mada-comment-compose input{min-height:42px;font-size:13px}
+  .mada-comment-compose button{min-height:42px}
+  .mada-reaction-picker{position:fixed;left:10px;right:10px;bottom:78px;justify-content:space-around;z-index:500}
+  .mada-reaction-picker button{font-size:24px;padding:7px 9px}
+  .mada-post-menu{position:fixed;left:10px;right:10px;top:auto;bottom:78px;z-index:500;min-width:0}
+  .mada-post-menu button{padding:12px;font-size:13px}
+  .mada-profile-friends{grid-template-columns:1fr!important}
+  .mada-friend-card{min-height:58px}
+  .mada-reels-grid{gap:4px}
+  .mada-reel-card{border-radius:10px}
+  .bottom-nav{z-index:900!important}
+}
+@media(min-width:601px){
+  .mada-safe-profile-shell{margin-bottom:12px}
+}
+body.dark .mada-safe-profile-shell{--card-bg:#111d31}
