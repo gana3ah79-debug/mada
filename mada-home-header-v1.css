@@ -1,0 +1,9 @@
+/* Mada homepage header v1: visual-only, no global event handlers. */
+.topbar{position:sticky;top:0;z-index:150;min-height:66px;padding:0 14px;background:rgba(255,255,255,.98);box-shadow:0 5px 18px rgba(24,40,72,.08)}
+.topbar>#menuBtn{order:3;flex:0 0 46px;width:46px;height:46px;border-radius:15px;background:#f1f4f8;color:#1f2b3d;font-size:28px;font-weight:900;display:grid;place-items:center}
+.topbar>.top-actions{order:1;display:flex;align-items:center;gap:7px}
+.topbar>.mada-wordmark{order:2;z-index:2;pointer-events:none}
+.topbar .icon-btn{width:44px;height:44px;border-radius:15px;font-size:23px}
+#menuBottom{display:none!important}
+.bottom-nav{z-index:120}
+@media(max-width:520px){.topbar{min-height:62px;height:62px;padding:0 12px}.topbar>#menuBtn{width:44px;height:44px;font-size:27px}.topbar .icon-btn{width:42px;height:42px}.topbar>.mada-wordmark{font-size:28px}}
