@@ -1,0 +1,1 @@
+.mada-comment-pending{opacity:.65;transition:opacity .2s}.mada-comment-pending small{margin-inline-start:8px;font-size:11px}.mada-comment-sent{animation:madaCommentIn .22s ease-out}@keyframes madaCommentIn{from{opacity:.35;transform:translateY(4px)}to{opacity:1;transform:none}}.dark .mada-comment-pending{opacity:.6}
