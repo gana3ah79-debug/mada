@@ -7,4 +7,5 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   function load(src,attr){if(document.querySelector('script['+attr+']'))return;const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.async=false;document.head.appendChild(s)}
   load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
   load('mada-reels-creator-v1.js?v20260906-1','data-mada-reels-creator');
+  load('mada-reels-interactions-v1.js?v20260906-1','data-mada-reels-interactions');
 })();
