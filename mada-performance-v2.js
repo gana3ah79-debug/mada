@@ -1,45 +1,35 @@
-/* Mada Performance v2 — lazy media, delegated feed events, no duplicate handlers, auth-safe */
+/* Mada Performance v2 — feed pagination, lazy media, delegated events, auth-safe */
 (function(){'use strict';
+  const sb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
   const feed=()=>document.getElementById('feed');
+  const me=()=>window.madaUser?.()||window.user;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const initials=n=>(n||'م').trim().charAt(0);
   const isVideo=u=>/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u||'');
+  const S={page:0,size:10,loading:false,done:false,token:0};
   let boundFeed=null,observer=null;
+  function media(url){if(!url)return '';return isVideo(url)?`<video class="post-video" controls playsinline preload="none" data-src="${esc(url)}" loading="lazy"></video>`:`<img class="post-image" src="${esc(url)}" alt="صورة المنشور" loading="lazy" decoding="async">`}
+  function renderPost(p,pm,likes,comments,shares,u){
+    const ls=likes.filter(x=>x.post_id===p.id),cs=comments.filter(x=>x.post_id===p.id),a=pm.get(p.author_id)||{},liked=ls.some(x=>x.user_id===u.id),el=document.createElement('article');
+    el.className='card post';el.id='post-'+p.id;
+    el.innerHTML=`<div class="post-head"><button class="avatar" data-profile="${p.author_id}">${a.avatar_url?`<img src="${esc(a.avatar_url)}" loading="lazy" decoding="async">`:initials(a.display_name)}</button><div><button class="post-name profile-link" data-profile="${p.author_id}">${esc(a.display_name||'مستخدم Mada')}</button><div class="post-time">${new Date(p.created_at).toLocaleString('ar-EG')}</div></div></div><div class="post-text">${esc(p.body||'')}</div>${media(p.media_url)}<div class="post-meta"><span>👍 ${ls.length}</span><button class="meta-link" data-comments-open="${p.id}">${cs.length} تعليق</button><span>↗ ${shares.get(p.id)||0} مشاركة</span></div><div class="post-actions"><button class="like ${liked?'liked':''}" data-id="${p.id}" data-liked="${liked}">${liked?'💙':'👍'} أعجبني</button><button class="comment-toggle" data-comment-toggle="${p.id}">💬 تعليق</button><button class="share" data-id="${p.id}">↗️ مشاركة</button></div><div class="comments" data-comments="${p.id}">${cs.slice(-5).map(c=>`<div class="comment"><b>مستخدم</b> ${esc(c.body)}</div>`).join('')}<div class="comment-box"><input data-comment="${p.id}" placeholder="اكتب تعليقًا…"><button data-send="${p.id}">إرسال</button></div></div>`;
+    return el;
+  }
   function lazyMedia(root){
     if(!root)return;
-    root.querySelectorAll('img').forEach(img=>{img.loading='lazy';img.decoding='async';if(!img.getAttribute('alt'))img.alt='';});
-    root.querySelectorAll('video').forEach(v=>{
-      if(v.dataset.mpvBound==='1')return;
-      v.dataset.mpvBound='1';
-      v.preload='none';
-      if(v.src){v.dataset.src=v.src;v.removeAttribute('src');v.load();}
-      if(v.dataset.src)v.addEventListener('loadeddata',()=>{v.dataset.loaded='1'},{once:true,passive:true});
-    });
-    root.querySelectorAll('img.post-image').forEach(img=>{
-      const src=img.getAttribute('src');
-      if(!isVideo(src))return;
-      const v=document.createElement('video');v.className='post-video';v.controls=true;v.playsInline=true;v.preload='none';v.dataset.src=src;v.setAttribute('aria-label','فيديو المنشور');img.replaceWith(v);
-    });
+    root.querySelectorAll('img').forEach(img=>{img.loading='lazy';img.decoding='async';if(!img.alt)img.alt='';});
+    root.querySelectorAll('video').forEach(v=>{if(v.dataset.mpvBound==='1')return;v.dataset.mpvBound='1';v.preload='none';if(v.dataset.src)observer?.observe(v);});
   }
   function loadVisibleVideo(v){if(!v)return;if(!v.src&&v.dataset.src){v.src=v.dataset.src;v.load();}return v;}
-  function delegated(e){
-    const b=e.target.closest('button');if(!b||!boundFeed?.contains(b))return;
-    const id=b.dataset.id;
-    if(b.matches('[data-comment-toggle]')){document.querySelector(`[data-comments-open="${b.dataset.commentToggle}"]`)?.click();return;}
-    if(b.classList.contains('like')&&id){const liked=b.dataset.liked==='true';b.dataset.liked=String(!liked);b.classList.toggle('liked',!liked);b.textContent=(!liked?'💙':'👍')+' أعجبني';window.madaPerfLike?.(id,!liked);return;}
-    if(b.classList.contains('share')&&id){window.madaPerfShare?.(id);return;}
-    if(b.dataset.send){window.madaPerfComment?.(b.dataset.send);return;}
-  }
-  function installDelegation(){const f=feed();if(!f||boundFeed===f)return;boundFeed=f;f.querySelectorAll('button').forEach(b=>{b.onclick=null});f.addEventListener('click',delegated,{passive:false});lazyMedia(f);}
-  function observe(){installDelegation();if(!observer){observer=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target;if(e.isIntersecting){loadVisibleVideo(v);if(v.dataset.autoplay==='1')v.play?.().catch(()=>{});}else{v.pause?.();}}),{rootMargin:'300px 0px',threshold:.01});}
-    const f=feed();f?.querySelectorAll('video[data-src]').forEach(v=>observer.observe(v));
-  }
-  function patch(){
-    if(window.__madaPerfPatched)return;window.__madaPerfPatched=true;
-    const oldLike=window.toggleLike,oldComment=window.addComment,oldShare=window.sharePost;
-    window.madaPerfLike=async(id,liked)=>{if(typeof oldLike==='function')return oldLike(id,liked);};
-    window.madaPerfComment=async id=>{if(typeof oldComment==='function')return oldComment(id);};
-    window.madaPerfShare=async id=>{if(typeof oldShare==='function')return oldShare(id);};
-  }
-  function boot(){patch();installDelegation();new MutationObserver(()=>{clearTimeout(window.__madaPerfTimer);window.__madaPerfTimer=setTimeout(observe,80)}).observe(document.body,{childList:true,subtree:true});observe();}
+  function installObserver(){if(observer)return;observer=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target;if(e.isIntersecting){loadVisibleVideo(v);}else{try{v.pause()}catch(_){}}}),{rootMargin:'250px 0px',threshold:.01});}
+  function observeVideos(){const f=feed();if(!f)return;installObserver();f.querySelectorAll('video[data-src]').forEach(v=>observer.observe(v));}
+  function moreButton(){const f=feed();if(!f)return;let b=f.querySelector('[data-feed-more]');if(S.done){b?.remove();return}if(!b){b=document.createElement('button');b.type='button';b.dataset.feedMore='1';b.className='primary wide mada-feed-more';b.textContent='تحميل المزيد';b.addEventListener('click',()=>loadFeedPage(false));f.appendChild(b);}}
+  async function loadFeedPage(reset){const f=feed(),u=me();if(!f||!u||S.loading)return;if(reset){S.page=0;S.done=false;S.token++;f.innerHTML='<div class="card empty">جاري تحميل المنشورات…</div>'}if(S.done)return;const token=S.token;S.loading=true;try{const from=S.page*S.size,to=from+S.size-1,s=sb();const r=await s.from('posts').select('id,author_id,body,media_url,visibility,created_at').eq('visibility','public').order('created_at',{ascending:false}).range(from,to);if(token!==S.token)return;if(r.error)throw r.error;const posts=r.data||[];if(!posts.length){S.done=true;if(S.page===0)f.innerHTML='<div class="card empty">لا توجد منشورات بعد. كن أول من ينشر في Mada 👋</div>';moreButton();return;}const ids=posts.map(p=>p.id),authors=[...new Set(posts.map(p=>p.author_id).filter(Boolean))];const[pr,lr,cr,sr]=await Promise.all([s.from('profiles').select('id,display_name,avatar_url').in('id',authors),s.from('post_likes').select('post_id,user_id').in('post_id',ids),s.from('comments').select('id,post_id,author_id,body,created_at').in('post_id',ids).order('created_at',{ascending:true}),s.from('post_shares').select('post_id').in('post_id',ids)]);if(token!==S.token)return;const pm=new Map((pr.data||[]).map(x=>[x.id,x])),shares=new Map();(sr.data||[]).forEach(x=>shares.set(x.post_id,(shares.get(x.post_id)||0)+1));if(S.page===0)f.innerHTML='';posts.forEach(p=>f.appendChild(renderPost(p,pm,lr.data||[],cr.data||[],shares,u)));S.page++;if(posts.length<S.size)S.done=true;moreButton();lazyMedia(f);observeVideos();}catch(e){console.error('Mada feed performance',e);if(S.page===0)f.innerHTML='<div class="card empty">تعذر تحميل المنشورات.</div>';}finally{S.loading=false;}}
+  function delegated(e){const f=boundFeed;if(!f||!f.contains(e.target))return;const b=e.target.closest('button');if(!b)return;const id=b.dataset.id;if(b.matches('[data-feed-more]'))return;if(b.classList.contains('like')&&id){e.preventDefault();const liked=b.dataset.liked==='true';b.dataset.liked=String(!liked);b.classList.toggle('liked',!liked);b.firstChild.textContent=!liked?'💙':'👍';const meta=b.closest('.post')?.querySelector('.post-meta span');if(meta)meta.textContent='👍 '+Math.max(0,parseInt(meta.textContent.replace(/\D/g,''),10)+(liked?-1:1));window.madaPerfLike?.(id,!liked);return;}if(b.dataset.send){e.preventDefault();window.madaPerfComment?.(b.dataset.send);return;}if(b.matches('[data-comment-toggle]')){e.preventDefault();document.querySelector(`[data-comments-open="${b.dataset.commentToggle}"]`)?.click();return;}if(b.classList.contains('share')&&id){e.preventDefault();window.madaPerfShare?.(id);return;}}
+  function installDelegation(){const f=feed();if(!f||boundFeed===f)return;boundFeed=f;f.addEventListener('click',delegated,false);}
+  function patchActions(){if(window.__madaPerfPatched)return;window.__madaPerfPatched=true;const oldLike=window.toggleLike,oldComment=window.addComment,oldShare=window.sharePost;window.madaPerfLike=async(id,liked)=>{if(typeof oldLike==='function')return oldLike(id,liked);};window.madaPerfComment=async id=>{if(typeof oldComment==='function')return oldComment(id);};window.madaPerfShare=async id=>{if(typeof oldShare==='function')return oldShare(id);};}
+  function css(){if(document.getElementById('mpv2-style'))return;const s=document.createElement('style');s.id='mpv2-style';s.textContent='.mada-feed-more{display:block;margin:8px auto 18px;max-width:220px}.feed .post-image,.feed .post-video{display:block;width:100%;max-height:620px;object-fit:cover;background:#eef2f7}.feed .post-head .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}@media(max-width:600px){.feed .post-image,.feed .post-video{max-height:560px}}';document.head.appendChild(s);}
+  function boot(){patchActions();css();installDelegation();window.madaReloadFeed=()=>loadFeedPage(true);window.loadFeed=loadFeedPage;loadFeedPage(true);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-  window.MadaPerformance={refresh:observe,lazyMedia};
+  window.MadaPerformance={refresh:()=>loadFeedPage(true),loadMore:()=>loadFeedPage(false),lazyMedia,observeVideos};
 })();
