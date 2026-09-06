@@ -72,7 +72,15 @@ public class MainActivity extends Activity {
 
     @Override protected void onResume() {
         super.onResume();
+        startBuzzServiceFromSavedSession();
         if (web != null) web.postDelayed(this::syncSession, 1000);
+    }
+
+    void startBuzzServiceFromSavedSession() {
+        String access = sp.getString("access", "");
+        String uid = sp.getString("uid", "");
+        if (access.isEmpty() || uid.isEmpty()) return;
+        startBuzzService();
     }
 
     void syncSession() {
