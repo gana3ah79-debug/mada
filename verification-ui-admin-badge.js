@@ -1,0 +1,9 @@
+(function(){
+'use strict';
+const sb=()=>window.MADA_SUPABASE_CLIENT||window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
+const cache=new Map();
+function adminBadge(p){if(p?.role!=='admin'||p?.is_banned)return '';return '<span class="mada-verified-badge admin" role="img" aria-label="حساب إداري موثق" title="حساب إداري موثق"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.4l2.05 1.2 2.36-.08 1.2 2.05 2.05 1.2-.08 2.36L20.8 11l.08 2.36-2.05 1.2-1.2 2.05-2.36-.08L12 17.6l-2.05-1.07-2.36.08-1.2-2.05-2.05-1.2L4.4 11l-.08-2.36 2.05-1.2 1.2-2.05 2.36.08L12 2.4z"/><path class="check" d="M8 11.8l2.45 2.45L16.5 8.2"/></svg></span>'}
+function id(el){return ['data-profile-id','data-user-id','data-author-id','data-profile','data-user','data-author','data-sender-id'].map(a=>el.getAttribute?.(a)).find(Boolean)}
+async function run(root=document){const els=[...document.querySelectorAll('.post-name,.comment b,.reply b,.user-info b,.conversation-list .user-info b,.message-author,.notification-user,.profile-name,[data-profile-id],[data-user-id],[data-author-id],[data-profile]')];const ids=[...new Set(els.map(id).filter(Boolean))].filter(x=>!cache.has(x));if(ids.length){const r=await sb().from('profiles').select('id,role,is_banned').in('id',ids);(r.data||[]).forEach(p=>cache.set(p.id,p))}els.forEach(el=>{const p=cache.get(id(el));el.querySelectorAll(':scope > .mada-verified-badge.admin').forEach(x=>x.remove());const b=adminBadge(p);if(b)el.insertAdjacentHTML('beforeend',b)});}
+window.MadaAdminBadge={refresh:()=>{cache.clear();return run(document)}};run(document);new MutationObserver(()=>run(document)).observe(document.body,{childList:true,subtree:true});
+})();
