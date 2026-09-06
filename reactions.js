@@ -29,7 +29,20 @@
     if(r.error){btn.innerHTML=oldHtml;btn.dataset.liked=String(oldLiked);if(oldType)btn.dataset.reactionType=oldType;else delete btn.dataset.reactionType;btn.classList.toggle('liked',oldLiked);alert('تعذر حفظ التفاعل: '+r.error.message);return}
     if(window.MadaPostLayout?.refresh) setTimeout(()=>window.MadaPostLayout.refresh(document.getElementById('post-'+postId)),0);
   }
-  function show(btn){const id=btn.dataset.id;if(!id)return;closeAll(id);if(!btn.parentElement.querySelector(`[data-picker="${id}"]`))btn.insertAdjacentHTML('afterend',picker(id));openId=id}
+  function show(btn){
+    const id=btn.dataset.id;if(!id)return;
+    closeAll(id);
+    if(btn.parentElement.querySelector(`[data-picker="${id}"]`))return;
+    btn.insertAdjacentHTML('afterend',picker(id));
+    const pop=btn.parentElement.querySelector(`[data-picker="${id}"]`);if(!pop)return;
+    const r=btn.getBoundingClientRect(),w=pop.getBoundingClientRect();
+    let left=r.left+r.width/2-w.width/2;
+    left=Math.max(8,Math.min(left,innerWidth-w.width-8));
+    let top=r.top-w.height-10;
+    if(top<8)top=r.bottom+10;
+    pop.style.left=left+'px';pop.style.top=top+'px';pop.classList.add('mada-reaction-picker-fixed');
+    openId=id;
+  }
   function addPickers(){
     document.querySelectorAll('.post-actions .like[data-id]').forEach(btn=>{
       if(btn.dataset.reactionReady)return;btn.dataset.reactionReady='1';
@@ -43,6 +56,8 @@
   }
   const observer=new MutationObserver(addPickers);
   document.addEventListener('click',async e=>{const b=e.target.closest('[data-reaction]');if(b){e.preventDefault();e.stopPropagation();await saveReaction(b.closest('[data-picker]').dataset.picker,b.dataset.reaction);return}if(!e.target.closest('.mada-reaction-picker')&&!e.target.closest('.post-actions .like'))closeAll()},true);
+  document.addEventListener('scroll',()=>{if(openId){const b=button(openId);if(b){const p=document.querySelector(`[data-picker="${openId}"]`);if(p){const r=b.getBoundingClientRect(),w=p.getBoundingClientRect();let left=r.left+r.width/2-w.width/2;left=Math.max(8,Math.min(left,innerWidth-w.width-8));let top=r.top-w.height-10;if(top<8)top=r.bottom+10;p.style.left=left+'px';p.style.top=top+'px'}}}},true);
+  window.addEventListener('resize',()=>{if(openId){const b=button(openId),p=document.querySelector(`[data-picker="${openId}"]`);if(b&&p){const r=b.getBoundingClientRect(),w=p.getBoundingClientRect();let left=r.left+r.width/2-w.width/2;left=Math.max(8,Math.min(left,innerWidth-w.width-8));let top=r.top-w.height-10;if(top<8)top=r.bottom+10;p.style.left=left+'px';p.style.top=top+'px'}}});
   function boot(){const feed=document.getElementById('feed');if(feed)observer.observe(feed,{childList:true,subtree:true});addPickers()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
   window.MadaReactions={addPickers,saveReaction,REACTIONS};
