@@ -1,0 +1,23 @@
+/* Mada post menu — force clean white background */
+#feed article.post .mada-post-menu{
+  background:#ffffff!important;
+  color:#1e293b!important;
+  border:1px solid #e2e8f0!important;
+  box-shadow:0 14px 35px rgba(15,23,42,.18)!important;
+}
+#feed article.post .mada-post-menu button{
+  background:transparent!important;
+  color:#1e293b!important;
+}
+#feed article.post .mada-post-menu button:hover{background:#f1f5f9!important}
+#feed article.post .mada-post-menu button:active{background:#e2e8f0!important}
+#feed article.post .mada-post-menu button.danger{color:#dc2626!important}
+/* Keep the menu white even when the app is in dark mode, per design request. */
+body.dark #feed article.post .mada-post-menu{
+  background:#ffffff!important;
+  color:#1e293b!important;
+  border-color:#e2e8f0!important;
+  box-shadow:0 14px 35px rgba(15,23,42,.22)!important;
+}
+body.dark #feed article.post .mada-post-menu button{color:#1e293b!important}
+body.dark #feed article.post .mada-post-menu button:hover{background:#f1f5f9!important}
