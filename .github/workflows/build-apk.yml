@@ -34,13 +34,25 @@ jobs:
       - name: Decode Mada release keystore
         env:
           MADA_KEYSTORE_BASE64: ${{ secrets.MADA_KEYSTORE_BASE64 }}
+          MADA_KEYSTORE_PASSWORD: ${{ secrets.MADA_KEYSTORE_PASSWORD }}
         run: |
           test -n "$MADA_KEYSTORE_BASE64"
-          VALUE="${MADA_KEYSTORE_BASE64#*=}"
-          VALUE="$(printf '%s' "$VALUE" | tr -d '[:space:]')"
-          printf '%s' "$VALUE" | base64 --decode --ignore-garbage > "$GITHUB_WORKSPACE/mada-release.jks"
+          python3 - <<'PY'
+          import base64, os
+          raw = os.environ['MADA_KEYSTORE_BASE64'].strip()
+          if raw.startswith('MADA_KEYSTORE_BASE64='):
+              raw = raw.split('=', 1)[1]
+          raw = ''.join(raw.split())
+          raw += '=' * (-len(raw) % 4)
+          data = base64.b64decode(raw, validate=False)
+          if not data:
+              raise SystemExit('Decoded keystore is empty')
+          path = os.path.join(os.environ['GITHUB_WORKSPACE'], 'mada-release.jks')
+          with open(path, 'wb') as f:
+              f.write(data)
+          PY
           test -s "$GITHUB_WORKSPACE/mada-release.jks"
-          keytool -list -keystore "$GITHUB_WORKSPACE/mada-release.jks" -storepass '${{ secrets.MADA_KEYSTORE_PASSWORD }}' >/dev/null
+          keytool -list -keystore "$GITHUB_WORKSPACE/mada-release.jks" -storepass "$MADA_KEYSTORE_PASSWORD" >/dev/null
 
       - name: Build signed Mada APK and AAB
         env:
