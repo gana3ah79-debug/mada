@@ -1,0 +1,1 @@
+Stable snapshot before performance cleanup.
