@@ -45,7 +45,6 @@ async function getConversation(other){
  const rpc=await sb.rpc('mada_get_or_create_direct_conversation',{p_other:other});
  if(!rpc.error&&rpc.data){const id=typeof rpc.data==='string'?rpc.data:(rpc.data.id||rpc.data.conversation_id||rpc.data[0]?.id||rpc.data[0]?.conversation_id);if(id)return id}
  if(rpc.error)console.warn('Mada conversation RPC:',rpc.error);
- // Fallback for databases where the RPC is unavailable.
  const mine=await sb.from('conversation_members').select('conversation_id').eq('user_id',user.id);
  if(mine.error)throw mine.error;
  for(const row of mine.data||[]){const x=await sb.from('conversation_members').select('conversation_id').eq('conversation_id',row.conversation_id).eq('user_id',other).maybeSingle();if(x.data?.conversation_id)return x.data.conversation_id}
@@ -57,8 +56,8 @@ async function getConversation(other){
 }
 async function open(other,name){
  if(!other||!user)return;
+ if(activeId===other&&activeCid)return;
  activeId=other;activeName=name||'مستخدم Mada';
- // Give instant visual feedback on mobile instead of waiting on the database.
  if(mobile()){$('.mada-ms-side').style.display='none';$('.mada-ms-chat').style.display='flex'}
  $('madaMsHeadName').textContent=activeName;$('madaMsHeadAvatar').textContent=ini(activeName);$('madaMsStatus').textContent='جاري فتح المحادثة…';
  document.querySelectorAll('.mada-ms-user').forEach(x=>x.classList.toggle('active',x.dataset.id===other));
@@ -81,5 +80,22 @@ async function sendBuzz(cid){const r=await sb.from('messages').insert({conversat
 function buzzEffect(){const m=document.querySelector('.mada-messenger');if(!m)return;m.classList.remove('mada-buzz-shake');void m.offsetWidth;m.classList.add('mada-buzz-shake');if(navigator.vibrate)navigator.vibrate([80,40,80,40,180])}
 async function start(){sb=S();if(!sb)return toast('محرك Supabase غير جاهز');const s=await sb.auth.getSession();user=s.data?.session?.user;if(!user)return toast('سجّل الدخول أولًا');shell();await renderList()}
 window.MadaMessenger={open:start,openFriend:open,close};
+/* Capture friend taps at the Messenger owner level. This handler is registered
+   when v1 loads, before later page scripts, so other global click handlers cannot
+   swallow the tap. It calls openFriend directly and prevents duplicate dispatch. */
+document.addEventListener('click',e=>{
+ const b=e.target&&e.target.closest?e.target.closest('.mada-ms-user'):null;
+ const list=$('madaMsList');
+ if(!b||!list||!list.contains(b))return;
+ e.preventDefault();e.stopImmediatePropagation();
+ open(b.dataset.id,b.dataset.name);
+},true);
+document.addEventListener('pointerup',e=>{
+ const b=e.target&&e.target.closest?e.target.closest('.mada-ms-user'):null;
+ const list=$('madaMsList');
+ if(!b||!list||!list.contains(b))return;
+ e.preventDefault();e.stopImmediatePropagation();
+ open(b.dataset.id,b.dataset.name);
+},true);
 document.addEventListener('click',e=>{if(e.target.closest('#msgBtn,#msgBtn2,[data-messenger-open]')){e.preventDefault();e.stopImmediatePropagation();start()}},true);
 })();
