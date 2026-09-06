@@ -1,64 +1,55 @@
-/* Mada reactions: instant Facebook-style interactions, no feed refresh/flicker. */
+/* Mada reactions: stable click + long press picker. */
 (function(){
+  'use strict';
   const REACTIONS={like:{emoji:'👍',label:'إعجاب'},love:{emoji:'❤️',label:'أحببته'},haha:{emoji:'😂',label:'هاها'},wow:{emoji:'😮',label:'واو'},sad:{emoji:'😢',label:'حزين'},angry:{emoji:'😡',label:'غاضب'}};
   let openId=null;
-  const getSb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
-  const getUser=()=>window.user||null;
-  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
-  const picker=id=>`<div class="mada-reaction-picker" data-picker="${id}" role="menu" aria-label="اختيار التفاعل"><div class="mada-reaction-title">اختر تفاعلك</div><div class="mada-reaction-list">${Object.entries(REACTIONS).map(([k,v])=>`<button type="button" class="mada-reaction" data-reaction="${k}" title="${v.label}" aria-label="${v.label}"><span>${v.emoji}</span></button>`).join('')}</div></div>`;
-  function closeAll(except){document.querySelectorAll('.mada-reaction-picker').forEach(x=>{if(!except||x.dataset.picker!==except)x.remove()});openId=except||null}
-  function button(postId){return document.getElementById('post-'+postId)?.querySelector('.post-actions .like')||null}
-  function setButton(btn,type,count){const r=REACTIONS[type]||REACTIONS.like;btn.innerHTML=`<span class="action-icon">${r.emoji}</span><span>${esc(r.label)}</span><b class="action-count">${Math.max(0,count)}</b>`;btn.dataset.reactionType=type;btn.dataset.liked='true';btn.classList.add('liked');}
-  function setUnliked(btn,count){btn.innerHTML=`<span class="action-icon">👍</span><span>إعجاب</span><b class="action-count">${Math.max(0,count)}</b>`;delete btn.dataset.reactionType;btn.dataset.liked='false';btn.classList.remove('liked')}
-  async function saveReaction(postId,type){
-    const sb=getSb(),user=getUser();
-    if(!sb||!user){alert('يرجى تسجيل الدخول أولاً');return}
-    const btn=button(postId);if(!btn)return;
-    const oldHtml=btn.innerHTML,oldType=btn.dataset.reactionType||'',oldLiked=btn.dataset.liked==='true';
-    const oldCount=parseInt(btn.querySelector('.action-count')?.textContent||'0',10)||0;
-    const existing=await sb.from('post_likes').select('post_id,user_id,reaction_type').eq('post_id',postId).eq('user_id',user.id).maybeSingle();
-    if(existing.error){alert('تعذر قراءة التفاعل: '+existing.error.message);return}
-    const was=existing.data;
-    const removing=!!was&&was.reaction_type===type;
-    const optimisticCount=removing?Math.max(0,oldCount-1):(was?oldCount:oldCount+1);
-    if(removing)setUnliked(btn,optimisticCount);else setButton(btn,type,optimisticCount);
-    closeAll();
+  const sb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
+  const user=()=>window.user||null;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  function getButton(id){return document.querySelector('#post-'+CSS.escape(String(id))+' .post-actions .like[data-id]')}
+  function picker(id){return '<div class="mada-reaction-picker" data-picker="'+esc(id)+'" role="menu"><div class="mada-reaction-title">اختر تفاعلك</div><div class="mada-reaction-list">'+Object.entries(REACTIONS).map(([k,v])=>'<button type="button" class="mada-reaction" data-reaction="'+k+'" aria-label="'+v.label+'">'+v.emoji+'</button>').join('')+'</div></div>'}
+  function close(){document.querySelectorAll('.mada-reaction-picker').forEach(x=>x.remove());openId=null}
+  function render(btn,type,count){const r=REACTIONS[type]||REACTIONS.like;btn.innerHTML='<span class="action-icon">'+r.emoji+'</span><span>'+esc(r.label)+'</span><b class="action-count">'+Math.max(0,count)+'</b>';btn.dataset.reactionType=type;btn.dataset.liked='true';btn.classList.add('liked')}
+  function unrender(btn,count){btn.innerHTML='<span class="action-icon">👍</span><span>إعجاب</span><b class="action-count">'+Math.max(0,count)+'</b>';delete btn.dataset.reactionType;btn.dataset.liked='false';btn.classList.remove('liked')}
+  async function save(id,type){
+    const client=sb(),me=user(),btn=getButton(id);
+    if(!client||!me||!btn){if(!me) alert('يرجى تسجيل الدخول أولاً');return}
+    const before=btn.innerHTML, beforeLiked=btn.dataset.liked==='true', beforeType=btn.dataset.reactionType||'';
+    const count=parseInt(btn.querySelector('.action-count')?.textContent||'0',10)||0;
+    const q=await client.from('post_likes').select('post_id,user_id,reaction_type').eq('post_id',id).eq('user_id',me.id).maybeSingle();
+    if(q.error){alert('تعذر قراءة التفاعل: '+q.error.message);return}
+    const old=q.data;
+    const remove=!!old&&old.reaction_type===type;
+    const nextCount=remove?Math.max(0,count-1):(old?count:count+1);
+    if(remove)unrender(btn,nextCount);else render(btn,type,nextCount);
+    close();
     let r;
-    if(was){r=removing?await sb.from('post_likes').delete().eq('post_id',postId).eq('user_id',user.id):await sb.from('post_likes').update({reaction_type:type}).eq('post_id',postId).eq('user_id',user.id)}
-    else r=await sb.from('post_likes').insert({post_id:postId,user_id:user.id,reaction_type:type});
-    if(r.error){btn.innerHTML=oldHtml;btn.dataset.liked=String(oldLiked);if(oldType)btn.dataset.reactionType=oldType;else delete btn.dataset.reactionType;btn.classList.toggle('liked',oldLiked);alert('تعذر حفظ التفاعل: '+r.error.message);return}
-    if(window.MadaPostLayout?.refresh) setTimeout(()=>window.MadaPostLayout.refresh(document.getElementById('post-'+postId)),0);
+    if(old) r=remove?await client.from('post_likes').delete().eq('post_id',id).eq('user_id',me.id):await client.from('post_likes').update({reaction_type:type}).eq('post_id',id).eq('user_id',me.id);
+    else r=await client.from('post_likes').insert({post_id:id,user_id:me.id,reaction_type:type});
+    if(r.error){btn.innerHTML=before;btn.dataset.liked=String(beforeLiked);if(beforeType)btn.dataset.reactionType=beforeType;else delete btn.dataset.reactionType;btn.classList.toggle('liked',beforeLiked);alert('تعذر حفظ التفاعل: '+r.error.message);}
   }
   function show(btn){
     const id=btn.dataset.id;if(!id)return;
-    closeAll(id);
-    if(btn.parentElement.querySelector(`[data-picker="${id}"]`))return;
-    btn.insertAdjacentHTML('afterend',picker(id));
-    const pop=btn.parentElement.querySelector(`[data-picker="${id}"]`);if(!pop)return;
-    const r=btn.getBoundingClientRect(),w=pop.getBoundingClientRect();
-    let left=r.left+r.width/2-w.width/2;
-    left=Math.max(8,Math.min(left,innerWidth-w.width-8));
-    let top=r.top-w.height-10;
-    if(top<8)top=r.bottom+10;
-    pop.style.left=left+'px';pop.style.top=top+'px';pop.classList.add('mada-reaction-picker-fixed');
+    close();btn.insertAdjacentHTML('afterend',picker(id));
+    const p=btn.parentElement.querySelector('[data-picker="'+CSS.escape(String(id))+'"]');if(!p)return;
+    const r=btn.getBoundingClientRect(),w=p.getBoundingClientRect();
+    p.style.position='fixed';p.style.left=Math.max(8,Math.min(r.left+r.width/2-w.width/2,innerWidth-w.width-8))+'px';p.style.top=Math.max(8,r.top-w.height-10)+'px';
     openId=id;
   }
-  function addPickers(){
-    document.querySelectorAll('.post-actions .like[data-id]').forEach(btn=>{
-      if(btn.dataset.reactionReady)return;btn.dataset.reactionReady='1';
-      let timer=null,longPress=false;
-      btn.addEventListener('click',e=>{if(longPress){e.preventDefault();e.stopPropagation();longPress=false;return}e.preventDefault();e.stopPropagation();saveReaction(btn.dataset.id,'like')},true);
-      btn.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();show(btn)},true);
-      btn.addEventListener('touchstart',()=>{longPress=false;timer=setTimeout(()=>{longPress=true;show(btn)},500)},{passive:true});
-      btn.addEventListener('touchend',()=>{clearTimeout(timer)},{passive:true});
-      btn.addEventListener('touchmove',()=>{clearTimeout(timer)},{passive:true});
-    });
-  }
-  const observer=new MutationObserver(addPickers);
-  document.addEventListener('click',async e=>{const b=e.target.closest('[data-reaction]');if(b){e.preventDefault();e.stopPropagation();await saveReaction(b.closest('[data-picker]').dataset.picker,b.dataset.reaction);return}if(!e.target.closest('.mada-reaction-picker')&&!e.target.closest('.post-actions .like'))closeAll()},true);
-  document.addEventListener('scroll',()=>{if(openId){const b=button(openId);if(b){const p=document.querySelector(`[data-picker="${openId}"]`);if(p){const r=b.getBoundingClientRect(),w=p.getBoundingClientRect();let left=r.left+r.width/2-w.width/2;left=Math.max(8,Math.min(left,innerWidth-w.width-8));let top=r.top-w.height-10;if(top<8)top=r.bottom+10;p.style.left=left+'px';p.style.top=top+'px'}}}},true);
-  window.addEventListener('resize',()=>{if(openId){const b=button(openId),p=document.querySelector(`[data-picker="${openId}"]`);if(b&&p){const r=b.getBoundingClientRect(),w=p.getBoundingClientRect();let left=r.left+r.width/2-w.width/2;left=Math.max(8,Math.min(left,innerWidth-w.width-8));let top=r.top-w.height-10;if(top<8)top=r.bottom+10;p.style.left=left+'px';p.style.top=top+'px'}}});
-  function boot(){const feed=document.getElementById('feed');if(feed)observer.observe(feed,{childList:true,subtree:true});addPickers()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-  window.MadaReactions={addPickers,saveReaction,REACTIONS};
+  function bind(){document.querySelectorAll('.post-actions .like[data-id]').forEach(btn=>{
+    if(btn.dataset.madaReactionBound==='1')return;
+    btn.dataset.madaReactionBound='1';
+    let timer=null,long=false;
+    btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(long){long=false;return}save(btn.dataset.id,'like')},true);
+    btn.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();show(btn)},true);
+    btn.addEventListener('touchstart',()=>{long=false;timer=setTimeout(()=>{long=true;show(btn)},450)},{passive:true});
+    btn.addEventListener('touchend',()=>clearTimeout(timer),{passive:true});
+    btn.addEventListener('touchcancel',()=>clearTimeout(timer),{passive:true});
+    btn.addEventListener('touchmove',()=>clearTimeout(timer),{passive:true});
+  })}
+  document.addEventListener('click',e=>{const b=e.target.closest('.mada-reaction');if(b){e.preventDefault();e.stopPropagation();const p=b.closest('[data-picker]');if(p)save(p.dataset.picker,b.dataset.reaction);return}if(!e.target.closest('.mada-reaction-picker'))close()},true);
+  const obs=new MutationObserver(bind);
+  function boot(){const feed=document.getElementById('feed');if(feed)obs.observe(feed,{childList:true,subtree:true});bind()}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  window.MadaReactions={bind,save,REACTIONS};
 })();
