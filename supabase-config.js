@@ -18,7 +18,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-reels-side-actions-v1.js?v20260906-1','data-mada-reels-side-actions');
   load('mada-reels-reaction-dock-v1.js?v20260906-2','data-mada-reels-reaction-dock');
   load('mada-reels-fullscreen-v1.js?v20260906-3','data-mada-reels-fullscreen');
-  load('mada-reels-comments-v1.js?v20260906-3','data-mada-reels-comments');
+  load('mada-reels-comments-v1.js?v20260906-3','data-mada-comments');
   load('mada-reels-polish-v1.js?v20260906-1','data-mada-reels-polish');
   load('mada-reels-follow-stats-v1.js?v20260906-1','data-mada-reels-follow-stats');
   load('mada-reels-performance-v1.js?v20260906-1','data-mada-reels-performance');
@@ -34,7 +34,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-messenger-v1.js?v20260906-12','data-mada-messenger-v1');
   load('mada-messenger-media-v1.js?v20260906-2','data-mada-messenger-media-v1');
   load('mada-messenger-status-v1.js?v20260906-2','data-mada-messenger-status-v1');
-  load('mada-buzz-popup-v1.js?v20260906-2','data-mada-buzz-popup-v1');
+  load('mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1');
   load('mada-push-v3.js?v20260906-1','data-mada-push-v3');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
 })();
