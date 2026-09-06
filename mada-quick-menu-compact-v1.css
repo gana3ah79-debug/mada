@@ -1,0 +1,48 @@
+/* Mada compact quick menu v1 — keep shortcuts in one row and remove wasted vertical space. */
+.quick-grid{
+  display:grid !important;
+  grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+  gap:6px !important;
+  padding:6px !important;
+  margin:0 0 10px !important;
+  min-height:0 !important;
+  height:auto !important;
+  align-items:stretch !important;
+  direction:ltr !important;
+}
+.quick-grid button{
+  min-width:0 !important;
+  width:100% !important;
+  height:72px !important;
+  min-height:72px !important;
+  padding:7px 3px !important;
+  margin:0 !important;
+  border:0 !important;
+  border-radius:14px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:3px !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  direction:rtl !important;
+  font-size:11px !important;
+  line-height:1.15 !important;
+}
+.quick-grid button span{
+  display:block !important;
+  margin:0 !important;
+  font-size:25px !important;
+  line-height:1 !important;
+  height:28px !important;
+}
+.quick-grid button b{font-size:11px;line-height:1.15;}
+.quick-grid .admin-home-btn{background:#f4f8ff !important;color:#29415f !important;}
+@media(max-width:520px){
+  .quick-grid{gap:4px !important;padding:4px !important;margin-bottom:8px !important;}
+  .quick-grid button{height:68px !important;min-height:68px !important;border-radius:12px !important;padding:5px 2px !important;font-size:10px !important;}
+  .quick-grid button span{font-size:22px !important;height:25px !important;}
+  .quick-grid button b{font-size:10px;}
+}
+@media(prefers-reduced-motion:reduce){.quick-grid button{transition:none !important;}}
