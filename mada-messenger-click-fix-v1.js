@@ -1,11 +1,11 @@
-/* Mada Messenger click fix v1 — reliable mobile friend-row activation */
+/* Mada Messenger click fix v2 — reliable mobile friend-row activation */
 (function(){'use strict';
-if(window.__MADA_MESSENGER_CLICK_FIX_V1)return;window.__MADA_MESSENGER_CLICK_FIX_V1=true;
+if(window.__MADA_MESSENGER_CLICK_FIX_V2)return;window.__MADA_MESSENGER_CLICK_FIX_V2=true;
 function bind(root){
   const rows=root.querySelectorAll?.('.mada-ms-user')||[];
   rows.forEach(b=>{
-    if(b.dataset.clickFix==='1')return;
-    b.dataset.clickFix='1';
+    if(b.dataset.clickFixV2==='1')return;
+    b.dataset.clickFixV2='1';
     b.style.pointerEvents='auto';
     b.style.touchAction='manipulation';
     const run=ev=>{
@@ -15,12 +15,10 @@ function bind(root){
       const fn=b.onclick;
       if(typeof fn==='function'){
         try{fn.call(b,ev);}catch(err){console.error('Mada Messenger friend click',err);}
-      }else{
-        b.click();
       }
     };
-    b.addEventListener('pointerup',run,{passive:false});
-    b.addEventListener('touchend',run,{passive:false});
+    if(window.PointerEvent)b.addEventListener('pointerup',run,{passive:false});
+    else b.addEventListener('touchend',run,{passive:false});
   });
 }
 function boot(){
