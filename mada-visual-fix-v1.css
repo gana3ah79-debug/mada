@@ -1,0 +1,8 @@
+/* Mada visual repair: keep post text readable and admin verification inline. */
+.feed .post-text{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;direction:rtl!important;text-align:right!important;white-space:pre-wrap!important;word-break:normal!important;overflow-wrap:anywhere!important;writing-mode:horizontal-tb!important;line-height:1.9!important}
+.feed .post-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}
+.feed .post-head>div{min-width:0!important;flex:1 1 auto!important}
+.feed .post-name{display:inline-flex!important;align-items:center!important;white-space:nowrap!important;width:auto!important;max-width:100%!important}
+.mada-verified-badge.admin{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:20px!important;height:20px!important;margin-inline-start:6px!important;vertical-align:-4px!important;flex:0 0 20px!important}
+.mada-verified-badge.admin svg{width:20px!important;height:20px!important;display:block!important}
+.mada-admin-verified-target{display:inline-flex!important;align-items:center!important;width:auto!important;max-width:100%!important}
