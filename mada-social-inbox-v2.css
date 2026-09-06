@@ -1,0 +1,3 @@
+.mada-msg-new,.mada-notify-badge{animation:madaInboxPulse 1.2s ease-in-out infinite}@keyframes madaInboxPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+#msgBtn,#msgBtn2,#notifyBtn,#notifyNav,#notifyBottom{overflow:visible}
+@media(max-width:600px){.msi-head{font-size:13px}.msi-head button{font-size:11px}.mmsg-row{min-height:58px}.mmsg-user{min-height:52px}}
