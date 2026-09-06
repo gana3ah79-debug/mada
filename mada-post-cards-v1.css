@@ -1,0 +1,29 @@
+/* Mada Post Cards v1 — modern Facebook/Instagram-inspired feed cards. */
+.feed{gap:16px!important}
+.feed .post{position:relative;background:var(--card,#fff)!important;border:1px solid rgba(148,163,184,.16)!important;border-radius:22px!important;overflow:hidden!important;box-shadow:0 7px 24px rgba(15,23,42,.065)!important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important}
+.feed .post.mada-card-ready{animation:madaPostIn .42s cubic-bezier(.2,.8,.2,1) both}
+.feed .post:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(15,23,42,.11)!important;border-color:rgba(37,99,235,.16)!important}
+.feed .post-header{display:flex!important;align-items:center!important;gap:10px!important;padding:15px 16px 10px!important}
+.feed .post-header .post-avatar,.feed .post-header img{flex:0 0 auto;border-radius:50%!important;object-fit:cover!important;box-shadow:0 0 0 2px var(--card,#fff),0 0 0 3px rgba(37,99,235,.12)!important}
+.feed .post-header b{font-weight:850!important}
+.feed .post-body,.feed .post-content,.feed .post-text{padding:8px 16px 14px!important;font-size:15px!important;line-height:1.9!important}
+.feed .post-media,.feed .post-image,.feed .post-video{display:block;width:100%;max-height:620px;object-fit:cover;background:#eef2f7}
+.feed .post-media img,.feed .post-image img{display:block;width:100%;height:auto;max-height:620px;object-fit:cover}
+.feed .post-meta{display:flex;align-items:center;gap:10px;padding:8px 15px;color:#667085;font-size:12px;border-top:1px solid rgba(148,163,184,.12);min-height:38px}
+.feed .post-meta span:first-child{font-weight:800;color:#475467}
+.feed .post-meta .meta-link{margin-inline-start:auto}
+.feed .post-meta button{border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:3px 0}
+.feed .post-meta button:hover{color:#1877f2;text-decoration:underline}
+.feed .post-actions{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important;padding:8px 10px 10px!important;margin:0!important;border-top:1px solid rgba(148,163,184,.14)!important;background:linear-gradient(180deg,rgba(248,250,252,.42),transparent)!important}
+.feed .post-actions button{min-height:44px;border:0!important;border-radius:14px!important;background:transparent!important;color:#475467!important;font-weight:850!important;cursor:pointer;transition:background .16s ease,color .16s ease,transform .16s ease!important}
+.feed .post-actions button:hover{background:rgba(37,99,235,.075)!important;color:#1877f2!important}
+.feed .post-actions button:active{transform:scale(.94)!important}
+.feed .post-actions .liked{color:#1877f2!important;background:rgba(37,99,235,.06)!important}
+.feed .comments{border-top:1px solid rgba(148,163,184,.10)!important}
+@keyframes madaPostIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@media(max-width:600px){.feed{gap:11px!important}.feed .post{border-radius:18px!important}.feed .post-header{padding:12px 13px 8px!important}.feed .post-body,.feed .post-content,.feed .post-text{padding:7px 13px 11px!important;font-size:14px!important}.feed .post-media,.feed .post-image,.feed .post-video,.feed .post-media img,.feed .post-image img{max-height:560px!important}.feed .post-meta{padding:7px 12px;font-size:11px}.feed .post-actions{padding:6px 7px 8px!important}.feed .post-actions button{min-height:42px;border-radius:12px!important;font-size:12px!important}}
+@media(prefers-reduced-motion:reduce){.feed .post.mada-card-ready{animation:none!important}.feed .post{transition:none!important}}
+body.dark .feed .post{border-color:rgba(100,116,139,.22)!important;box-shadow:0 8px 26px rgba(0,0,0,.18)!important}
+body.dark .feed .post-meta{color:#98a6ba;border-color:rgba(100,116,139,.18)!important}
+body.dark .feed .post-actions{background:linear-gradient(180deg,rgba(15,23,42,.35),transparent)!important}
+body.dark .feed .post-actions button{color:#c5cfdd!important}
