@@ -14,9 +14,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
     if(!b||!list||!list.contains(b))return;
     e.preventDefault();e.stopImmediatePropagation();
     b.classList.add('active');
-    const id=b.dataset.id,name=b.dataset.name||b.querySelector('b')?.textContent?.trim()||'مستخدم Mada';
-    const go=()=>{if(window.MadaMessenger&&typeof window.MadaMessenger.openFriend==='function'){window.MadaMessenger.openFriend(id,name);return true}return false};
-    if(!go())setTimeout(go,120);
+    /* Let the dedicated click-fix invoke the button's own listener directly. */
   },true);
   load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
   load('mada-stories-v5.js?v20260906-1','data-mada-stories-v5');
@@ -41,6 +39,6 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge');
   load('mada-friends-v1.js?v20260906-1','data-mada-friends-v1');
   load('mada-messenger-v1.js?v20260906-7','data-mada-messenger-v1');
-  load('mada-messenger-click-fix-v1.js?v20260906-6','data-mada-messenger-click-fix-v1');
+  load('mada-messenger-click-fix-v1.js?v20260906-7','data-mada-messenger-click-fix-v1');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
 })();
