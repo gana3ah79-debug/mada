@@ -1,3 +1,4 @@
+# Signed Mada Release APK build
 name: Build Mada Release APK
 
 on:
