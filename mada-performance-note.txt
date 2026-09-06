@@ -1,0 +1,1 @@
+Performance repair marker: optimized verification observers to avoid repeated full-document scans and redundant Supabase profile requests.
