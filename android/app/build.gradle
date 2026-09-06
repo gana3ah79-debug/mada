@@ -5,7 +5,7 @@ plugins {
 android {
     namespace 'com.mada.app'
     compileSdk 35
-    defaultConfig { applicationId 'com.mada.app'; minSdk 23; targetSdk 35; versionCode 10; versionName '1.9' }
+    defaultConfig { applicationId 'com.mada.app'; minSdk 23; targetSdk 35; versionCode 11; versionName '1.10' }
     signingConfigs { release { def p=System.getenv(); if(p.MADA_KEYSTORE_PATH&&p.MADA_KEYSTORE_PASSWORD&&p.MADA_KEY_ALIAS&&p.MADA_KEY_PASSWORD){storeFile file(p.MADA_KEYSTORE_PATH);storePassword p.MADA_KEYSTORE_PASSWORD;keyAlias p.MADA_KEY_ALIAS;keyPassword p.MADA_KEY_PASSWORD} } }
     buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),'proguard-rules.pro' } }
 }
