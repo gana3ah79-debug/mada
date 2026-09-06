@@ -1,4 +1,0 @@
-/* extra guard for post menu */
-#feed article.post .post-more-wrap{position:relative!important;z-index:1000!important}
-#feed article.post .mada-post-menu{position:absolute!important;top:48px!important;right:0!important;left:auto!important;width:215px!important;z-index:99999!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:16px!important;padding:7px!important;box-shadow:0 14px 35px rgba(15,23,42,.18)!important;display:flex!important;flex-direction:column!important;gap:2px!important;direction:rtl!important}
-#feed article.post .mada-post-menu button{display:block!important;width:100%!important;min-height:42px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:#1e293b!important;padding:8px 11px!important;text-align:right!important;font-size:13px!important;font-weight:700!important}
