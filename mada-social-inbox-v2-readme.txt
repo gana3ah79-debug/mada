@@ -1,1 +1,0 @@
-Unified notification and message entry layer for Mada.
