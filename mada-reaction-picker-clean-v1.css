@@ -1,0 +1,5 @@
+/* Final visual guard for Mada reaction picker */
+.mada-reaction-picker .mada-reaction-list{gap:4px!important}
+.mada-reaction-picker .mada-reaction{box-sizing:border-box!important;width:32px!important;height:32px!important;min-width:32px!important;max-width:32px!important;padding:0!important;margin:0!important;font-size:21px!important;line-height:32px!important;overflow:visible!important}
+.mada-reaction-picker .mada-reaction span{font-size:21px!important;line-height:1!important;display:block!important;transform:scale(.94)!important}
+@media(max-width:600px){.mada-reaction-picker .mada-reaction-list{gap:4px!important}.mada-reaction-picker .mada-reaction{width:32px!important;height:32px!important;min-width:32px!important;max-width:32px!important;font-size:21px!important}.mada-reaction-picker .mada-reaction span{font-size:21px!important}}
