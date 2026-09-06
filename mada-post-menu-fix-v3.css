@@ -1,0 +1,4 @@
+/* final menu polish */
+#feed article.post .post-more-wrap{position:relative!important;z-index:1000!important}
+#feed article.post .post-more{overflow:visible!important}
+#feed article.post .mada-post-menu{position:absolute!important;top:48px!important;right:0!important;left:auto!important;z-index:99999!important}
