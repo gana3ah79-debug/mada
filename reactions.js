@@ -4,17 +4,17 @@
   const REACTIONS={like:{emoji:'👍',label:'إعجاب'},love:{emoji:'❤️',label:'أحببته'},haha:{emoji:'😂',label:'هاها'},wow:{emoji:'😮',label:'واو'},sad:{emoji:'😢',label:'حزين'},angry:{emoji:'😡',label:'غاضب'}};
   let openId=null;
   const sb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
-  const user=()=>window.user||null;
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const getUser=()=>window.MadaCurrentUser||window.user||null;
+  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
   function getButton(id){return document.querySelector('#post-'+CSS.escape(String(id))+' .post-actions .like[data-id]')}
   function picker(id){return '<div class="mada-reaction-picker" data-picker="'+esc(id)+'" role="menu"><div class="mada-reaction-title">اختر تفاعلك</div><div class="mada-reaction-list">'+Object.entries(REACTIONS).map(([k,v])=>'<button type="button" class="mada-reaction" data-reaction="'+k+'" aria-label="'+v.label+'">'+v.emoji+'</button>').join('')+'</div></div>'}
   function close(){document.querySelectorAll('.mada-reaction-picker').forEach(x=>x.remove());openId=null}
   function render(btn,type,count){const r=REACTIONS[type]||REACTIONS.like;btn.innerHTML='<span class="action-icon">'+r.emoji+'</span><span>'+esc(r.label)+'</span><b class="action-count">'+Math.max(0,count)+'</b>';btn.dataset.reactionType=type;btn.dataset.liked='true';btn.classList.add('liked')}
   function unrender(btn,count){btn.innerHTML='<span class="action-icon">👍</span><span>إعجاب</span><b class="action-count">'+Math.max(0,count)+'</b>';delete btn.dataset.reactionType;btn.dataset.liked='false';btn.classList.remove('liked')}
   async function save(id,type){
-    const client=sb(),me=user(),btn=getButton(id);
+    const client=sb(),me=getUser(),btn=getButton(id);
     if(!client||!me||!btn){if(!me) alert('يرجى تسجيل الدخول أولاً');return}
-    const before=btn.innerHTML, beforeLiked=btn.dataset.liked==='true', beforeType=btn.dataset.reactionType||'';
+    const before=btn.innerHTML,beforeLiked=btn.dataset.liked==='true',beforeType=btn.dataset.reactionType||'';
     const count=parseInt(btn.querySelector('.action-count')?.textContent||'0',10)||0;
     const q=await client.from('post_likes').select('post_id,user_id,reaction_type').eq('post_id',id).eq('user_id',me.id).maybeSingle();
     if(q.error){alert('تعذر قراءة التفاعل: '+q.error.message);return}
