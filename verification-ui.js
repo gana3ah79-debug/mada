@@ -1,0 +1,17 @@
+(function(){
+'use strict';
+const sb=()=>window.MADA_SUPABASE_CLIENT||window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
+const cache=new Map(), pending=new Set();
+const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+function active(p){if(!p?.is_verified)return false;if(p.verification_type==='premium'&&p.verification_expires_at&&new Date(p.verification_expires_at)<=new Date())return false;return true}
+function badge(p){if(!active(p))return '';const premium=p.verification_type==='premium';return `<span class="mada-verified-badge ${premium?'premium':''}" role="img" aria-label="${premium?'حساب موثق Premium':'حساب موثق'}" title="${premium?'حساب موثق Premium':'حساب موثق'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.4l2.05 1.2 2.36-.08 1.2 2.05 2.05 1.2-.08 2.36L20.8 11l.08 2.36-2.05 1.2-1.2 2.05-2.36-.08L12 17.6l-2.05-1.07-2.36.08-1.2-2.05-2.05-1.2L4.4 11l-.08-2.36 2.05-1.2 1.2-2.05 2.36.08L12 2.4z"/><path class="check" d="M8 11.8l2.45 2.45L16.5 8.2"/></svg></span>`}
+function getId(el){for(const a of ['data-profile-id','data-user-id','data-author-id','data-profile','data-user','data-author','data-sender-id']){const v=el.getAttribute?.(a);if(v)return v}return null}
+function targets(root){const out=[];const sel='[data-profile-id],[data-user-id],[data-author-id],[data-profile],[data-user],[data-author],[data-sender-id]';if(root?.matches?.(sel))out.push(root);if(root?.querySelectorAll)root.querySelectorAll(sel).forEach(x=>out.push(x));document.querySelectorAll('.post-name,.comment b,.reply b,.user-info b,.conversation-list .user-info b,.message-author,.notification-user,.profile-name').forEach(x=>{if(!x.dataset.madaVerifyTarget)out.push(x)});return [...new Set(out)]}
+async function fetchProfiles(ids){const missing=ids.filter(id=>!cache.has(id)&&!pending.has(id));if(!missing.length)return;missing.forEach(id=>pending.add(id));try{for(let i=0;i<missing.length;i+=80){const batch=missing.slice(i,i+80),r=await sb().from('profiles').select('id,is_verified,verification_type,verification_expires_at').in('id',batch);(r.data||[]).forEach(p=>cache.set(p.id,p))}}finally{missing.forEach(id=>pending.delete(id))}}
+function mark(el,id,p){el.dataset.madaVerifyTarget='1';el.querySelectorAll(':scope > .mada-verified-badge').forEach(x=>x.remove());const b=badge(p);if(!b)return;el.insertAdjacentHTML('beforeend',b)}
+async function decorate(root=document){const els=targets(root), ids=[...new Set(els.map(getId).filter(Boolean))];await fetchProfiles(ids);els.forEach(el=>{const id=getId(el);if(id)mark(el,id,cache.get(id))})}
+function addIdsFromNearby(){document.querySelectorAll('[data-profile]').forEach(x=>{const id=getId(x);if(!id)return;const n=x.closest('.post-head,.comment,.reply,.user-row,.conversation-row,.notification-item')?.querySelector('.post-name,.comment-name,.reply-name,.user-info b,.message-author,.notification-user');if(n&&!getId(n))n.setAttribute('data-profile',id)})}
+window.MadaVerification=Object.assign(window.MadaVerification||{},{badge,refresh:()=>{cache.clear();return decorate(document)}});
+addIdsFromNearby();decorate(document);
+new MutationObserver(ms=>{let added=false;for(const m of ms){m.addedNodes.forEach(n=>{if(n.nodeType===1){added=true;addIdsFromNearby();decorate(n)}})}if(added)decorate(document)}).observe(document.body,{childList:true,subtree:true});
+})();
