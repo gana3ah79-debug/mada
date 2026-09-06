@@ -1,0 +1,15 @@
+(function(){
+'use strict';
+const sb=()=>window.MADA_SUPABASE_CLIENT||window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
+const cache=new Map(),pending=new Set();
+const BADGE='<span class="mada-verified-badge admin" role="img" aria-label="حساب إداري موثق" title="حساب إداري موثق"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l2.35 1.45 2.76-.03 1.45 2.35 2.35 1.45-.03 2.76L22.2 12l-1.35 2.22.03 2.76-2.35 1.45-1.45 2.35-2.76-.03L12 22.2l-2.22-1.35-2.76.03-1.45-2.35-2.35-1.45.03-2.76L1.8 12l1.45-2.22-.03-2.76 2.35-1.45 1.45-2.35 2.76.03L12 1.8z"/><path class="check" d="M7.6 12.1l2.9 2.9 5.95-6.05"/></svg></span>';
+function getId(el){for(const a of ['data-profile-id','data-user-id','data-author-id','data-profile','data-user','data-author','data-sender-id']){const v=el?.getAttribute?.(a);if(v)return v}return null}
+function targets(root=document){const out=[];const sel='[data-profile-id],[data-user-id],[data-author-id],[data-profile],[data-user],[data-author],[data-sender-id],.post-name,.comment b,.reply b,.user-info b,.message-author,.notification-user,.profile-name';if(root.matches?.(sel))out.push(root);root.querySelectorAll?.(sel).forEach(x=>out.push(x));return [...new Set(out)]}
+async function fetchProfiles(ids){const missing=ids.filter(id=>!cache.has(id)&&!pending.has(id));if(!missing.length)return;missing.forEach(id=>pending.add(id));try{for(let i=0;i<missing.length;i+=80){const r=await sb().from('profiles').select('id,role,is_banned').in('id',missing.slice(i,i+80));(r.data||[]).forEach(p=>cache.set(p.id,p))}}finally{missing.forEach(id=>pending.delete(id))}}
+function render(el,p){if(!el||p?.role!=='admin'||p?.is_banned)return;if(el.parentElement?.querySelector(':scope > .mada-verified-badge.admin[data-for="'+CSS.escape(getId(el)||'')+'"]'))return;const wrap=document.createElement('span');wrap.innerHTML=BADGE;const badge=wrap.firstElementChild;if(badge)badge.dataset.for=getId(el)||'';el.insertAdjacentElement('afterend',badge)}
+async function decorate(root=document){const els=targets(root),ids=[...new Set(els.map(getId).filter(Boolean))];await fetchProfiles(ids);els.forEach(el=>{const id=getId(el);if(id)render(el,cache.get(id))})}
+window.MadaAdminBadge={refresh:()=>{cache.clear();return decorate(document)}};
+let timer=0;const queue=()=>{if(timer)return;timer=setTimeout(()=>{timer=0;decorate(document)},120)};
+function start(){decorate(document);if(document.body)new MutationObserver(ms=>{for(const m of ms){if(m.type==='characterData'){queue();return}for(const n of m.addedNodes||[]){if(n.nodeType===1&&!n.matches?.('.mada-verified-badge')){queue();return}}}}).observe(document.body,{childList:true,subtree:true,characterData:true})}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
