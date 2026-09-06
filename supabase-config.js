@@ -7,15 +7,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   function load(src,attr){if(document.querySelector('script['+attr+']'))return;const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.async=false;document.head.appendChild(s)}
   function loadCss(href,attr){if(document.querySelector('link['+attr+']'))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.setAttribute(attr,'1');document.head.appendChild(l)}
   loadCss('mada-light-surfaces-v1.css?v20260906-1','data-mada-light-surfaces-v1');
-  loadCss('mada-messenger-v1.css?v20260906-7','data-mada-messenger-v1');
-  document.addEventListener('pointerdown',function(e){
-    const b=e.target&&e.target.closest?e.target.closest('.mada-ms-user'):null;
-    const list=document.getElementById('madaMsList');
-    if(!b||!list||!list.contains(b))return;
-    e.preventDefault();e.stopImmediatePropagation();
-    b.classList.add('active');
-    /* Let the dedicated click-fix invoke the button's own listener directly. */
-  },true);
+  loadCss('mada-messenger-v1.css?v20260906-8','data-mada-messenger-v1');
   load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
   load('mada-stories-v5.js?v20260906-1','data-mada-stories-v5');
   load('mada-reels-creator-v1.js?v20260906-1','data-mada-reels-creator');
@@ -38,7 +30,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-comments-v1.js?v20260906-1','data-mada-comments-v1');
   load('mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge');
   load('mada-friends-v1.js?v20260906-1','data-mada-friends-v1');
-  load('mada-messenger-v1.js?v20260906-7','data-mada-messenger-v1');
-  load('mada-messenger-click-fix-v1.js?v20260906-7','data-mada-messenger-click-fix-v1');
+  load('mada-messenger-v1.js?v20260906-8','data-mada-messenger-v1');
+  load('mada-messenger-click-fix-v1.js?v20260906-8','data-mada-messenger-click-fix-v1');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
 })();
