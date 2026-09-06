@@ -1,30 +1,10 @@
-/* Mada Reaction Motion v3 — stronger visible like feedback. Persistence remains in existing handlers. */
+/* Mada Reaction Motion v4 — immediate, visible like feedback. */
 (function(){'use strict';
-if(window.__MADA_REACTION_MOTION_V3)return;window.__MADA_REACTION_MOTION_V3=true;
-function pulse(btn,cls){if(!btn)return;btn.classList.remove(cls);void btn.offsetWidth;btn.classList.add(cls);setTimeout(()=>btn.classList.remove(cls),700)}
-function burst(btn){
-  if(!btn)return;
-  const r=btn.getBoundingClientRect();
-  const wrap=document.createElement('span');
-  wrap.className='mada-reaction-burst';
-  wrap.setAttribute('aria-hidden','true');
-  wrap.style.left=(r.left+r.width/2)+'px';
-  wrap.style.top=(r.top+r.height/2+window.scrollY)+'px';
-  wrap.innerHTML='<span class="mada-burst-heart">♥</span><i>✦</i><i>✦</i><i>✦</i><i>✦</i>';
-  document.body.appendChild(wrap);
-  setTimeout(()=>wrap.remove(),850);
-}
-function bind(){
-  const feed=document.querySelector('#feed');
-  if(!feed||feed.dataset.madaReactionMotionBound)return;
-  feed.dataset.madaReactionMotionBound='1';
-  feed.addEventListener('click',e=>{
-    const btn=e.target.closest('.post-actions button');
-    if(!btn)return;
-    if(btn.classList.contains('like')){pulse(btn,'mada-reaction-pop');burst(btn)}
-    else pulse(btn,'mada-action-pulse');
-  });
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(bind,300),{once:true});else setTimeout(bind,300);
-new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});
+if(window.__MADA_REACTION_MOTION_V4)return;window.__MADA_REACTION_MOTION_V4=true;
+const css=`.mada-like-fx{position:relative!important;z-index:8!important;transform-origin:center!important}.mada-like-fx.mada-like-hit{animation:madaLikeHit .62s cubic-bezier(.18,.9,.25,1.25)!important}.mada-like-portal{position:fixed;left:0;top:0;width:0;height:0;z-index:2147483647;pointer-events:none}.mada-like-heart{position:absolute;font-size:32px;line-height:1;pointer-events:none;animation:madaLikeHeart .72s cubic-bezier(.15,.8,.2,1) forwards}.mada-like-spark{position:absolute;font-size:17px;line-height:1;pointer-events:none;animation:madaLikeSpark .68s ease-out forwards}.mada-like-spark.s1{--x:-42px;--y:-28px}.mada-like-spark.s2{--x:42px;--y:-24px}.mada-like-spark.s3{--x:-34px;--y:28px}.mada-like-spark.s4{--x:36px;--y:30px}@keyframes madaLikeHit{0%{transform:scale(1)}25%{transform:scale(1.28) rotate(-5deg)}48%{transform:scale(.91) rotate(3deg)}72%{transform:scale(1.1)}100%{transform:scale(1)}}@keyframes madaLikeHeart{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-12deg)}16%{opacity:1;transform:translate(-50%,-55%) scale(1.2) rotate(4deg)}55%{opacity:1;transform:translate(-50%,-78px) scale(1.05) rotate(-3deg)}100%{opacity:0;transform:translate(-50%,-115px) scale(1.5) rotate(8deg)}}@keyframes madaLikeSpark{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}22%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.3) rotate(45deg)}}@media(prefers-reduced-motion:reduce){.mada-like-fx.mada-like-hit,.mada-like-portal *{animation:none!important}}`;
+const style=document.createElement('style');style.id='mada-reaction-motion-v4-inline';style.textContent=css;document.head.appendChild(style);
+let last=0;
+function animate(btn){if(!btn)return;const now=Date.now();if(now-last<180)return;last=now;btn.classList.remove('mada-like-fx','mada-like-hit');void btn.offsetWidth;btn.classList.add('mada-like-fx','mada-like-hit');const r=btn.getBoundingClientRect();const portal=document.createElement('span');portal.className='mada-like-portal';portal.style.left=(r.left+r.width/2)+'px';portal.style.top=(r.top+r.height/2)+'px';portal.innerHTML='<span class="mada-like-heart">❤</span><span class="mada-like-spark s1">✦</span><span class="mada-like-spark s2">✦</span><span class="mada-like-spark s3">✦</span><span class="mada-like-spark s4">✦</span>';document.body.appendChild(portal);setTimeout(()=>{btn.classList.remove('mada-like-hit');portal.remove()},820)}
+function bind(){const feed=document.querySelector('#feed');if(!feed||feed.dataset.madaReactionV4)return;feed.dataset.madaReactionV4='1';feed.addEventListener('pointerdown',e=>{const b=e.target.closest('.post-actions .like');if(b)animate(b)},true);feed.addEventListener('click',e=>{const b=e.target.closest('.post-actions .like');if(b)animate(b)},true)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});
 })();
