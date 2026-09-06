@@ -1,6 +1,6 @@
 package com.mada.app;
 
-import android.app.*;import android.content.*;import android.net.Uri;import android.os.*;import android.provider.Settings;import android.webkit.*;
+import android.app.*;import android.content.*;import android.net.Uri;import android.os.*;import android.webkit.*;
 
 public class MainActivity extends Activity{
  private static final String URL="https://mada-3g8.pages.dev"; private static final int FILE_REQUEST=1001;
@@ -9,9 +9,9 @@ public class MainActivity extends Activity{
  @Override protected void onNewIntent(Intent in){super.onNewIntent(in);setIntent(in);if(in!=null&&in.hasExtra("sender_id")){pendingSender=in.getStringExtra("sender_id");openPendingChat();}}
  @Override protected void onSaveInstanceState(Bundle out){out.putString("pending_sender",pendingSender);super.onSaveInstanceState(out);}
  @Override protected void onResume(){super.onResume();if(web!=null)web.postDelayed(this::syncSession,1000);}
- void syncSession(){web.evaluateJavascript("(async()=>{try{let s=window.MADA_SUPABASE_CLIENT;if(!s)return null;let r=await s.auth.getSession();let x=r.data&&r.data.session;return x?JSON.stringify({access_token:x.access_token,refresh_token:x.refresh_token,user_id:x.user.id}):null}catch(e){return null}})()",v->{try{if(v==null||"null".equals(v))return;Object raw=new org.json.JSONTokener(v).nextValue();if(!(raw instanceof String))return;org.json.JSONObject o=new org.json.JSONObject((String)raw);sp.edit().putString("access",o.getString("access_token")).putString("refresh",o.optString("refresh_token")).putString("uid",o.getString("user_id")).apply();startBuzzService();}catch(Exception ignored){}});}
- void openPendingChat(){if(pendingSender==null||pendingSender.isEmpty()||web==null)return;String id=org.json.JSONObject.quote(pendingSender);web.postDelayed(()->web.evaluateJavascript("(()=>{try{if(window.MadaMessenger&&window.MadaMessenger.openFriend){window.MadaMessenger.openFriend("+id+");return true}return false}catch(e){return false}})()",v->{if(v!=null&&v.contains("true"))pendingSender=null;}),700);}
- void startBuzzService(){if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(this)){try{startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,Uri.parse("package:"+getPackageName())));}catch(Exception ignored){}return;}Intent i=new Intent(this,BuzzService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(i);else startService(i);}
+ void syncSession(){web.evaluateJavascript("(async()=>{try{let s=window.MADA_SUPABASE_CLIENT;if(!s)return null;let r=await s.auth.getSession();let x=r.data&&r.data.session;return x?JSON.stringify({access_token:x.access_token,refresh_token:x.refresh_token,user_id:x.user.id}):null}catch(e){return null}})()",v->{try{if(v==null||\"null\".equals(v))return;Object raw=new org.json.JSONTokener(v).nextValue();if(!(raw instanceof String))return;org.json.JSONObject o=new org.json.JSONObject((String)raw);sp.edit().putString(\"access\",o.getString(\"access_token\")).putString(\"refresh\",o.optString(\"refresh_token\")).putString(\"uid\",o.getString(\"user_id\")).apply();startBuzzService();}catch(Exception ignored){}});}
+ void openPendingChat(){if(pendingSender==null||pendingSender.isEmpty()||web==null)return;String id=org.json.JSONObject.quote(pendingSender);web.postDelayed(()->web.evaluateJavascript("(()=>{try{if(window.MadaMessenger&&window.MadaMessenger.openFriend){window.MadaMessenger.openFriend("+id+");return true}return false}catch(e){return false}})()",v->{if(v!=null&&v.contains(\"true\"))pendingSender=null;}),700);}
+ void startBuzzService(){Intent i=new Intent(this,BuzzService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(i);else startService(i);}
  class Bridge{@JavascriptInterface public void startOverlay(){startBuzzService();}}
  @Override public void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==FILE_REQUEST&&fileCallback!=null){fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(c,d));fileCallback=null;}}
  @Override public void onBackPressed(){if(web.canGoBack())web.goBack();else super.onBackPressed();}
