@@ -13,7 +13,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String START_URL = "https://gana3ah79-debug.github.io/mada/";
+    private static final String START_URL = "https://mada-3g8.pages.dev/";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
@@ -41,7 +41,7 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String host = uri.getHost();
-                if (host != null && (host.endsWith("github.io") || host.endsWith("supabase.co") || host.endsWith("jsdelivr.net"))) return false;
+                if (host != null && (host.endsWith("pages.dev") || host.endsWith("supabase.co") || host.endsWith("jsdelivr.net"))) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) {}
                 return true;
             }
@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
                 catch (Exception e) { fileCallback = null; return false; }
             }
         });
-        webView.loadUrl(START_URL + "?v=20260902-1");
+        webView.loadUrl(START_URL + "?apk=1.2");
     }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
