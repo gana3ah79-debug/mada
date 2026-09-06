@@ -36,6 +36,9 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      - name: Check Mada Android version
+        run: grep -n "versionCode\|versionName" android/app/build.gradle
+
       - name: Build debug APK
         run: gradle -p android clean assembleDebug --no-daemon --stacktrace
 
