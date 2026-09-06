@@ -6,7 +6,10 @@ function run(name){
  const fn=window.MadaSocialCenter?.[name];
  if(typeof fn==='function')return fn();
  if(name==='search'&&window.MadaSearchFriendsV3?.open)return window.MadaSearchFriendsV3.open();
- if(name==='friends'&&window.Social?.center)return window.Social.center('requests');
+ if(name==='friends'&&window.MadaFriendsV4?.open)return window.MadaFriendsV4.open('friends');
+ if(name==='messages'&&window.MadaMessages?.open)return window.MadaMessages.open();
+ if(name==='notifications'&&window.MadaSocialInboxV2?.openNotifications)return window.MadaSocialInboxV2.openNotifications();
+ if(name==='friends'&&window.Social?.center)return window.Social.center('friends');
  if(name==='search'&&window.MadaCoreControls?.search)return window.MadaCoreControls.search();
 }
 function bind(){
