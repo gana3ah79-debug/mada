@@ -8,6 +8,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   function loadCss(href,attr){if(document.querySelector('link['+attr+']'))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.setAttribute(attr,'1');document.head.appendChild(l)}
   loadCss('mada-light-surfaces-v1.css?v20260906-2','data-mada-light-surfaces-v1');
   loadCss('mada-messenger-v1.css?v20260906-10','data-mada-messenger-v1');
+  loadCss('mada-messenger-media-v1.css?v20260906-1','data-mada-messenger-media-v1');
   load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
   load('mada-stories-v5.js?v20260906-1','data-mada-stories-v5');
   load('mada-reels-creator-v1.js?v20260906-1','data-mada-reels-creator');
@@ -31,7 +32,8 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge');
   load('mada-friends-v1.js?v20260906-1','data-mada-friends-v1');
   load('mada-messenger-v1.js?v20260906-12','data-mada-messenger-v1');
-  load('mada-messenger-status-v1.js?v20260906-1','data-mada-messenger-status-v1');
+  load('mada-messenger-media-v1.js?v20260906-1','data-mada-messenger-media-v1');
+  load('mada-messenger-status-v1.js?v20260906-2','data-mada-messenger-status-v1');
   load('mada-buzz-popup-v1.js?v20260906-2','data-mada-buzz-popup-v1');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
 })();
