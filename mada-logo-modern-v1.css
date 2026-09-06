@@ -1,0 +1,21 @@
+/* Mada modern wordmark v1 — lightweight CSS-only branding */
+.mada-brand{display:inline-flex;align-items:center;gap:9px;direction:ltr;text-decoration:none;user-select:none}
+.mada-brand .mada-brand-mark{width:38px;height:38px;display:grid;place-items:center;position:relative;flex:0 0 38px;border-radius:12px;background:linear-gradient(135deg,#11cfff 0%,#2574ff 48%,#b52cff 100%);box-shadow:0 7px 18px rgba(45,104,244,.24);overflow:hidden}
+.mada-brand .mada-brand-mark:before,.mada-brand .mada-brand-mark:after{content:'';position:absolute;width:13px;height:29px;border-radius:9px;transform:skewX(-25deg);background:linear-gradient(180deg,#fff,#c8f7ff);opacity:.95}
+.mada-brand .mada-brand-mark:before{left:8px;top:5px;transform:skewX(-25deg) rotate(-8deg)}
+.mada-brand .mada-brand-mark:after{right:7px;top:5px;transform:skewX(25deg) rotate(8deg);background:linear-gradient(180deg,#fff,#e8c8ff)}
+.mada-brand .mada-brand-mark i{position:relative;z-index:2;width:9px;height:25px;border-radius:7px;background:linear-gradient(180deg,#fff,#bff6ff);transform:skewX(-7deg);box-shadow:0 0 10px rgba(255,255,255,.35)}
+.mada-brand .mada-brand-word{font-size:27px;line-height:1;font-weight:950;letter-spacing:.6px;background:linear-gradient(100deg,#137cff 0%,#2671f5 48%,#a92bff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 5px 18px rgba(53,105,241,.13)}
+.mada-brand .mada-brand-sub{font-size:10px;line-height:1;color:#8a96aa;font-weight:800;letter-spacing:1.2px;margin-top:4px;direction:rtl}
+.mada-brand-stack{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.auth-card .mada-brand{margin-bottom:8px}
+.auth-card .mada-brand .mada-brand-mark{width:64px;height:64px;flex-basis:64px;border-radius:20px;box-shadow:0 12px 28px rgba(45,104,244,.28)}
+.auth-card .mada-brand .mada-brand-mark:before,.auth-card .mada-brand .mada-brand-mark:after{width:21px;height:48px;border-radius:12px}
+.auth-card .mada-brand .mada-brand-mark:before{left:13px;top:8px}.auth-card .mada-brand .mada-brand-mark:after{right:12px;top:8px}.auth-card .mada-brand .mada-brand-mark i{width:14px;height:41px;border-radius:10px}
+.auth-card .mada-brand .mada-brand-word{font-size:46px;letter-spacing:1px}
+.auth-card .mada-brand .mada-brand-sub{font-size:14px;letter-spacing:2px}
+.topbar>.mada-brand{position:absolute;left:50%;transform:translateX(-50%);z-index:2;pointer-events:none}
+.topbar>.mada-brand .mada-brand-mark{width:34px;height:34px;flex-basis:34px;border-radius:11px}.topbar>.mada-brand .mada-brand-word{font-size:24px}
+@media(max-width:520px){.topbar>.mada-brand{gap:7px}.topbar>.mada-brand .mada-brand-mark{width:31px;height:31px;flex-basis:31px;border-radius:10px}.topbar>.mada-brand .mada-brand-word{font-size:22px}.topbar>.mada-brand .mada-brand-sub{display:none}}
+body.dark .mada-brand .mada-brand-word{background:linear-gradient(100deg,#59cfff,#72a8ff 52%,#dc75ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+body.dark .mada-brand .mada-brand-sub{color:#8f9db3}
