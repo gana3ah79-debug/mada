@@ -1,5 +1,5 @@
-# Mada production release workflow - trigger verified
-name: Build Mada Production Release
+# Mada Android builds
+name: Build Mada Android
 
 on:
   push:
@@ -7,31 +7,63 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-release:
+  build-debug:
+    name: Build installable debug APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK platform and build tools
+      - name: Install Android SDK
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
+      - name: Build debug APK
+        run: gradle -p android clean assembleDebug --no-daemon --stacktrace
+      - name: Verify debug APK
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify android/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload Mada debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mada-Debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
 
+  build-release:
+    name: Build signed production APK and AAB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK platform and build tools
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
       - name: Decode Mada release keystore
         env:
           MADA_KEYSTORE_BASE64: ${{ secrets.MADA_KEYSTORE_BASE64 }}
@@ -39,22 +71,22 @@ jobs:
         run: |
           test -n "$MADA_KEYSTORE_BASE64"
           python3 - <<'PY'
-          import base64, os
+          import base64, os, binascii
           raw = os.environ['MADA_KEYSTORE_BASE64'].strip()
           if raw.startswith('MADA_KEYSTORE_BASE64='):
               raw = raw.split('=', 1)[1]
           raw = ''.join(raw.split())
-          raw += '=' * (-len(raw) % 4)
-          data = base64.b64decode(raw, validate=False)
+          try:
+              data = base64.b64decode(raw + '=' * (-len(raw) % 4), validate=False)
+          except (binascii.Error, ValueError) as e:
+              raise SystemExit(f'Invalid MADA_KEYSTORE_BASE64 secret: {e}')
           if not data:
               raise SystemExit('Decoded keystore is empty')
           path = os.path.join(os.environ['GITHUB_WORKSPACE'], 'mada-release.jks')
-          with open(path, 'wb') as f:
-              f.write(data)
+          open(path, 'wb').write(data)
           PY
           test -s "$GITHUB_WORKSPACE/mada-release.jks"
           keytool -list -keystore "$GITHUB_WORKSPACE/mada-release.jks" -storepass "$MADA_KEYSTORE_PASSWORD" >/dev/null
-
       - name: Build signed Mada APK and AAB
         env:
           MADA_KEYSTORE_PATH: ${{ github.workspace }}/mada-release.jks
@@ -66,30 +98,25 @@ jobs:
           test -n "$MADA_KEY_ALIAS"
           test -n "$MADA_KEY_PASSWORD"
           gradle -p android clean assembleRelease bundleRelease --no-daemon --stacktrace
-
       - name: Verify signed APK
         run: |
-          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
-          "$APKSIGNER" verify --verbose android/app/build/outputs/apk/release/app-release.apk
-          ls -lh android/app/build/outputs/apk/release/app-release.apk
-          ls -lh android/app/build/outputs/bundle/release/app-release.aab
-
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose android/app/build/outputs/apk/release/app-release.apk
+          test -s android/app/build/outputs/apk/release/app-release.apk
+          test -s android/app/build/outputs/bundle/release/app-release.aab
       - name: Clean signing key
         if: always()
         run: rm -f "$GITHUB_WORKSPACE/mada-release.jks"
-
       - name: Upload Mada production APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mada-Release-v1.3-APK
+          name: Mada-Release-APK
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
-
       - name: Upload Mada production AAB
         uses: actions/upload-artifact@v4
         with:
-          name: Mada-Release-v1.3-AAB
+          name: Mada-Release-AAB
           path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
