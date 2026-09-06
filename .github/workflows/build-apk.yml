@@ -1,4 +1,4 @@
-name: Build Mada APK
+name: Build Mada Release APK
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,18 +31,18 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Build installable debug APK
-        run: gradle -p android clean assembleDebug --no-daemon --stacktrace
+      - name: Build Mada release APK
+        run: gradle -p android clean assembleRelease --no-daemon --stacktrace
 
-      - name: Verify APK
+      - name: Verify release APK
         run: |
-          test -s android/app/build/outputs/apk/debug/app-debug.apk
-          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+          test -s android/app/build/outputs/apk/release/app-release-unsigned.apk
+          ls -lh android/app/build/outputs/apk/release/app-release-unsigned.apk
 
-      - name: Upload APK
+      - name: Upload Mada Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: Mada-APK-v1.2
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Mada-Release-APK-v1.2
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 30
