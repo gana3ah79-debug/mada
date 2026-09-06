@@ -35,6 +35,6 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-messenger-media-v1.js?v20260906-2','data-mada-messenger-media-v1');
   load('mada-messenger-status-v1.js?v20260906-2','data-mada-messenger-status-v1');
   load('mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1');
-  load('mada-push-v3.js?v20260906-1','data-mada-push-v3');
+  load('mada-push-v3.js?v20260906-4','data-mada-push-v3');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
 })();
