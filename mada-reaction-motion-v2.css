@@ -1,13 +1,18 @@
-/* Mada Reaction Motion v2 — lively post actions */
+/* Mada Reaction Motion v3 — stronger visible like feedback */
 .feed .post-actions .like{position:relative;overflow:visible;transition:transform .16s ease,color .16s ease,background .16s ease!important}
-.feed .post-actions .like:active{transform:scale(.92)!important}
-.feed .post-actions .like.liked{color:#1877f2!important;background:rgba(24,119,242,.08)!important}
-.feed .post-actions .like.mada-reaction-pop{animation:madaReactionPop .42s cubic-bezier(.2,.9,.25,1.2)}
-.feed .post-actions .like.mada-reaction-pop::after{content:'❤';position:absolute;left:50%;top:50%;font-size:18px;pointer-events:none;animation:madaHeartBurst .55s ease-out forwards}
-.feed .post-actions .like.mada-reaction-pop::before{content:'✦  ✦  ✦';position:absolute;left:0;right:0;top:-10px;text-align:center;font-size:10px;letter-spacing:4px;opacity:0;pointer-events:none;animation:madaSparkBurst .55s ease-out forwards}
-.feed .post-actions button.mada-action-pulse{animation:madaActionPulse .3s ease}
-@keyframes madaReactionPop{0%{transform:scale(1)}35%{transform:scale(1.16)}65%{transform:scale(.96)}100%{transform:scale(1)}}
-@keyframes madaHeartBurst{0%{opacity:0;transform:translate(-50%,-10%) scale(.35)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-42px) scale(1.45)}}
-@keyframes madaSparkBurst{0%{opacity:0;transform:translateY(7px) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translateY(-18px) scale(1.1)}}
-@keyframes madaActionPulse{0%{transform:scale(1)}45%{transform:scale(1.06)}100%{transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){.feed .post-actions .like.mada-reaction-pop,.feed .post-actions .like.mada-reaction-pop::before,.feed .post-actions .like.mada-reaction-pop::after,.feed .post-actions button.mada-action-pulse{animation:none!important}}
+.feed .post-actions .like:active{transform:scale(.88)!important}
+.feed .post-actions .like.liked{color:#1877f2!important;background:rgba(24,119,242,.10)!important}
+.feed .post-actions .like.mada-reaction-pop{animation:madaReactionPop .62s cubic-bezier(.18,.9,.25,1.35)!important}
+.feed .post-actions button.mada-action-pulse{animation:madaActionPulse .34s ease}
+.mada-reaction-burst{position:absolute;z-index:2147483647;width:1px;height:1px;pointer-events:none;transform:translate(-50%,-50%)}
+.mada-burst-heart{position:absolute;left:0;top:0;font-size:34px;line-height:1;color:#1877f2;text-shadow:0 4px 12px rgba(24,119,242,.28);animation:madaBurstHeart .78s cubic-bezier(.15,.75,.2,1) forwards}
+.mada-reaction-burst i{position:absolute;left:0;top:0;font-style:normal;font-size:16px;color:#60a5fa;animation:madaBurstSpark .72s ease-out forwards}
+.mada-reaction-burst i:nth-of-type(1){--x:-42px;--y:-28px}
+.mada-reaction-burst i:nth-of-type(2){--x:42px;--y:-24px}
+.mada-reaction-burst i:nth-of-type(3){--x:-34px;--y:28px}
+.mada-reaction-burst i:nth-of-type(4){--x:36px;--y:30px}
+@keyframes madaReactionPop{0%{transform:scale(1)}28%{transform:scale(1.22) rotate(-5deg)}52%{transform:scale(.93) rotate(3deg)}78%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes madaBurstHeart{0%{opacity:0;transform:translate(-50%,-50%) scale(.25) rotate(-12deg)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(4deg)}55%{opacity:1;transform:translate(-50%,-76px) scale(1.02) rotate(-3deg)}100%{opacity:0;transform:translate(-50%,-112px) scale(1.45) rotate(8deg)}}
+@keyframes madaBurstSpark{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}25%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.25) rotate(35deg)}}
+@keyframes madaActionPulse{0%{transform:scale(1)}45%{transform:scale(1.07)}100%{transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.feed .post-actions .like.mada-reaction-pop,.feed .post-actions button.mada-action-pulse,.mada-reaction-burst *{animation:none!important}}
