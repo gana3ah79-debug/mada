@@ -10,13 +10,29 @@ android {
         applicationId 'com.mada.app'
         minSdk 23
         targetSdk 35
-        versionCode 3
-        versionName '1.2'
+        versionCode 4
+        versionName '1.3'
+    }
+
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv('MADA_KEYSTORE_PATH')
+            def storePassword = System.getenv('MADA_KEYSTORE_PASSWORD')
+            def keyAlias = System.getenv('MADA_KEY_ALIAS')
+            def keyPassword = System.getenv('MADA_KEY_PASSWORD')
+            if (keystorePath && storePassword && keyAlias && keyPassword) {
+                storeFile file(keystorePath)
+                storePassword storePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
