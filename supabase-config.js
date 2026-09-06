@@ -15,7 +15,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-bottom-nav-smart-v1.js?v20260906-1','data-mada-bottom-nav-smart');
   load('mada-reels-layout-v2.js?v20260906-1','data-mada-reels-layout');
   load('mada-reels-side-actions-v1.js?v20260906-1','data-mada-reels-side-actions');
-  load('mada-reels-reaction-dock-v1.js?v20260906-2','data-mada-reels-side-actions');
+  load('mada-reels-reaction-dock-v1.js?v20260906-2','data-mada-reels-reaction-dock');
   load('mada-reels-fullscreen-v1.js?v20260906-3','data-mada-reels-fullscreen');
   load('mada-reels-comments-v1.js?v20260906-3','data-mada-reels-comments');
   load('mada-reels-polish-v1.js?v20260906-1','data-mada-reels-polish');
