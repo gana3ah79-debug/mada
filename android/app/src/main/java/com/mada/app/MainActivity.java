@@ -1,71 +1,14 @@
 package com.mada.app;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.webkit.CookieManager;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.app.*;import android.content.*;import android.net.Uri;import android.os.*;import android.provider.Settings;import android.webkit.*;import android.view.*;import android.widget.*;import java.util.*;
 
-public class MainActivity extends Activity {
-    private static final String START_URL = "https://mada-3g8.pages.dev/";
-    private static final int FILE_CHOOSER_REQUEST = 1001;
-    private WebView webView;
-    private ValueCallback<Uri[]> fileCallback;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        webView = new WebView(this);
-        setContentView(webView);
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
-        settings.setSupportZoom(false);
-        settings.setBuiltInZoomControls(false);
-        settings.setDisplayZoomControls(false);
-        settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        CookieManager.getInstance().setAcceptCookie(true);
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                Uri uri = request.getUrl();
-                String host = uri.getHost();
-                if (host != null && (host.endsWith("pages.dev") || host.endsWith("supabase.co") || host.endsWith("jsdelivr.net"))) return false;
-                try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) {}
-                return true;
-            }
-        });
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
-                if (fileCallback != null) fileCallback.onReceiveValue(null);
-                fileCallback = callback;
-                try { startActivityForResult(params.createIntent(), FILE_CHOOSER_REQUEST); return true; }
-                catch (Exception e) { fileCallback = null; return false; }
-            }
-        });
-        webView.loadUrl(START_URL + "?apk=1.2");
-    }
-
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == FILE_CHOOSER_REQUEST && fileCallback != null) {
-            Uri[] results = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
-            fileCallback.onReceiveValue(results);
-            fileCallback = null;
-        }
-    }
-    @Override protected void onSaveInstanceState(Bundle outState) { webView.saveState(outState); super.onSaveInstanceState(outState); }
-    @Override public void onBackPressed() { if (webView.canGoBack()) webView.goBack(); else super.onBackPressed(); }
+public class MainActivity extends Activity{
+ WebView web; SharedPreferences sp;
+ static final String URL="https://mada-3g8.pages.dev";
+ @Override public void onCreate(Bundle b){super.onCreate(b);sp=getSharedPreferences("mada",0); web=new WebView(this); web.getSettings().setJavaScriptEnabled(true);web.getSettings().setDomStorageEnabled(true);web.getSettings().setMediaPlaybackRequiresUserGesture(false);web.addJavascriptInterface(new Bridge(),"MadaNative");web.setWebViewClient(new WebViewClient(){@Override public void onPageFinished(WebView v,String u){syncSession();}});setContentView(web);web.loadUrl(URL);}
+ @Override protected void onResume(){super.onResume(); if(web!=null)web.postDelayed(this::syncSession,800);}
+ void syncSession(){web.evaluateJavascript("(async()=>{try{let s=window.MADA_SUPABASE_CLIENT;if(!s)return null;let r=await s.auth.getSession();let x=r.data&&r.data.session;if(x)return JSON.stringify({access_token:x.access_token,refresh_token:x.refresh_token,user_id:x.user.id});}catch(e){}return null})()",v->{if(v==null||v.equals("null"))return;try{String x=android.text.TextUtils.htmlEncode(v);x=x.substring(1,x.length()-1).replace("\\\"","\"").replace("\\\\","\\");org.json.JSONObject o=new org.json.JSONObject(x);sp.edit().putString("access",o.getString("access_token")).putString("refresh",o.optString("refresh_token")).putString("uid",o.getString("user_id")).apply();startBuzzService();}catch(Exception ignored){}});}
+ void startBuzzService(){if(Build.VERSION.SDK_INT>=23&&!Settings.canDrawOverlays(this)){try{startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:"+getPackageName())));}catch(Exception ignored){} } Intent i=new Intent(this,BuzzService.class);if(Build.VERSION.SDK_INT>=26)startForegroundService(i);else startService(i);}
+ class Bridge{ @JavascriptInterface public void startOverlay(){startBuzzService();} }
+ @Override public void onBackPressed(){if(web.canGoBack())web.goBack();else super.onBackPressed();}
 }
