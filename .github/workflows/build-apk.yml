@@ -1,3 +1,4 @@
+# Mada production release workflow - trigger verified
 name: Build Mada Production Release
 
 on:
