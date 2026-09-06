@@ -7,18 +7,16 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   function load(src,attr){if(document.querySelector('script['+attr+']'))return;const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.async=false;document.head.appendChild(s)}
   function loadCss(href,attr){if(document.querySelector('link['+attr+']'))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.setAttribute(attr,'1');document.head.appendChild(l)}
   loadCss('mada-light-surfaces-v1.css?v20260906-1','data-mada-light-surfaces-v1');
-  loadCss('mada-messenger-v1.css?v20260906-6','data-mada-messenger-v1');
-  /* Capture Messenger friend taps before any later app script can cancel them. */
-  document.addEventListener('click',function(e){
+  loadCss('mada-messenger-v1.css?v20260906-7','data-mada-messenger-v1');
+  document.addEventListener('pointerdown',function(e){
     const b=e.target&&e.target.closest?e.target.closest('.mada-ms-user'):null;
-    if(!b||!document.getElementById('madaMsList')?.contains(b))return;
-    if(b.dataset.madaOpening==='1')return;
-    b.dataset.madaOpening='1';
+    const list=document.getElementById('madaMsList');
+    if(!b||!list||!list.contains(b))return;
     e.preventDefault();e.stopImmediatePropagation();
     b.classList.add('active');
     const id=b.dataset.id,name=b.dataset.name||b.querySelector('b')?.textContent?.trim()||'مستخدم Mada';
-    if(window.MadaMessenger&&typeof window.MadaMessenger.openFriend==='function')window.MadaMessenger.openFriend(id,name);
-    setTimeout(()=>{b.dataset.madaOpening='0'},1200);
+    const go=()=>{if(window.MadaMessenger&&typeof window.MadaMessenger.openFriend==='function'){window.MadaMessenger.openFriend(id,name);return true}return false};
+    if(!go())setTimeout(go,120);
   },true);
   load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
   load('mada-stories-v5.js?v20260906-1','data-mada-stories-v5');
@@ -42,7 +40,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-comments-v1.js?v20260906-1','data-mada-comments-v1');
   load('mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge');
   load('mada-friends-v1.js?v20260906-1','data-mada-friends-v1');
-  load('mada-messenger-v1.js?v20260906-6','data-mada-messenger-v1');
-  load('mada-messenger-click-fix-v1.js?v20260906-5','data-mada-messenger-click-fix-v1');
+  load('mada-messenger-v1.js?v20260906-7','data-mada-messenger-v1');
+  load('mada-messenger-click-fix-v1.js?v20260906-6','data-mada-messenger-click-fix-v1');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
 })();
