@@ -1,42 +1,57 @@
-/* Mada: universal back navigation for mobile pages, modals and drawers. */
+/* Mada: reliable Android/browser back handling for pages, modals and drawers. */
 (function(){'use strict';
-  let depth=0, internal=false;
-  const homePaths=new Set(['','/','/index.html','/mada/','/mada/index.html']);
-  function modalOpen(){const m=document.getElementById('modal');return !!(m && !m.hidden);}
+  const KEY='madaBackV2';
+  let suppress=false;
+  function modal(){const x=document.getElementById('modal');return x&&!x.hidden;}
+  function drawer(){return document.querySelector('.mada-drawer:not([hidden])');}
   function closeTop(){
-    const m=document.getElementById('modal');
-    if(m && !m.hidden){
-      const c=document.getElementById('closeModal');
-      if(c){c.click();return true;}
-      m.hidden=true;return true;
+    if(modal()){
+      const b=document.getElementById('closeModal');
+      if(b)b.click(); else document.getElementById('modal').hidden=true;
+      return true;
     }
-    const drawer=document.querySelector('.mada-drawer:not([hidden])');
-    if(drawer){document.querySelector('.mada-drawer-close')?.click();return true;}
+    const d=drawer();
+    if(d){d.querySelector('.mada-drawer-close')?.click();return true;}
     return false;
   }
-  function isHome(){return homePaths.has(location.pathname.replace(/\\/+$/,'/').replace(/\\/g,'/')) || location.pathname.endsWith('/index.html');}
-  function push(){
-    if(internal)return;
-    try{history.pushState({madaSubPage:true,depth:++depth},'',location.href);}catch(e){}
+  function isHome(){
+    const p=(location.pathname||'/').replace(/\\/+/g,'/').replace(/\\$/,'')||'/';
+    return p==='/'||p==='/index.html'||p.endsWith('/index.html');
+  }
+  function pushLayer(){
+    if(suppress)return;
+    try{history.pushState({madaBack:true},'',location.href);}catch(e){}
+  }
+  function ensureBase(){
+    try{
+      const s=history.state;
+      if(!s||!s[KEY])history.replaceState(Object.assign({},s||{},{[KEY]:true,base:true}),document.title,location.href);
+    }catch(e){}
   }
   function markNavigation(){
     document.addEventListener('click',function(e){
-      const b=e.target.closest('button,a,[data-profile]');if(!b)return;
+      const b=e.target.closest('button,a,[data-profile]');
+      if(!b||b.disabled)return;
       if(b.id==='closeModal'||b.classList.contains('mada-drawer-close'))return;
-      if(b.matches('[data-profile]')||b.id==='profileNav'||b.id==='friendsNav'||b.id==='friendsBottom'||b.id==='notifyNav'||b.id==='notifyBottom'||b.id==='msgBtn'||b.id==='msgBtn2'||b.id==='premiumBtn'||b.id==='premiumBannerBtn'){
-        setTimeout(()=>{if(modalOpen())push()},40);
-      }
+      const navigates=(
+        b.matches('[data-profile]')||
+        ['profileNav','friendsNav','friendsBottom','notifyNav','notifyBottom','msgBtn','msgBtn2','premiumBtn','premiumBannerBtn','searchBtn','menuBtn','allStoriesBtn','reelsBtn','addStoryBtn','createNav','createBottom'].includes(b.id)
+      );
+      if(!navigates)return;
+      /* Create a real browser-history entry BEFORE the app opens its dynamic view.
+         This makes the Android system Back button fire popstate instead of exiting. */
+      pushLayer();
     },true);
   }
   window.addEventListener('popstate',function(){
-    if(closeTop()){depth=Math.max(0,depth-1);return;}
-    // On standalone pages (comments/profile/etc.) the Android/browser back
-    // button should perform normal page navigation; do not trap it.
-    if(!isHome() && history.length>1){internal=true;history.back();}
+    /* First Back closes the topmost in-app layer. */
+    if(closeTop())return;
+    /* On a standalone URL, let the browser/WebView continue normal history. */
+    if(!isHome())return;
   });
-  document.addEventListener('keydown',e=>{
+  document.addEventListener('keydown',function(e){
     if(e.key==='Escape'&&closeTop())e.stopPropagation();
   },true);
-  function start(){markNavigation();}
+  function start(){ensureBase();markNavigation();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
