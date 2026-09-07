@@ -38,8 +38,16 @@ create table if not exists public.comments (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.posts(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
+  parent_comment_id uuid references public.comments(id) on delete cascade,
   body text not null,
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.comment_likes (
+  comment_id uuid not null references public.comments(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (comment_id,user_id)
 );
 
 create table if not exists public.reports (
@@ -100,6 +108,7 @@ create table if not exists public.payments (
 
 create index if not exists posts_created_at_idx on public.posts(created_at desc);
 create index if not exists comments_post_id_idx on public.comments(post_id);
+create index if not exists comments_parent_comment_id_idx on public.comments(parent_comment_id, created_at asc);
 create index if not exists reports_status_idx on public.reports(status);
 create index if not exists payments_status_idx on public.payments(status);
 
@@ -128,6 +137,7 @@ alter table public.profiles enable row level security;
 alter table public.posts enable row level security;
 alter table public.post_likes enable row level security;
 alter table public.comments enable row level security;
+alter table public.comment_likes enable row level security;
 alter table public.reports enable row level security;
 alter table public.bans enable row level security;
 alter table public.subscription_plans enable row level security;
@@ -146,6 +156,9 @@ create policy likes_delete on public.post_likes for delete to authenticated usin
 create policy comments_read on public.comments for select to authenticated using (true);
 create policy comments_insert on public.comments for insert to authenticated with check (user_id=auth.uid());
 create policy comments_delete on public.comments for delete to authenticated using (user_id=auth.uid() or public.is_admin());
+create policy comment_likes_read on public.comment_likes for select to authenticated using (true);
+create policy comment_likes_insert on public.comment_likes for insert to authenticated with check (user_id=auth.uid());
+create policy comment_likes_delete on public.comment_likes for delete to authenticated using (user_id=auth.uid() or public.is_admin());
 create policy reports_insert on public.reports for insert to authenticated with check (reporter_id=auth.uid());
 create policy reports_admin_read on public.reports for select to authenticated using (public.is_admin());
 create policy reports_admin_update on public.reports for update to authenticated using (public.is_admin()) with check (public.is_admin());
