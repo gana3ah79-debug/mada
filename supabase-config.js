@@ -6,8 +6,8 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
 
 (function(){
   'use strict';
-  if(window.__MADA_SECONDARY_BUNDLE_V3)return;
-  window.__MADA_SECONDARY_BUNDLE_V3=true;
+  if(window.__MADA_SECONDARY_BUNDLE_V4)return;
+  window.__MADA_SECONDARY_BUNDLE_V4=true;
 
   const cssFiles=[
     ['mada-light-surfaces-v1.css?v20260906-2','data-mada-light-surfaces-v1'],
@@ -37,13 +37,13 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
     ['mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge'],
     ['mada-friends-v1.js?v20260906-1','data-mada-friends-v1'],
     ['mada-messenger-v1.js?v20260906-12','data-mada-messenger-v1'],
-    ['mada-push-v3.js?v20260906-4','data-mada-push-v3']
+    ['mada-push-v3.js?v20260906-4','data-mada-push-v3'],
+    ['mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1']
   ];
   const messengerAddonCss=[['mada-messenger-media-v1.css?v20260906-2','data-mada-messenger-media-v1']];
   const messengerAddonJs=[
     ['mada-messenger-media-v1.js?v20260906-2','data-mada-messenger-media-v1'],
     ['mada-messenger-status-v1.js?v20260906-2','data-mada-messenger-status-v1'],
-    ['mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1'],
     ['mada-messenger-buzz-fix-v1.js?v20260907-1','data-mada-messenger-buzz-fix-v1']
   ];
 
