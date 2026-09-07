@@ -6,13 +6,12 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
 
 (function(){
   'use strict';
-  if(window.__MADA_SECONDARY_BUNDLE_V2)return;
-  window.__MADA_SECONDARY_BUNDLE_V2=true;
+  if(window.__MADA_SECONDARY_BUNDLE_V3)return;
+  window.__MADA_SECONDARY_BUNDLE_V3=true;
 
   const cssFiles=[
     ['mada-light-surfaces-v1.css?v20260906-2','data-mada-light-surfaces-v1'],
-    ['mada-messenger-v1.css?v20260906-10','data-mada-messenger-v1'],
-    ['mada-messenger-media-v1.css?v20260906-2','data-mada-messenger-media-v1']
+    ['mada-messenger-v1.css?v20260906-10','data-mada-messenger-v1']
   ];
   const jsFiles=[
     ['mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels'],
@@ -38,10 +37,13 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
     ['mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge'],
     ['mada-friends-v1.js?v20260906-1','data-mada-friends-v1'],
     ['mada-messenger-v1.js?v20260906-12','data-mada-messenger-v1'],
+    ['mada-push-v3.js?v20260906-4','data-mada-push-v3']
+  ];
+  const messengerAddonCss=[['mada-messenger-media-v1.css?v20260906-2','data-mada-messenger-media-v1']];
+  const messengerAddonJs=[
     ['mada-messenger-media-v1.js?v20260906-2','data-mada-messenger-media-v1'],
     ['mada-messenger-status-v1.js?v20260906-2','data-mada-messenger-status-v1'],
     ['mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1'],
-    ['mada-push-v3.js?v20260906-4','data-mada-push-v3'],
     ['mada-messenger-buzz-fix-v1.js?v20260907-1','data-mada-messenger-buzz-fix-v1']
   ];
 
@@ -78,7 +80,25 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
     for(const item of jsFiles) await loadJs(item);
     window.dispatchEvent(new CustomEvent('mada:secondary-ready'));
   }
-  window.MadaSecondaryBundle={load:loadSecondary};
-
+  let messengerAddonPromise=null;
+  async function loadMessengerAddons(){
+    if(messengerAddonPromise)return messengerAddonPromise;
+    messengerAddonPromise=(async()=>{
+      for(const item of messengerAddonCss) await loadCss(item);
+      for(const item of messengerAddonJs) await loadJs(item);
+    })().catch(()=>{});
+    return messengerAddonPromise;
+  }
+  function watchMessenger(){
+    if(document.querySelector('.mada-messenger-overlay'))loadMessengerAddons();
+    if(document.body.__madaMessengerAddonWatch)return;
+    const mo=new MutationObserver(()=>{
+      if(document.querySelector('.mada-messenger-overlay'))loadMessengerAddons();
+    });
+    mo.observe(document.body,{childList:true});
+    document.body.__madaMessengerAddonWatch=true;
+  }
+  window.MadaSecondaryBundle={load:loadSecondary,loadMessengerAddons};
+  watchMessenger();
   idle(()=>{ loadSecondary().catch(()=>{}); },1800);
 })();
