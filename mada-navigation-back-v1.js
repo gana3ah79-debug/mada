@@ -12,9 +12,7 @@
     if(d){d.querySelector('.mada-drawer-close')?.click();return true;}
     return false;
   }
-  function pushLayer(){
-    try{history.pushState({madaBackLayer:true},document.title,location.href);}catch(e){}
-  }
+  function pushLayer(){try{history.pushState({madaBackLayer:true},document.title,location.href);}catch(e){}}
   function ensureBase(){
     try{
       if(!history.state||!history.state.madaBackBase)
@@ -22,7 +20,7 @@
     }catch(e){}
   }
   function isDynamicButton(b){
-    if(b.matches('a[href]'))return false; /* real URL navigation already creates history */
+    if(b.matches('a[href]'))return false;
     return b.matches('[data-profile]')||[
       'profileNav','friendsNav','friendsBottom','notifyNav','notifyBottom','msgBtn','msgBtn2',
       'premiumBtn','premiumBannerBtn','searchBtn','menuBtn','allStoriesBtn','reelsBtn',
@@ -33,18 +31,18 @@
     document.addEventListener('click',function(e){
       const b=e.target.closest('button,a,[data-profile]');
       if(!b||b.disabled||b.id==='closeModal'||b.classList.contains('mada-drawer-close'))return;
-      if(!isDynamicButton(b))return;
-      /* Make Android/browser Back close the dynamic Mada screen first. */
-      pushLayer();
+      if(b.id==='backBtn'){
+        e.preventDefault();
+        if(closeTop())return;
+        if(history.length>1)history.back();
+        else location.href='index.html';
+        return;
+      }
+      if(isDynamicButton(b))pushLayer();
     },true);
   }
-  window.addEventListener('popstate',function(){
-    if(closeTop())return;
-    /* For real standalone URLs, normal browser/WebView history remains untouched. */
-  });
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape'&&closeTop())e.stopPropagation();
-  },true);
+  window.addEventListener('popstate',function(){if(closeTop())return;});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&closeTop())e.stopPropagation();},true);
   function start(){ensureBase();markNavigation();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
