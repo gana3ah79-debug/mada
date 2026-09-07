@@ -1,74 +1,18 @@
-/* Mada standalone comments page v1 — paged, bounded, no inline expansion. */
+/* Mada dedicated comments page v2 — lightweight, paginated, RTL, schema-tolerant. */
 (function(){
-  'use strict';
-  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
-  const $=id=>document.getElementById(id);
-  const params=new URLSearchParams(location.search);
-  const postId=params.get('post');
-  const sb=()=>window.MADA_SUPABASE_CLIENT||window.supabase?.createClient?.(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);
-  let client=null,user=null,offset=0,hasMore=false,totalCount=0,loading=false;
-  const PAGE_SIZE=30;
-
-  function toast(message){const t=$('toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>{t.hidden=true},2800)}
-  function goBack(){if(document.referrer&&new URL(document.referrer,location.href).origin===location.origin&&history.length>1)history.back();else location.href='index.html'}
-  function formatDate(value){try{return new Date(value).toLocaleString('ar-EG',{dateStyle:'medium',timeStyle:'short'})}catch{return ''}}
-  function initials(name){return (name||'م').trim().charAt(0)||'م'}
-
-  async function loadPost(){
-    if(!postId){$('postCard').innerHTML='<div class="empty">المنشور غير موجود.</div>';return false}
-    const r=await client.from('posts').select('id,author_id,body,media_url,created_at').eq('id',postId).maybeSingle();
-    if(r.error||!r.data){$('postCard').innerHTML='<div class="empty">تعذر العثور على المنشور.</div>';return false}
-    const p=r.data;
-    let author={display_name:'مستخدم Mada',avatar_url:null};
-    if(p.author_id){const a=await client.from('profiles').select('display_name,avatar_url').eq('id',p.author_id).maybeSingle();if(a.data)author=a.data}
-    $('postCard').innerHTML=`<div class="post-author"><span class="avatar">${esc(initials(author.display_name))}</span><div><strong>${esc(author.display_name||'مستخدم Mada')}</strong><small>${formatDate(p.created_at)}</small></div></div><div class="post-body">${esc(p.body||'')}</div>${p.media_url?`<img class="post-media" src="${esc(p.media_url)}" alt="صورة المنشور" loading="lazy">`:''}`;
-    return true;
-  }
-
-  async function refreshCount(){
-    const r=await client.from('comments').select('id',{count:'exact',head:true}).eq('post_id',postId);
-    if(!r.error){totalCount=r.count||0;$('commentsCount').textContent=String(totalCount);$('commentsSubtitle').textContent=`${totalCount} تعليق`}
-  }
-
-  function commentHtml(c,profile){
-    const name=profile?.display_name||'مستخدم';
-    return `<article class="comment-row" data-comment-id="${esc(c.id)}"><span class="avatar small">${esc(initials(name))}</span><div class="comment-content"><div class="comment-head"><strong>${esc(name)}</strong><time>${formatDate(c.created_at)}</time></div><div class="comment-body">${esc(c.body)}</div></div></article>`;
-  }
-
-  async function loadComments(reset){
-    if(loading||!client||!postId)return;loading=true;
-    const list=$('commentsList'),more=$('loadMoreBtn');
-    if(reset){offset=0;hasMore=false;list.innerHTML='<div class="loading">جاري تحميل التعليقات…</div>';more.hidden=true}
-    const r=await client.from('comments').select('id,author_id,body,created_at').eq('post_id',postId).order('created_at',{ascending:false}).range(offset,offset+PAGE_SIZE-1);
-    if(r.error){if(reset)list.innerHTML='<div class="empty">تعذر تحميل التعليقات.</div>';toast('تعذر تحميل التعليقات');loading=false;return}
-    const rows=r.data||[];hasMore=rows.length===PAGE_SIZE;offset+=rows.length;
-    const ids=[...new Set(rows.map(x=>x.author_id).filter(Boolean))];let profiles=new Map();
-    if(ids.length){const p=await client.from('profiles').select('id,display_name,avatar_url').in('id',ids);profiles=new Map((p.data||[]).map(x=>[x.id,x]))}
-    if(reset&&rows.length===0)list.innerHTML='<div class="empty">لا توجد تعليقات بعد. كن أول من يعلق 👋</div>';
-    else list.insertAdjacentHTML('beforeend',rows.map(c=>commentHtml(c,profiles.get(c.author_id))).join(''));
-    more.hidden=!hasMore;await refreshCount();loading=false;
-  }
-
-  async function sendComment(e){
-    e.preventDefault();const input=$('commentInput'),button=$('sendBtn'),body=input.value.trim();
-    if(!body||!user)return;
-    input.disabled=true;button.disabled=true;
-    const r=await client.from('comments').insert({post_id:postId,author_id:user.id,body}).select('id,author_id,body,created_at').single();
-    input.disabled=false;button.disabled=false;
-    if(r.error){toast('تعذر إضافة التعليق: '+r.error.message);return}
-    input.value='';
-    const name=user.user_metadata?.display_name||user.user_metadata?.name||'أنت';
-    const list=$('commentsList');list.querySelector('.empty')?.remove();list.insertAdjacentHTML('afterbegin',commentHtml(r.data,{display_name:name}));
-    await refreshCount();window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
-  }
-
-  async function boot(){
-    $('backBtn').addEventListener('click',goBack);$('loadMoreBtn').addEventListener('click',()=>loadComments(false));$('commentForm').addEventListener('submit',sendComment);
-    client=sb();
-    if(!client){$('postCard').innerHTML='<div class="empty">تعذر تشغيل التعليقات.</div>';return}
-    const session=await client.auth.getSession();user=session.data?.session?.user||null;
-    if(!user){$('commentInput').disabled=true;$('sendBtn').disabled=true;$('commentInput').placeholder='سجل الدخول لكتابة تعليق'}
-    if(await loadPost())await loadComments(true);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+'use strict';
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+const postId=new URLSearchParams(location.search).get('post'),PAGE=30;let client,user,offset=0,loading=false;
+const uid=o=>o?.user_id||o?.author_id||o?.profile_id||null,txt=o=>o?.body??o?.content??o?.text??'',media=o=>o?.image_url||o?.media_url||o?.image||null,name=p=>p?.display_name||p?.name||p?.username||'مستخدم',initial=n=>(String(n||'م').trim()[0]||'م').toUpperCase();
+function dt(v){try{return new Date(v).toLocaleString('ar-EG',{day:'numeric',month:'long',year:'numeric',hour:'numeric',minute:'2-digit'})}catch{return ''}}
+function toast(x){const t=$('toast');t.textContent=x;t.hidden=false;clearTimeout(window.madaToast);window.madaToast=setTimeout(()=>t.hidden=true,2500)}
+async function getProfiles(ids){if(!ids.length)return new Map();const r=await client.from('profiles').select('id,display_name,username,avatar_url').in('id',ids);return new Map((r.data||[]).map(p=>[p.id,p]))}
+async function loadPost(){if(!postId){$('postCard').innerHTML='<div class="empty">المنشور غير موجود.</div>';return false}const r=await client.from('posts').select('*').eq('id',postId).maybeSingle();if(r.error||!r.data){$('postCard').innerHTML='<div class="empty">تعذر تحميل المنشور.</div>';return false}const p=r.data,id=uid(p);let prof=null;if(id){const q=await client.from('profiles').select('id,display_name,username,avatar_url').eq('id',id).maybeSingle();prof=q.data||null}const n=name(prof);$('postCard').innerHTML=`<div class="post-author"><div class="avatar">${esc(initial(n))}</div><div class="author-info"><strong>${esc(n)}</strong><time>${esc(dt(p.created_at))}</time></div><button class="post-more" type="button">•••</button></div><div class="post-text">${esc(txt(p))}</div>${media(p)?`<img class="post-media" src="${esc(media(p))}" alt="" loading="lazy">`:''}`;return true}
+async function count(){const r=await client.from('comments').select('*',{count:'exact',head:true}).eq('post_id',postId);if(!r.error){$('commentsCount').textContent=String(r.count||0);$('commentsSubtitle').textContent=`${r.count||0} تعليق`}}
+function row(c,p){const n=name(p);return `<article class="comment-row" data-id="${esc(c.id)}"><div class="avatar small">${esc(initial(n))}</div><div class="comment-main"><div class="comment-author"><strong>${esc(n)}</strong><time>${esc(dt(c.created_at))}</time></div><div class="comment-text">${esc(txt(c))}</div><div class="comment-actions"><button type="button">♡ 0</button><button type="button">↩ رد</button>${user&&uid(c)===user.id?`<button type="button" data-delete="${esc(c.id)}">🗑 حذف</button>`:''}</div></div></article>`}
+async function loadMore(reset){if(loading)return;loading=true;const list=$('commentsList'),more=$('loadMoreBtn');if(reset){offset=0;list.innerHTML='<div class="loading">جاري تحميل التعليقات…</div>';more.hidden=true}const r=await client.from('comments').select('*').eq('post_id',postId).order('created_at',{ascending:false}).range(offset,offset+PAGE-1);if(r.error){if(reset)list.innerHTML='<div class="empty">تعذر تحميل التعليقات.</div>';toast('تعذر تحميل التعليقات');loading=false;return}const rows=r.data||[],ps=await getProfiles([...new Set(rows.map(uid).filter(Boolean))]);if(reset)list.innerHTML='';if(reset&&!rows.length)list.innerHTML='<div class="empty">لا توجد تعليقات بعد 👋</div>';rows.forEach(c=>list.insertAdjacentHTML('beforeend',row(c,ps.get(uid(c)))));offset+=rows.length;more.hidden=rows.length<PAGE;await count();loading=false}
+async function send(e){e.preventDefault();if(!user){toast('سجّل الدخول لكتابة تعليق');return}const input=$('commentInput'),btn=$('sendBtn'),body=input.value.trim();if(!body)return;input.disabled=btn.disabled=true;btn.textContent='جارٍ…';let r=await client.from('comments').insert({post_id:postId,author_id:user.id,body}).select('*').single();if(r.error)r=await client.from('comments').insert({post_id:postId,user_id:user.id,body}).select('*').single();input.disabled=btn.disabled=false;btn.textContent='إرسال';if(r.error){toast('تعذر إضافة التعليق');return}input.value='';$('commentsList').querySelector('.empty')?.remove();$('commentsList').insertAdjacentHTML('afterbegin',row(r.data,{display_name:'أنت'}));await count()}
+function back(){if(history.length>1)history.back();else location.href='index.html'}
+async function boot(){$('backBtn').onclick=back;$('loadMoreBtn').onclick=()=>loadMore(false);$('commentForm').onsubmit=send;client=window.MADA_SUPABASE_CLIENT||window.sb||window.supabase?.createClient?.(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY);if(!client){$('postCard').innerHTML='<div class="empty">تعذر تشغيل صفحة التعليقات.</div>';return}const s=await client.auth.getSession();user=s.data?.session?.user||null;if(!user){$('commentInput').disabled=true;$('sendBtn').disabled=true;$('commentInput').placeholder='سجّل الدخول لكتابة تعليق'}if(await loadPost())await loadMore(true)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
