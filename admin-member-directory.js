@@ -1,0 +1,58 @@
+(()=>{
+  if(window.__madaMemberDirectoryLoaded)return;window.__madaMemberDirectoryLoaded=true;
+  const client=window.supabase?.createClient&&window.MADA_SUPABASE_URL?window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY):null;
+  if(!client)return;
+  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+  const fmt=x=>x?new Date(x).toLocaleDateString('ar-EG'):'—';
+  const aid=async()=>{const{data:{session}}=await client.auth.getSession();return session?.user?.id||null};
+  const audit=async(action,target,details={})=>{try{const id=await aid();if(id)await client.from('admin_audit_log').insert({admin_id:id,action,target_type:'member',target_id:target,details})}catch(e){}};
+  let lastRows=[];
+  function panel(){
+    if(!document.getElementById('madaAdvancedMemberPanel')){
+      const host=document.getElementById('content');if(!host)return;
+      const style=document.createElement('style');style.textContent=`#madaAdvancedMemberPanel{margin:12px 0;padding:14px;border:1px solid #e4e9f1;border-radius:16px;background:var(--card,#fff);box-shadow:0 5px 18px rgba(15,23,42,.05)}#madaAdvancedMemberPanel h3{margin:0 0 10px}.mada-am-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.mada-am-grid input,.mada-am-grid select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #dbe2ec;border-radius:10px;background:#fff}.mada-am-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.mada-am-actions button{border:0;border-radius:10px;padding:9px 11px;font-weight:800;cursor:pointer}.mada-am-primary{background:#eaf2ff;color:#1f65c1}.mada-am-danger{background:#ffe8e8;color:#b42318}.mada-am-results{margin-top:10px}.mada-am-row{display:flex;align-items:center;gap:9px;padding:10px 2px;border-top:1px solid #edf0f5;flex-wrap:wrap}.mada-am-main{flex:1;min-width:180px}.mada-am-main b{display:block}.mada-am-main small{color:#718096}.mada-badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#f1f5f9;margin:2px;font-size:11px;font-weight:800}.mada-badge.warn{background:#fff3cd}.mada-badge.bad{background:#ffe4e6}.mada-badge.ok{background:#e8f7ee}.mada-am-row button{border:0;border-radius:9px;padding:7px 9px;font-weight:800;background:#edf3ff;color:#276edb}.mada-am-summary{font-size:12px;color:#64748b;margin-top:8px}@media(max-width:800px){.mada-am-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.mada-am-grid{grid-template-columns:1fr}}`;
+      document.head.appendChild(style);
+    }
+    const old=document.getElementById('madaAdvancedMemberPanel');if(old)old.remove();
+    const host=document.getElementById('content');if(!host)return;
+    const box=document.createElement('div');box.id='madaAdvancedMemberPanel';box.innerHTML=`<h3>🔎 إدارة الأعضاء المتقدمة</h3><div class="mada-am-grid"><input id="madaAmSearch" placeholder="ابحث بالاسم أو اليوزر أو المدينة"><select id="madaAmStatus"><option value="all">كل الحالات</option><option value="active">نشط</option><option value="banned">محظور</option><option value="frozen">مجمد</option><option value="restricted">مقيد</option><option value="monitored">تحت المراقبة</option><option value="warnings">إنذارات 2+</option></select><select id="madaAmRole"><option value="all">كل الأدوار</option><option value="user">عضو</option><option value="admin">أدمن</option><option value="moderator">مشرف</option></select><select id="madaAmSort"><option value="newest">الأحدث</option><option value="oldest">الأقدم</option><option value="name">الاسم</option><option value="warnings">عدد الإنذارات</option></select></div><div class="mada-am-actions"><button class="mada-am-primary" id="madaAmSearchBtn">🔍 بحث متقدم</button><button id="madaAmResetBtn">↩️ إعادة ضبط</button><button id="madaAmSelectAll">☑️ تحديد النتائج</button><button id="madaAmClear">☐ إلغاء التحديد</button></div><div class="mada-am-actions"><button class="mada-am-primary" id="madaAmFreeze">⏸️ تجميد 24 ساعة</button><button class="mada-am-primary" id="madaAmUnfreeze">▶️ رفع التجميد</button><button class="mada-am-primary" id="madaAmMonitor">🛡️ تشغيل المراقبة</button><button class="mada-am-primary" id="madaAmPost">🚫 منع النشر</button><button class="mada-am-primary" id="madaAmComment">🚫 منع التعليق</button></div><div id="madaAmSummary" class="mada-am-summary">استخدم البحث لعرض أعضاء مطابقين.</div><div id="madaAmResults" class="mada-am-results"></div>`;
+    const usersTab=document.querySelector('aside button[data-tab="users"]');
+    host.prepend(box);
+    box.querySelector('#madaAmSearchBtn').onclick=search;
+    box.querySelector('#madaAmResetBtn').onclick=()=>{box.querySelector('#madaAmSearch').value='';box.querySelector('#madaAmStatus').value='all';box.querySelector('#madaAmRole').value='all';box.querySelector('#madaAmSort').value='newest';search()};
+    box.querySelector('#madaAmSelectAll').onclick=()=>box.querySelectorAll('.mada-am-check').forEach(x=>x.checked=true);
+    box.querySelector('#madaAmClear').onclick=()=>box.querySelectorAll('.mada-am-check').forEach(x=>x.checked=false);
+    box.querySelector('#madaAmFreeze').onclick=()=>bulk('freeze');box.querySelector('#madaAmUnfreeze').onclick=()=>bulk('unfreeze');box.querySelector('#madaAmMonitor').onclick=()=>bulk('monitor');box.querySelector('#madaAmPost').onclick=()=>bulk('post');box.querySelector('#madaAmComment').onclick=()=>bulk('comment');
+    box.querySelector('#madaAmSearch').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+    if(usersTab)usersTab.addEventListener('click',()=>setTimeout(panel,30),{once:false});
+  }
+  async function search(){
+    const box=document.getElementById('madaAdvancedMemberPanel');if(!box)return;
+    const q=box.querySelector('#madaAmSearch').value.trim();const role=box.querySelector('#madaAmRole').value;const status=box.querySelector('#madaAmStatus').value;const sort=box.querySelector('#madaAmSort').value;
+    let query=client.from('profiles').select('id,username,display_name,role,is_banned,is_verified,is_premium,created_at,city').limit(500);
+    if(role!=='all')query=query.eq('role',role);
+    if(q)query=query.or(`username.ilike.%${q}%,display_name.ilike.%${q}%,city.ilike.%${q}%`);
+    const{data:users,error}=await query;if(error){box.querySelector('#madaAmSummary').textContent='❌ '+error.message;return}
+    const ids=(users||[]).map(u=>u.id);let controls=[],warnings=[];
+    if(ids.length){const[cw,ww]=await Promise.all([client.from('member_controls').select('user_id,frozen_until,posting_disabled,commenting_disabled,messaging_disabled,media_disabled,monitored').in('user_id',ids),client.from('member_warnings').select('user_id,level').in('user_id',ids)]);controls=cw.data||[];warnings=ww.data||[]}
+    const cm=new Map(controls.map(x=>[x.user_id,x]));const wm=new Map();warnings.forEach(w=>wm.set(w.user_id,(wm.get(w.user_id)||0)+1));
+    let rows=(users||[]).map(u=>({...u,c:cm.get(u.id)||{},warningCount:wm.get(u.id)||0}));
+    const now=Date.now();
+    rows=rows.filter(u=>{const frozen=u.c.frozen_until&&new Date(u.c.frozen_until).getTime()>now;const restricted=u.c.posting_disabled||u.c.commenting_disabled||u.c.messaging_disabled||u.c.media_disabled; if(status==='active')return !u.is_banned&&!frozen&&!restricted; if(status==='banned')return !!u.is_banned; if(status==='frozen')return frozen; if(status==='restricted')return restricted; if(status==='monitored')return !!u.c.monitored; if(status==='warnings')return u.warningCount>=2; return true});
+    rows.sort((a,b)=>sort==='oldest'?new Date(a.created_at)-new Date(b.created_at):sort==='name'?String(a.display_name||'').localeCompare(String(b.display_name||''),'ar'):sort==='warnings'?b.warningCount-a.warningCount:new Date(b.created_at)-new Date(a.created_at));
+    lastRows=rows;render(rows);box.querySelector('#madaAmSummary').textContent=`عرض ${rows.length} عضو`+(q?` مطابق لـ «${q}»`:'')+' · يمكنك تحديد مجموعة وتنفيذ إجراء واحد عليهم.';
+  }
+  function render(rows){const out=document.getElementById('madaAmResults');if(!out)return;out.innerHTML=rows.length?rows.map(u=>{const frozen=u.c.frozen_until&&new Date(u.c.frozen_until)>new Date();const restricted=u.c.posting_disabled||u.c.commenting_disabled||u.c.messaging_disabled||u.c.media_disabled;return `<div class="mada-am-row"><input class="mada-am-check" type="checkbox" data-id="${u.id}"><div class="mada-am-main"><b>${esc(u.display_name||u.username||'عضو')}</b><small>@${esc(u.username||'—')} · ${esc(u.city||'بدون مدينة')} · منذ ${fmt(u.created_at)}</small><span class="mada-badge ${u.is_banned?'bad':'ok'}">${u.is_banned?'⛔ محظور':'🟢 نشط'}</span>${frozen?'<span class="mada-badge bad">⏸️ مجمد</span>':''}${restricted?'<span class="mada-badge warn">🔓 مقيد</span>':''}${u.c.monitored?'<span class="mada-badge">🛡️ مراقبة</span>':''}<span class="mada-badge">⚠️ ${u.warningCount} إنذار</span>${u.is_premium?'<span class="mada-badge">💎 Premium</span>':''}${u.is_verified?'<span class="mada-badge">✅ موثق</span>':''}</div><button onclick="window.madaOpenMember('${u.id}')">🎛️ إدارة</button></div>`}).join(''):'<div class="mada-am-summary">لا توجد نتائج مطابقة.</div>'}
+  async function bulk(action){
+    const box=document.getElementById('madaAdvancedMemberPanel');if(!box)return;const ids=[...box.querySelectorAll('.mada-am-check:checked')].map(x=>x.dataset.id);if(!ids.length)return alert('حدد عضوًا واحدًا على الأقل');
+    const me=await aid();if(me&&ids.includes(me))return alert('لا يمكن تنفيذ إجراء جماعي على حساب الأدمن الحالي');
+    if(!confirm(`سيتم تنفيذ الإجراء على ${ids.length} عضو. متابعة؟`))return;
+    const until=action==='freeze'?new Date(Date.now()+86400000).toISOString():null;const payload={updated_at:new Date().toISOString(),updated_by:me};if(action==='freeze'||action==='unfreeze')payload.frozen_until=until;if(action==='monitor')payload.monitored=true;if(action==='post')payload.posting_disabled=true;if(action==='comment')payload.commenting_disabled=true;
+    const{error}=await client.from('member_controls').upsert(ids.map(id=>({user_id:id,...payload})),{onConflict:'user_id'});if(error)return alert('تعذر تنفيذ الإجراء: '+error.message);
+    await Promise.all(ids.map(id=>audit('member_bulk_'+action,id,{count:ids.length})));alert('✅ تم تنفيذ الإجراء بنجاح');search();
+  }
+  let lastContent='';
+  const obs=new MutationObserver(()=>{const content=document.getElementById('content');if(!content)return;const title=content.querySelector('.admin-title h2')?.textContent||'';if(title.includes('المستخدمون')||document.getElementById('userRows')){if(lastContent!==content.innerHTML.slice(0,120)){lastContent=content.innerHTML.slice(0,120);setTimeout(panel,10)}}});
+  obs.observe(document.getElementById('content')||document.body,{childList:true,subtree:true});
+  setTimeout(()=>{if(document.querySelector('aside button[data-tab="users"]')){document.querySelector('aside button[data-tab="users"]').addEventListener('click',()=>setTimeout(panel,80));}},200);
+})();
