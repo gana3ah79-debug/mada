@@ -10,6 +10,7 @@
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity>
+        <activity android:name=".BuzzActivity" android:exported="false" android:theme="@style/BuzzTheme" android:excludeFromRecents="true" android:launchMode="singleTop" />
         <service android:name=".BuzzService" android:exported="false" android:foregroundServiceType="remoteMessaging" />
         <receiver android:name=".BuzzBootReceiver" android:enabled="true" android:exported="false">
             <intent-filter>
