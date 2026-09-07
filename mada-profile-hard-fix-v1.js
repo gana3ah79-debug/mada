@@ -1,98 +1,12 @@
-/* Mada profile hard fix v1: patches the visible safe-profile DOM directly. */
-(function(){
-'use strict';
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-const client=()=>window.MADA_SUPABASE_CLIENT||window.sb;
-let busy=false,lastId=null;
-function css(){
- if($('mada-profile-hard-fix-css'))return;
- const s=document.createElement('style');s.id='mada-profile-hard-fix-css';s.textContent=`
-.mada-safe-profile-shell .mada-hard-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:5px 0 10px;color:#65758a;font-size:13px;font-weight:750}
-.mada-safe-profile-shell .mada-hard-user{direction:ltr}
-.mada-safe-profile-shell .mada-hard-verified{display:inline-flex;align-items:center;gap:4px;color:#1877f2;font-weight:900}
-.mada-safe-profile-shell .mada-hard-verified i{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#1877f2;color:#fff;font-style:normal;font-size:11px}
-.mada-safe-profile-shell .mada-hard-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
-.mada-safe-profile-shell .mada-hard-actions button{min-height:43px!important;border-radius:12px!important;font-weight:850!important}
-.mada-safe-profile-shell .mada-hard-primary{background:linear-gradient(135deg,#3567f2,#13a9df)!important;color:#fff!important;border:0!important}
-.mada-safe-profile-shell .mada-hard-secondary{background:#f1f4f8!important;color:#263348!important;border:1px solid #dce4ed!important}
-.dark .mada-safe-profile-shell .mada-hard-secondary{background:#1a293f!important;color:#fff!important;border-color:#33445d!important}
-.mada-hard-editor{display:grid;gap:10px}.mada-hard-editor label{font-weight:800}.mada-hard-editor input,.mada-hard-editor textarea{width:100%;box-sizing:border-box;margin-top:5px;padding:11px;border:1px solid #dce4ed;border-radius:12px;font:inherit}.mada-hard-editor textarea{min-height:100px}.mada-hard-editor button{width:100%;min-height:43px;border:0;border-radius:12px;font-weight:850}.mada-hard-editor .save{background:#1877f2;color:#fff}.mada-hard-editor .cancel{background:#eef2f6;color:#263348}
-`;
- document.head.appendChild(s);
-}
-async function getProfile(id){
- const c=client();if(!c||!id)return null;
- const r=await c.from('profiles').select('id,display_name,username,bio,city,location,avatar_url,cover_url,is_verified,verification_type,role').eq('id',id).maybeSingle();
- return r.error?null:r.data;
-}
-function modal(title,body){if(typeof window.showModal==='function')window.showModal(title,body);else{const m=$('modal'),t=$('modalTitle'),b=$('modalBody');if(m&&t&&b){t.textContent=title;b.innerHTML=body;m.hidden=false;}}}
-async function editProfile(p,id){
- modal('✏️ تعديل الملف الشخصي',`<div class="mada-hard-editor">
- <label>الاسم<input id="madaHardName" value="${esc(p.display_name||'')}"></label>
- <label>اسم المستخدم<input id="madaHardUsername" value="${esc(p.username||'')}"></label>
- <label>المدينة<input id="madaHardCity" value="${esc(p.city||p.location||'')}" placeholder="مثال: القاهرة"></label>
- <label>نبذة عني<textarea id="madaHardBio">${esc(p.bio||'')}</textarea></label>
- <button id="madaHardCancel" class="cancel" type="button">إلغاء</button>
- <button id="madaHardSave" class="save" type="button">حفظ التعديلات</button></div>`);
- $('madaHardCancel')?.addEventListener('click',()=>window.ProfileUI?.open?.(id));
- $('madaHardSave')?.addEventListener('click',async()=>{
-  const c=client();if(!c)return;
-  const payload={display_name:$('madaHardName').value.trim(),username:$('madaHardUsername').value.trim(),city:$('madaHardCity').value.trim(),bio:$('madaHardBio').value.trim(),updated_at:new Date().toISOString()};
-  const r=await c.from('profiles').update(payload).eq('id',id);
-  if(r.error){alert('تعذر حفظ الملف: '+r.error.message);return;}
-  window.ProfileUI?.open?.(id);
- });
-}
-async function patch(){
- if(busy)return;
- const root=document.querySelector('.mada-safe-profile-shell');
- const id=window.__MADA_PROFILE_ID;
- if(!root||!id||id===lastId&&root.dataset.madaHardDone==='1')return;
- busy=true;
- try{
-  const p=await getProfile(id);if(!p)return;
-  css();
-  const main=root.querySelector('.mada-safe-main');if(!main)return;
-  const me=await client().auth.getUser();const own=me.data?.user?.id===id;
-  const h=main.querySelector('h2');
-  if(h){
-   h.innerHTML=esc(p.display_name||p.username||'مستخدم Mada')+(p.is_verified?'<span class="mada-hard-verified" style="margin-inline-start:6px"><i>✓</i></span>':'');
-   let line=main.querySelector('.mada-hard-line');
-   if(!line){line=document.createElement('div');line.className='mada-hard-line';h.insertAdjacentElement('afterend',line)}
-   line.innerHTML=`${p.username?`<span class="mada-hard-user">@${esc(p.username)}</span>`:''}${(p.city||p.location)?`<span>📍 ${esc(p.city||p.location)}</span>`:''}${p.is_verified?'<span class="mada-hard-verified">✓ موثّق</span>':''}`;
-  }
-  const actions=main.querySelector('.mada-safe-actions');
-  if(actions){
-   actions.classList.add('mada-hard-actions');
-   actions.querySelectorAll('button').forEach(b=>b.type='button');
-   if(own){
-    const edit=actions.querySelector('#madaSafeEdit')||document.createElement('button');
-    if(!edit.parentNode)actions.prepend(edit);
-    edit.id='madaSafeEdit';edit.className='mada-hard-primary';edit.textContent='✏️ تعديل الملف';edit.onclick=()=>editProfile(p,id);
-    const share=actions.querySelector('[data-hard-share]')||document.createElement('button');
-    if(!share.parentNode)actions.appendChild(share);
-    share.type='button';share.dataset.hardShare='1';share.className='mada-hard-secondary';share.textContent='↗️ مشاركة الملف';share.onclick=()=>shareProfile(id,p);
-   }else{
-    const friend=actions.querySelector('#madaSafeFriend');if(friend){friend.className='mada-hard-primary';friend.textContent='👥 إضافة صديق';friend.type='button'}
-    const msg=actions.querySelector('#madaSafeMessage');if(msg){msg.className='mada-hard-secondary';msg.textContent='💬 رسالة';msg.type='button'}
-    const share=actions.querySelector('[data-hard-share]')||document.createElement('button');if(!share.parentNode)actions.appendChild(share);share.type='button';share.dataset.hardShare='1';share.className='mada-hard-secondary';share.textContent='↗️ مشاركة الملف';share.onclick=()=>shareProfile(id,p);
-   }
-  }
-  root.dataset.madaHardDone='1';lastId=id;
- }catch(e){console.warn('Mada profile hard fix:',e)}
- finally{busy=false}
-}
-function shareProfile(id,p){
- const url=location.origin+location.pathname+'?profile='+encodeURIComponent(id);
- if(navigator.share)navigator.share({title:p?.display_name||'Mada',text:'شاهد هذا الملف على Mada',url}).catch(()=>{});
- else if(navigator.clipboard)navigator.clipboard.writeText(url).then(()=>alert('تم نسخ رابط الملف ✓'));
-}
-function watch(){
- patch();
- const mo=new MutationObserver(()=>{const root=document.querySelector('.mada-safe-profile-shell');if(root&&root.dataset.madaHardDone!=='1')patch();});
- mo.observe(document.body,{childList:true,subtree:true});
- setInterval(()=>{const root=document.querySelector('.mada-safe-profile-shell');if(root&&root.dataset.madaHardDone!=='1')patch();},1000);
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch,{once:true});else watch();
+/* Mada profile hard fix v2: bypasses the fragile legacy profile loader. */
+(function(){'use strict';
+const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])), C=()=>window.MADA_SUPABASE_CLIENT||window.sb;
+const modal=(t,b)=>window.showModal?.(t,b);const ini=n=>(String(n||'م').trim()[0]||'م');
+function css(){if($('mada-hard-v2-css'))return;let s=document.createElement('style');s.id='mada-hard-v2-css';s.textContent=`.mada-h2{background:#fff;border-radius:20px;overflow:hidden;color:#172033}.mada-h2 .cover{height:155px;background:#e9eef5 center/cover no-repeat}.mada-h2 .main{padding:0 16px 14px}.mada-h2 .avatar{width:104px;height:104px;margin:-52px auto 8px 0;border:5px solid #fff;border-radius:50%;overflow:hidden;background:#edf2f7;display:grid;place-items:center;font-size:40px;font-weight:900}.mada-h2 .avatar img{width:100%;height:100%;object-fit:cover}.mada-h2 h2{margin:0;font-size:23px;font-weight:900}.mada-h2 .meta{display:flex;gap:8px;flex-wrap:wrap;color:#68778a;font-size:13px;font-weight:700;margin:4px 0}.mada-h2 .verified{color:#1877f2}.mada-h2 .bio{line-height:1.8;color:#536276;margin:8px 0}.mada-h2 .actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:11px}.mada-h2 .actions button{min-height:43px;border:1px solid #dce4ed;border-radius:12px;background:#f1f4f8;font:inherit;font-weight:850}.mada-h2 .actions .primary{background:#1877f2;color:#fff;border-color:#1877f2}.mada-h2 .stats{display:grid;grid-template-columns:repeat(3,1fr);border-block:1px solid #edf0f4;margin-top:14px}.mada-h2 .stats div{text-align:center;padding:10px}.mada-h2 .stats b,.mada-h2 .stats span{display:block}.mada-h2 .stats span{font-size:12px;color:#7d8999}.mada-h2 .tabs{display:flex;border-bottom:1px solid #edf0f4}.mada-h2 .tabs button{flex:1;padding:12px;border:0;background:transparent;font:inherit;font-weight:850;color:#78869a}.mada-h2 .tabs .active{color:#1877f2;border-bottom:3px solid #1877f2}.mada-h2 .post{margin:10px;padding:12px;border:1px solid #edf0f4;border-radius:14px}.mada-h2 .post p{white-space:pre-wrap;line-height:1.7}.mada-h2 .post img{width:100%;max-height:420px;object-fit:cover;border-radius:12px}.mada-edit{display:grid;gap:10px}.mada-edit input,.mada-edit textarea{width:100%;box-sizing:border-box;padding:11px;border:1px solid #dce4ed;border-radius:12px;font:inherit}.mada-edit textarea{min-height:100px}.mada-edit button{min-height:43px;border:0;border-radius:12px;font:inherit;font-weight:850}.mada-edit .save{background:#1877f2;color:#fff}.mada-edit .cancel{background:#eef2f6}.dark .mada-h2{background:#111d31;color:#fff}.dark .mada-h2 .bio,.dark .mada-h2 .meta,.dark .mada-h2 .stats span{color:#aeb8c7}.dark .mada-h2 .stats,.dark .mada-h2 .tabs,.dark .mada-h2 .post{border-color:#29374d}.dark .mada-h2 .actions button,.dark .mada-edit .cancel{background:#1b293d;color:#fff;border-color:#34455e}`;document.head.appendChild(s)}
+async function me(){try{return(await C().auth.getUser()).data?.user||null}catch(e){return null}}
+async function getP(id){try{let r=await C().from('profiles').select('id,display_name,username,bio,avatar_url,cover_url,location,is_verified,created_at').eq('id',id).maybeSingle();return r.data||null}catch(e){return null}}
+async function n(q){try{let r=await q;return r.count||0}catch(e){return 0}}
+async function open(id){let c=C(),u=await me();if(!c||!u)return;id=id||u.id;window.__MADA_PROFILE_ID=id;let p=await getP(id);if(!p){modal('👤 الملف الشخصي','<div class="empty">تعذر تحميل بيانات الملف الشخصي. تحقق من الاتصال وحاول مرة أخرى.</div>');return}css();let own=id===u.id, friends=await n(c.from('friendships').select('*',{count:'exact',head:true}).or(`and(requester_id.eq.${id},status.eq.accepted),and(addressee_id.eq.${id},status.eq.accepted)`)),followers=await n(c.from('follows').select('*',{count:'exact',head:true}).eq('following_id',id)),postsCount=await n(c.from('posts').select('*',{count:'exact',head:true}).eq('author_id',id)),posts=[];try{let r=await c.from('posts').select('id,body,media_url,created_at').eq('author_id',id).order('created_at',{ascending:false}).limit(20);posts=r.data||[]}catch(e){}let actions=own?'<button id="mhEdit" class="primary" type="button">✏️ تعديل الملف</button>':'<button id="mhFriend" class="primary" type="button">👥 إضافة صديق</button><button id="mhMsg" type="button">💬 رسالة</button><button id="mhFollow" type="button">➕ متابعة</button>';let ver=p.is_verified?'<span class="verified">✓ موثّق</span>':'';modal('👤 الملف الشخصي',`<div class="mada-h2"><div class="cover" style="background-image:url('${esc(p.cover_url||'')}')"></div><div class="main"><div class="avatar">${p.avatar_url?`<img src="${esc(p.avatar_url)}" alt="">`:ini(p.display_name||p.username)}</div><h2>${esc(p.display_name||p.username||'مستخدم Mada')} ${ver}</h2><div class="meta">${p.username?`<span dir="ltr">@${esc(p.username)}</span>`:''}${p.location?`<span>📍 ${esc(p.location)}</span>`:''}${ver}</div><div class="bio">${esc(p.bio||'لا توجد نبذة حتى الآن.')}</div><div class="actions">${actions}<button id="mhShare" type="button">↗️ مشاركة الملف</button></div><div class="stats"><div><b>${postsCount}</b><span>منشور</span></div><div><b>${friends}</b><span>أصدقاء</span></div><div><b>${followers}</b><span>متابعون</span></div></div></div><div class="tabs"><button id="mhPosts" class="active" type="button">المنشورات</button><button id="mhAbout" type="button">حول</button></div><div id="mhContent">${posts.length?posts.map(x=>`<article class="post"><p>${esc(x.body||'')}</p>${x.media_url?`<img src="${esc(x.media_url)}" alt="">`:''}<small>${esc(new Date(x.created_at).toLocaleString('ar-EG'))}</small></article>`).join(''):'<div class="empty" style="padding:20px">لا توجد منشورات بعد.</div>'}</div></div>`);$('mhEdit')?.addEventListener('click',()=>edit(p,id));$('mhMsg')?.addEventListener('click',()=>window.openChat?.(id));$('mhFriend')?.addEventListener('click',async()=>{let r=await c.from('friendships').insert({requester_id:u.id,addressee_id:id,status:'pending'});if(r.error)alert(r.error.message);else open(id)});$('mhFollow')?.addEventListener('click',async()=>{let x=await c.from('follows').select('*').eq('follower_id',u.id).eq('following_id',id).maybeSingle();let r=x.data?await c.from('follows').delete().eq('follower_id',u.id).eq('following_id',id):await c.from('follows').insert({follower_id:u.id,following_id:id});if(r.error)alert(r.error.message);else open(id)});$('mhShare')?.addEventListener('click',()=>{let url=location.origin+location.pathname+'?profile='+encodeURIComponent(id);if(navigator.share)navigator.share({title:p.display_name||'Mada',url}).catch(()=>{});else navigator.clipboard?.writeText(url).then(()=>alert('تم نسخ رابط الملف ✓'))});$('mhAbout')?.addEventListener('click',()=>{$('mhAbout').classList.add('active');$('mhPosts').classList.remove('active');$('mhContent').innerHTML=`<div style="padding:18px;line-height:2">${esc(p.bio||'لا توجد نبذة حتى الآن.')}<br>${p.location?`📍 ${esc(p.location)}<br>`:''}🗓️ عضو منذ ${esc(new Date(p.created_at).toLocaleDateString('ar-EG'))}</div>`});$('mhPosts')?.addEventListener('click',()=>open(id))}
+function edit(p,id){modal('✏️ تعديل الملف الشخصي',`<div class="mada-edit"><label>الاسم<input id="meName" value="${esc(p.display_name||'')}"></label><label>اسم المستخدم<input id="meUser" value="${esc(p.username||'')}"></label><label>المدينة / المكان<input id="meLoc" value="${esc(p.location||'')}"></label><label>نبذة عني<textarea id="meBio">${esc(p.bio||'')}</textarea></label><button id="meCancel" class="cancel" type="button">إلغاء</button><button id="meSave" class="save" type="button">حفظ التعديلات</button></div>`);$('meCancel').onclick=()=>open(id);$('meSave').onclick=async()=>{let r=await C().from('profiles').update({display_name:$('meName').value.trim(),username:$('meUser').value.trim(),location:$('meLoc').value.trim(),bio:$('meBio').value.trim(),updated_at:new Date().toISOString()}).eq('id',id);if(r.error)return alert('تعذر حفظ الملف: '+r.error.message);open(id)}}
+function install(){if(!window.ProfileUI||typeof window.ProfileUI.open!=='function')return setTimeout(install,100);if(window.__MADA_PROFILE_HARD_V2__)return;window.ProfileUI.open=open;window.__MADA_PROFILE_HARD_V2__=true}css();install();
 })();
