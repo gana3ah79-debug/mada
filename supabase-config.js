@@ -37,7 +37,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1');
   load('mada-push-v3.js?v20260906-4','data-mada-push-v3');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
-  load('mada-profile-root-fix-v4.js?v20260907-1','data-mada-profile-root-fix-v4');
+  load('mada-profile-root-fix-v4.js?v20260907-2','data-mada-profile-root-fix-v4');
   load('mada-profile-actions-v2.js?v20260907-1','data-mada-profile-actions-v2');
-  window.addEventListener('DOMContentLoaded',function(){load('mada-profile-edit-final-v1.js?v20260907-3','data-mada-profile-edit-final-v1')},{once:true});
+  window.addEventListener('DOMContentLoaded',function(){load('mada-profile-edit-final-v1.js?v20260907-4','data-mada-profile-edit-final-v1')},{once:true});
 })();
