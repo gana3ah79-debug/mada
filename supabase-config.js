@@ -5,7 +5,7 @@ window.MADA_SUPABASE_KEY = SUPABASE_PUBLISHABLE_KEY;
 window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 (function(){
   function load(src,attr){if(document.querySelector('script['+attr+']'))return;const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.async=false;document.head.appendChild(s)}
-  function loadCss(href,attr){if(document.querySelector('link['+attr+']'))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.setAttribute(attr,'1');document.head.appendChild(l)}
+  function loadCss(href,attr){if(document.querySelector('link['+attr+']'))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.setAttribute(attr,'1');l.async=false;document.head.appendChild(l)}
   loadCss('mada-light-surfaces-v1.css?v20260906-2','data-mada-light-surfaces-v1');
   loadCss('mada-messenger-v1.css?v20260906-10','data-mada-messenger-v1');
   loadCss('mada-messenger-media-v1.css?v20260906-2','data-mada-messenger-media-v1');
@@ -37,7 +37,7 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1');
   load('mada-push-v3.js?v20260906-4','data-mada-push-v3');
   load('mada-profile-photo-edit-v1.js?v20260906-2','data-mada-profile-photo-edit-v1');
-  load('mada-profile-root-fix-v4.js?v20260907-2','data-mada-profile-root-fix-v4');
+  load('mada-profile-root-fix-v4.js?v20260907-3','data-mada-profile-root-fix-v4');
   load('mada-profile-actions-v2.js?v20260907-1','data-mada-profile-actions-v2');
-  window.addEventListener('DOMContentLoaded',function(){load('mada-profile-edit-final-v1.js?v20260907-4','data-mada-profile-edit-final-v1')},{once:true});
+  load('mada-profile-edit-final-v1.js?v20260907-5','data-mada-profile-edit-final-v1');
 })();
