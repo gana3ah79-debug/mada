@@ -1,0 +1,21 @@
+/* Mada Profile Layout v1 — final mobile spacing for details and friends. */
+#modal .fb-grid{gap:8px!important;padding:8px 8px 28px!important}
+#modal .fb-grid>section{padding:12px!important;border-radius:10px!important}
+#modal .fb-details{gap:0!important;padding:0!important;border-bottom:0!important}
+#modal .fb-details div{min-height:44px!important;padding:7px 2px!important;border-bottom:1px solid #f0f0f0!important}
+#modal .fb-details div:last-child{border-bottom:0!important}
+#modal .friends-title{margin-top:16px!important;padding-top:12px!important;border-top:1px solid #eee!important}
+#modal .fb-friend-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+#modal .fb-friend-img{height:96px!important;border-radius:10px!important}
+#modal .fb-friend-card b{font-size:12px!important;margin-top:5px!important}
+#modal .fb-friend-card small{font-size:10px!important}
+#modal .fb-friends-line{padding:11px 12px!important;min-height:56px!important}
+#modal .fb-lock{margin:7px 8px!important;padding:9px 10px!important}
+#modal .fb-post{border-radius:10px!important;padding:10px!important}
+@media(max-width:420px){
+ #modal .fb-grid{padding-left:7px!important;padding-right:7px!important}
+ #modal .fb-grid>section{padding:11px!important}
+ #modal .fb-friend-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+ #modal .fb-friend-img{height:82px!important}
+ #modal .fb-section-title h3{font-size:16px!important}
+}
