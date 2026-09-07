@@ -58,9 +58,15 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
       document.head.appendChild(l);
     });
   }
+  function hasModernEquivalent(src){
+    if(src.indexOf('mada-friends-v1.js')!==-1){
+      return !!(window.MadaFriendsV4||document.querySelector('script[src*="mada-friends-v4.js"]'));
+    }
+    return false;
+  }
   function loadJs(item){
     const src=item[0],attr=item[1];
-    if(document.querySelector('script['+attr+']'))return Promise.resolve();
+    if(document.querySelector('script['+attr+']')||hasModernEquivalent(src))return Promise.resolve();
     return new Promise(resolve=>{
       const s=document.createElement('script');
       s.src=src;s.setAttribute(attr,'1');s.onload=resolve;s.onerror=resolve;
