@@ -1,8 +1,7 @@
-/* Mada Profile UI v3 — modern mobile-first profile styling, zero extra data requests, duplicate-badge cleanup. */
+/* Mada Profile UI v4 — visual-only profile layer. No renderer, no observers, no Supabase requests. */
 (function(){'use strict';
-if(window.__MADA_PROFILE_UI_V3)return;window.__MADA_PROFILE_UI_V3=true;
-const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
-function css(){if($('#mada-profile-ui-v3-css'))return;const s=document.createElement('style');s.id='mada-profile-ui-v3-css';s.textContent=`
+if(window.__MADA_PROFILE_UI_V4)return;window.__MADA_PROFILE_UI_V4=true;
+const css=()=>{if(document.getElementById('mada-profile-ui-v4-css'))return;const s=document.createElement('style');s.id='mada-profile-ui-v4-css';s.textContent=`
 #modal .mada-fast-profile{width:100%;max-width:760px;margin:0 auto;background:var(--card,#fff);color:var(--text,#172033);border-radius:24px;overflow:hidden;box-shadow:0 8px 30px rgba(15,23,42,.08);contain:layout paint style}
 #modal .mada-fast-cover{height:190px!important;background:#e9eef5 center/cover no-repeat!important;position:relative}
 #modal .mada-fast-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.10));pointer-events:none}
@@ -27,33 +26,12 @@ function css(){if($('#mada-profile-ui-v3-css'))return;const s=document.createEle
 #modal .mada-fast-posts{padding:8px 13px!important}
 #modal .mada-fast-post{content-visibility:auto!important;contain-intrinsic-size:0 180px!important;padding:11px 2px!important;border-bottom:1px solid #edf1f5!important}
 #modal .mada-fast-loading{padding:22px!important;text-align:center!important;color:#7c899b!important}
-#modal .mada-fast-profile img{content-visibility:auto}
-/* Remove duplicate verification/role decorations created by older profile layers. */
+#modal .mada-fast-profile img{content-visibility:auto!important}
 #modal .mada-fast-main .mada-auth-meta.verified,#modal .mada-fast-main .mada-auth-meta-line .verified{display:none!important}
 #modal .mada-fast-main h2>.mada-vfix-badge{display:none!important}
-@media(max-width:600px){
-#modal .mada-fast-profile{border-radius:20px}
-#modal .mada-fast-cover{height:155px!important}
-#modal .mada-fast-avatar{width:96px!important;height:96px!important;margin:-48px 0 9px auto!important;border-width:4px!important}
-#modal .mada-fast-main{padding:0 13px 13px!important}
-#modal .mada-fast-main h2{font-size:21px!important}
-#modal .mada-fast-meta{font-size:12px!important}
-#modal .mada-fast-bio{font-size:13px!important}
-#modal .mada-fast-stats div{padding:10px 2px!important}
-#modal .mada-fast-stats b{font-size:16px!important}
-#modal .mada-fast-actions{gap:7px!important}
-#modal .mada-fast-actions button{min-height:42px!important;border-radius:12px!important}
-#modal .mada-fast-posts{padding-inline:10px!important}
-}
-.dark #modal .mada-fast-profile{background:#101b2d!important;color:#fff!important}
-.dark #modal .mada-fast-meta,.dark #modal .mada-fast-bio,.dark #modal .mada-fast-stats span{color:#aeb8c7!important}
-.dark #modal .mada-fast-avatar{border-color:#101b2d!important}
-.dark #modal .mada-fast-actions button{background:#18263a!important;color:#fff!important;border-color:#2b3a50!important}
-.dark #modal .mada-fast-stats,.dark #modal .mada-fast-tabs,.dark #modal .mada-fast-post{border-color:#29374d!important}
-`;
-document.head.appendChild(s)}
-function clean(){const profile=$('#modal .mada-fast-profile');if(!profile)return;const h=$('.mada-fast-main h2',profile);if(h&&!h.dataset.madaUiV3Clean){const data=window.__MADA_PROFILE_HEADER_DATA__;const name=(data?.display_name||data?.username||'').trim();const badge=$('.mada-h4-badge',h);if(name){h.textContent=name+' ';if(badge)h.appendChild(badge)}h.dataset.madaUiV3Clean='1'} }
-function boot(){css();clean();const modal=$('#modal');if(!modal)return setTimeout(boot,250);if(modal.dataset.madaProfileUiV3Watch)return;modal.dataset.madaProfileUiV3Watch='1';let timer=0;new MutationObserver(()=>{clearTimeout(timer);timer=setTimeout(clean,70)}).observe(modal,{childList:true,subtree:true})}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-window.MadaProfileUIV3={refresh:clean};
+@media(max-width:600px){#modal .mada-fast-profile{border-radius:20px}#modal .mada-fast-cover{height:155px!important}#modal .mada-fast-avatar{width:96px!important;height:96px!important;margin:-48px 0 9px auto!important;border-width:4px!important}#modal .mada-fast-main{padding:0 13px 13px!important}#modal .mada-fast-main h2{font-size:21px!important}#modal .mada-fast-meta{font-size:12px!important}#modal .mada-fast-bio{font-size:13px!important}#modal .mada-fast-stats div{padding:10px 2px!important}#modal .mada-fast-stats b{font-size:16px!important}#modal .mada-fast-actions{gap:7px!important}#modal .mada-fast-actions button{min-height:42px!important;border-radius:12px!important}#modal .mada-fast-posts{padding-inline:10px!important}}
+.dark #modal .mada-fast-profile{background:#101b2d!important;color:#fff!important}.dark #modal .mada-fast-meta,.dark #modal .mada-fast-bio,.dark #modal .mada-fast-stats span{color:#aeb8c7!important}.dark #modal .mada-fast-avatar{border-color:#101b2d!important}.dark #modal .mada-fast-actions button{background:#18263a!important;color:#fff!important;border-color:#2b3a50!important}.dark #modal .mada-fast-stats,.dark #modal .mada-fast-tabs,.dark #modal .mada-fast-post{border-color:#29374d!important}
+`;document.head.appendChild(s)};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',css,{once:true});else css();
+window.MadaProfileUIV4={refresh:css};
 })();
