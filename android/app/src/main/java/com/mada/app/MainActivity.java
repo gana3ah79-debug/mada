@@ -1,6 +1,6 @@
 package com.mada.app;
 
-// APK build trigger: include the latest Mada web profile/runtime changes.
+// APK cache-bust: always load the newest Mada web app/profile code.
 import android.app.*;
 import android.content.*;
 import android.net.Uri;
@@ -31,6 +31,8 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        web.clearCache(true);
         web.addJavascriptInterface(new Bridge(), "MadaNative");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
@@ -54,7 +56,7 @@ public class MainActivity extends Activity {
             }
         });
         setContentView(web);
-        web.loadUrl(URL + "?apk=2.1");
+        web.loadUrl(URL + "?apk=2.2&v=" + System.currentTimeMillis());
     }
 
     @Override protected void onNewIntent(Intent in) {
