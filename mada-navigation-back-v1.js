@@ -1,8 +1,13 @@
-/* Mada: reliable Android/browser back handling for pages, modals and drawers. */
+/* Mada: reliable Android/browser back handling for pages, modals, drawers and Messenger. */
 (function(){'use strict';
   function modal(){const x=document.getElementById('modal');return !!(x&&!x.hidden);}
   function drawer(){return document.querySelector('.mada-drawer:not([hidden])');}
+  function messenger(){return document.querySelector('.mada-messenger-overlay');}
   function closeTop(){
+    if(messenger()){
+      try{window.MadaMessenger?.close?.();}catch(e){messenger()?.remove();}
+      return true;
+    }
     if(modal()){
       const b=document.getElementById('closeModal');
       if(b)b.click();else document.getElementById('modal').hidden=true;
