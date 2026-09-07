@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>التعليقات — مدى</title>
+  <link rel="stylesheet" href="comments-page-v1.css?v20260907-1">
+</head>
+<body>
+  <main class="comments-page">
+    <header class="comments-header">
+      <button id="backBtn" class="back-btn" type="button" aria-label="رجوع">→</button>
+      <div>
+        <strong>التعليقات</strong>
+        <small id="commentsSubtitle">مناقشة المنشور</small>
+      </div>
+    </header>
+
+    <section id="postCard" class="post-preview card">
+      <div class="loading">جاري تحميل المنشور…</div>
+    </section>
+
+    <section class="comments-section card">
+      <div class="section-title">
+        <strong>التعليقات</strong>
+        <span id="commentsCount">0</span>
+      </div>
+      <div id="commentsList" class="comments-list">
+        <div class="loading">جاري تحميل التعليقات…</div>
+      </div>
+      <button id="loadMoreBtn" class="load-more" type="button" hidden>تحميل المزيد</button>
+    </section>
+  </main>
+
+  <form id="commentForm" class="comment-composer" autocomplete="off">
+    <input id="commentInput" type="text" maxlength="2000" placeholder="اكتب تعليقًا…" aria-label="اكتب تعليقًا">
+    <button id="sendBtn" type="submit">إرسال</button>
+  </form>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="supabase-config.js?v20260907-6"></script>
+  <script defer src="comments-page-v1.js?v20260907-1"></script>
+</body>
+</html>
