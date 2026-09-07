@@ -1,9 +1,9 @@
-/* Mada comments v6 — standalone comments routing. */
+/* Mada comments v7 — standalone comments routing + cache-safe versioned URL. */
 (function(){
   'use strict';
-  if(window.__MADA_COMMENTS_V6)return;window.__MADA_COMMENTS_V6=true;
+  if(window.__MADA_COMMENTS_V7)return;window.__MADA_COMMENTS_V7=true;
   const getId=el=>el?.closest?.('article.post')?.id?.replace(/^post-/,'')||el?.dataset?.postId||null;
-  const open=id=>{if(!id)return;sessionStorage.setItem('mada-comments-return',location.href);location.href='comments.html?post='+encodeURIComponent(id)};
+  const open=id=>{if(!id)return;sessionStorage.setItem('mada-comments-return',location.href);location.href='comments.html?post='+encodeURIComponent(id)+'&ui=20260907-4'};
   function bind(){
     document.querySelectorAll('#feed article.post').forEach(article=>{
       if(article.dataset.madaCommentsRouteBound)return;
