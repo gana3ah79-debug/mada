@@ -1,5 +1,6 @@
 package com.mada.app;
 
+// APK build trigger: include the latest Mada web profile/runtime changes.
 import android.app.*;
 import android.content.*;
 import android.net.Uri;
