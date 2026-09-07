@@ -1,11 +1,7 @@
-/* Mada Profile Friends Fix v1 — reliable friend count and profile navigation. */
+/* Mada Profile Friends Fix v2 — compatibility bridge only. */
 (function(){'use strict';
-if(window.__MADA_PROFILE_FRIENDS_FIX_V1)return;window.__MADA_PROFILE_FRIENDS_FIX_V1=1;
-const C=()=>window.MADA_SUPABASE_CLIENT||window.sb,$=id=>document.getElementById(id);
-async function countFriends(id){const c=C();if(!c||!id)return 0;try{const r=await c.from('friendships').select('requester_id,addressee_id').eq('status','accepted').or(`requester_id.eq.${id},addressee_id.eq.${id}`);if(r.error)throw r.error;const set=new Set();(r.data||[]).forEach(x=>{const other=x.requester_id===id?x.addressee_id:x.requester_id;if(other)set.add(other)});return set.size}catch(e){console.warn('[Mada friend count]',e);return 0}}
-async function refreshCount(id){const n=await countFriends(id);['mfpFriendsCount','mfpFriendsNumber'].forEach(x=>{const e=$(x);if(e)e.textContent=n});document.querySelectorAll('.friends-title small').forEach(e=>e.textContent=n);const sub=document.querySelector('.mada-fb-profile .fb-subline');if(sub){const parts=sub.textContent.split('·');if(parts.length){const idx=parts.findIndex(x=>/أصدقاء/.test(x));if(idx>=0)parts[idx]=` ${n} أصدقاء `;sub.textContent=parts.join('·')}}return n}
-function go(id){if(!id)return;if(window.ProfileUI?.open)return window.ProfileUI.open(id);if(window.openProfile)return window.openProfile(id)}
-function wire(){document.addEventListener('click',e=>{const b=e.target.closest('[data-profile-id]');if(!b)return;if(b.closest('.mada-fb-profile')&&b.matches('.fb-friend-card')){e.preventDefault();e.stopPropagation();go(b.dataset.profileId)}},true);const modal=$('modal');if(modal&&!modal.__madaFriendFixObserver){modal.__madaFriendFixObserver=1;const obs=new MutationObserver(()=>{const root=modal.querySelector('.mada-fb-profile');const id=root?.dataset.profileId;if(id)refreshCount(id)});obs.observe(modal,{childList:true,subtree:true})}}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire,{once:true});else wire();
-window.MadaProfileFriendsFixV1={countFriends,refreshCount,openProfile:go};
+if(window.__MADA_PROFILE_FRIENDS_FIX_V2)return;
+window.__MADA_PROFILE_FRIENDS_FIX_V2=true;
+function openProfile(id){if(!id)return;if(window.ProfileUI?.open)return window.ProfileUI.open(id);if(window.openProfile)return window.openProfile(id)}
+window.MadaProfileFriendsFixV1={openProfile};
 })();
