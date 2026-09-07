@@ -3,40 +3,76 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_FqI5heK77syr-3QHh2LPHg_E82vbq-0
 window.MADA_SUPABASE_URL = SUPABASE_URL;
 window.MADA_SUPABASE_KEY = SUPABASE_PUBLISHABLE_KEY;
 window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+
 (function(){
-  function load(src,attr){if(document.querySelector('script['+attr+']'))return;const s=document.createElement('script');s.src=src;s.setAttribute(attr,'1');s.async=false;document.head.appendChild(s)}
-  function loadCss(href,attr){if(document.querySelector('link['+attr+']'))return;const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.setAttribute(attr,'1');l.async=false;document.head.appendChild(l)}
-  loadCss('mada-light-surfaces-v1.css?v20260906-2','data-mada-light-surfaces-v1');
-  loadCss('mada-messenger-v1.css?v20260906-10','data-mada-messenger-v1');
-  loadCss('mada-messenger-media-v1.css?v20260906-2','data-mada-messenger-media-v1');
-  load('mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels');
-  load('mada-stories-v5.js?v20260906-1','data-mada-stories-v5');
-  load('mada-reels-creator-v1.js?v20260906-1','data-mada-reels-creator');
-  load('mada-reels-interactions-v1.js?v20260906-4','data-mada-reels-interactions');
-  load('mada-bottom-nav-smart-v1.js?v20260906-1','data-mada-bottom-nav-smart');
-  load('mada-reels-layout-v2.js?v20260906-1','data-mada-reels-layout');
-  load('mada-reels-side-actions-v1.js?v20260906-1','data-mada-reels-side-actions');
-  load('mada-reels-reaction-dock-v1.js?v20260906-2','data-mada-reels-reaction-dock');
-  load('mada-reels-fullscreen-v1.js?v20260906-3','data-mada-reels-fullscreen');
-  load('mada-reels-comments-v1.js?v20260906-3','data-mada-comments');
-  load('mada-reels-polish-v1.js?v20260906-1','data-mada-reels-polish');
-  load('mada-reels-follow-stats-v1.js?v20260906-1','data-mada-reels-follow-stats');
-  load('mada-reels-performance-v1.js?v20260906-1','data-mada-reels-performance');
-  load('mada-reels-stage7-v1.js?v20260906-1','data-mada-reels-stage7');
-  load('mada-reels-actions-fix-v1.js?v20260906-1','data-mada-reels-actions-fix');
-  load('mada-reels-delete-v1.js?v20260906-1','data-mada-reels-delete');
-  load('mada-reels-final-v1.js?v20260906-1','data-mada-reels-final');
-  load('mada-social-center-v1.js?v20260906-1','data-mada-social-center');
-  load('mada-stability-v1.js?v20260906-1','data-mada-stability');
-  load('mada-comments-v1.js?v20260906-1','data-mada-comments-v1');
-  load('mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge');
-  load('mada-friends-v1.js?v20260906-1','data-mada-friends-v1');
-  load('mada-messenger-v1.js?v20260906-12','data-mada-messenger-v1');
-  load('mada-messenger-media-v1.js?v20260906-2','data-mada-messenger-media-v1');
-  load('mada-messenger-status-v1.js?v20260906-2','data-mada-messenger-status-v1');
-  load('mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1');
-  load('mada-push-v3.js?v20260906-4','data-mada-push-v3');
-  load('mada-messenger-buzz-fix-v1.js?v20260907-1','data-mada-messenger-buzz-fix-v1');
-  // Profile controls are loaded exactly once by index.html.
-  // Profile runtime is loaded explicitly by index.html. Do not load legacy profile layers here.
+  'use strict';
+  if(window.__MADA_SECONDARY_BUNDLE_V2)return;
+  window.__MADA_SECONDARY_BUNDLE_V2=true;
+
+  const cssFiles=[
+    ['mada-light-surfaces-v1.css?v20260906-2','data-mada-light-surfaces-v1'],
+    ['mada-messenger-v1.css?v20260906-10','data-mada-messenger-v1'],
+    ['mada-messenger-media-v1.css?v20260906-2','data-mada-messenger-media-v1']
+  ];
+  const jsFiles=[
+    ['mada-stories-reels-v2.js?v20260906-2','data-mada-stories-reels'],
+    ['mada-stories-v5.js?v20260906-1','data-mada-stories-v5'],
+    ['mada-reels-creator-v1.js?v20260906-1','data-mada-reels-creator'],
+    ['mada-reels-interactions-v1.js?v20260906-4','data-mada-reels-interactions'],
+    ['mada-bottom-nav-smart-v1.js?v20260906-1','data-mada-bottom-nav-smart'],
+    ['mada-reels-layout-v2.js?v20260906-1','data-mada-reels-layout'],
+    ['mada-reels-side-actions-v1.js?v20260906-1','data-mada-reels-side-actions'],
+    ['mada-reels-reaction-dock-v1.js?v20260906-2','data-mada-reels-reaction-dock'],
+    ['mada-reels-fullscreen-v1.js?v20260906-3','data-mada-reels-fullscreen'],
+    ['mada-reels-comments-v1.js?v20260906-3','data-mada-comments'],
+    ['mada-reels-polish-v1.js?v20260906-1','data-mada-reels-polish'],
+    ['mada-reels-follow-stats-v1.js?v20260906-1','data-mada-reels-follow-stats'],
+    ['mada-reels-performance-v1.js?v20260906-1','data-mada-reels-performance'],
+    ['mada-reels-stage7-v1.js?v20260906-1','data-mada-reels-stage7'],
+    ['mada-reels-actions-fix-v1.js?v20260906-1','data-mada-reels-actions-fix'],
+    ['mada-reels-delete-v1.js?v20260906-1','data-mada-reels-delete'],
+    ['mada-reels-final-v1.js?v20260906-1','data-mada-reels-final'],
+    ['mada-social-center-v1.js?v20260906-1','data-mada-social-center'],
+    ['mada-stability-v1.js?v20260906-1','data-mada-stability'],
+    ['mada-comments-v1.js?v20260906-1','data-mada-comments-v1'],
+    ['mada-reels-comments-bridge-v1.js?v20260906-1','data-mada-reels-comments-bridge'],
+    ['mada-friends-v1.js?v20260906-1','data-mada-friends-v1'],
+    ['mada-messenger-v1.js?v20260906-12','data-mada-messenger-v1'],
+    ['mada-messenger-media-v1.js?v20260906-2','data-mada-messenger-media-v1'],
+    ['mada-messenger-status-v1.js?v20260906-2','data-mada-messenger-status-v1'],
+    ['mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1'],
+    ['mada-push-v3.js?v20260906-4','data-mada-push-v3'],
+    ['mada-messenger-buzz-fix-v1.js?v20260907-1','data-mada-messenger-buzz-fix-v1']
+  ];
+
+  function idle(fn,timeout){
+    if('requestIdleCallback' in window) return window.requestIdleCallback(fn,{timeout:timeout||1800});
+    return setTimeout(fn,Math.min(timeout||1200,1800));
+  }
+  function loadCss(item){
+    const href=item[0],attr=item[1];
+    if(document.querySelector('link['+attr+']'))return Promise.resolve();
+    return new Promise(resolve=>{
+      const l=document.createElement('link');
+      l.rel='stylesheet';l.href=href;l.setAttribute(attr,'1');l.onload=resolve;l.onerror=resolve;
+      document.head.appendChild(l);
+    });
+  }
+  function loadJs(item){
+    const src=item[0],attr=item[1];
+    if(document.querySelector('script['+attr+']'))return Promise.resolve();
+    return new Promise(resolve=>{
+      const s=document.createElement('script');
+      s.src=src;s.setAttribute(attr,'1');s.onload=resolve;s.onerror=resolve;
+      document.body.appendChild(s);
+    });
+  }
+  async function loadSecondary(){
+    for(const item of cssFiles) await loadCss(item);
+    for(const item of jsFiles) await loadJs(item);
+    window.dispatchEvent(new CustomEvent('mada:secondary-ready'));
+  }
+  window.MadaSecondaryBundle={load:loadSecondary};
+
+  idle(()=>{ loadSecondary().catch(()=>{}); },1800);
 })();
