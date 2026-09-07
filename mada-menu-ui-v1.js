@@ -2,7 +2,7 @@
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
-  const safe=fn=>{try{fn()}catch(e){console.warn('Mada menu',e)}};
+  const safe=async fn=>{try{await fn()}catch(e){console.warn('Mada menu',e)}};
   async function logout(){
     if(!confirm('هل تريد تسجيل الخروج من تطبيق Mada؟')) return;
     try{
@@ -13,16 +13,28 @@
     close();
     window.location.reload();
   }
-  function action(name){
+  async function openMyProfile(){
+    const client=window.MADA_SUPABASE_CLIENT || window.sb || window.supabaseClient;
+    let id=null;
+    try{
+      id=(await client?.auth?.getUser?.())?.data?.user?.id || null;
+    }catch(e){console.warn('Mada profile user',e)}
+    if(!id) id=window.__MADA_PROFILE_ID || null;
+    if(!id){alert('تعذر فتح الملف الشخصي. يرجى تسجيل الدخول مرة أخرى.');return;}
+    const opener=window.openProfile || window.MadaProfileActionsV3?.open || window.ProfileUI?.open;
+    if(typeof opener!=='function'){alert('تعذر فتح الملف الشخصي الآن.');return;}
+    await opener(id);
+  }
+  async function action(name){
     const map={
-      profile:()=>window.ProfileUI?.open?.(window.user?.id),
+      profile:openMyProfile,
       friends:()=>window.friendsView?.(),
       messenger:()=>window.MadaMessenger?.open?.(),
       messages:()=>window.MadaMessenger?.open?.(),
       notifications:()=>window.notifications?.(),
       premium:()=>window.showModal?.('💎 Mada Premium','<div class="empty">سيتم فتح مزايا Premium هنا.</div>')
     };
-    safe(()=>map[name]?.()); close();
+    await safe(()=>map[name]?.()); close();
   }
   function settings(){
     const d=$('madaDrawer'); if(!d)return;
