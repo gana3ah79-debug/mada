@@ -45,3 +45,5 @@ jobs:
           name: mada-android-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+# Fresh APK build trigger after the latest Mada profile update.
