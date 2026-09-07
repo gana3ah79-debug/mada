@@ -1,6 +1,6 @@
-/* Mada Profile Interactions v2 — profile buttons and post controls cooperate with management. */
+/* Mada Profile Interactions v3 — shared profile controls only; editing belongs exclusively to MadaProfileEditor. */
 (function(){'use strict';
-if(window.__MADA_PROFILE_INTERACTIONS_V2)return;window.__MADA_PROFILE_INTERACTIONS_V2=true;
+if(window.__MADA_PROFILE_INTERACTIONS_V3)return;window.__MADA_PROFILE_INTERACTIONS_V3=true;
 const $=id=>document.getElementById(id),C=()=>window.MADA_SUPABASE_CLIENT||window.sb;
 const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
 const toast=t=>window.showToast?.(t)||window.showModal?.('Mada',`<div class="fb-empty">${esc(t)}</div>`);
@@ -14,7 +14,8 @@ function create(mode){if(window.openCreatePost)return window.openCreatePost({mod
 function bind(){document.addEventListener('click',e=>{const modal=$('modal');if(!modal||!modal.contains(e.target))return;const b=e.target.closest('button');if(!b)return;
 if(b.id==='mfpShare'){e.preventDefault();e.stopPropagation();share();return}
 if(b.id==='mfpLockInfo'){e.preventDefault();e.stopPropagation();lockInfo();return}
-/* fb-post-more is intentionally left to MadaProfilePostManagement. */
+/* fb-post-more is intentionally owned by MadaProfilePostManagement. */
+/* #mfpEdit and #mfpDetailsEdit are intentionally owned by MadaProfileEditor. */
 if(b.id==='mfpAllFriends'){e.preventDefault();e.stopPropagation();window.MadaProfileControlsV1?.friends?.();return}
 if(b.id==='mfpCover'||b.id==='mfpAvatar'){if(!own()){e.preventDefault();e.stopPropagation();toast('لا يمكنك تعديل صورة هذا الملف.')}return}
 if(b.id==='mfpAddStory'){e.preventDefault();e.stopPropagation();window.openCreateStory?.()||create('story');return}
@@ -23,7 +24,6 @@ if(b.id==='mfpPhotoCreate'){e.preventDefault();e.stopPropagation();create('photo
 if(b.id==='mfpReelCreate'){e.preventDefault();e.stopPropagation();create('reel');return}
 if(b.id==='mfpLive'){e.preventDefault();e.stopPropagation();create('live');return}
 if(b.closest('.fb-tabs')){e.preventDefault();e.stopPropagation();const all=[...document.querySelectorAll('#modal .fb-tabs button')];all.forEach(x=>x.classList.remove('active'));b.classList.add('active');const t=b.id;tab(t==='mfpPostsTab'?'all':t==='mfpPhotosTab'?'photos':t==='mfpReelsTab'?'reels':'memories');return}
-if(b.id==='mfpDetailsEdit'){e.preventDefault();e.stopPropagation();window.ProfileUI?.edit?.();return}
 if(b.getAttribute('aria-label')==='خيارات'||b.getAttribute('aria-label')==='القائمة'){e.preventDefault();e.stopPropagation();options();return}
 if(b.getAttribute('aria-label')==='بحث'){e.preventDefault();e.stopPropagation();window.MadaProfileControlsV1?.openSearch?.();return}
 },{capture:true})}
