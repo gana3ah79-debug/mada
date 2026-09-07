@@ -37,6 +37,6 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-buzz-popup-v1.js?v20260906-3','data-mada-buzz-popup-v1');
   load('mada-push-v3.js?v20260906-4','data-mada-push-v3');
   load('mada-messenger-buzz-fix-v1.js?v20260907-1','data-mada-messenger-buzz-fix-v1');
-  load('mada-profile-controls-v1.js?v20260907-1','data-mada-profile-controls-v1');
+  load('mada-profile-controls-v1.js?v20260907-2','data-mada-profile-controls-v2');
   // Profile runtime is loaded explicitly by index.html. Do not load legacy profile layers here.
 })();
