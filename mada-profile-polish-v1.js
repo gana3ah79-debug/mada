@@ -1,20 +1,10 @@
-/* Mada profile polish v1 - safe loader */
+/* Mada profile polish v2 - styling only. Profile data is rendered by profile.js. */
 (function(){
   'use strict';
-  if(window.__MADA_PROFILE_POLISH_V1)return;
-  window.__MADA_PROFILE_POLISH_V1=true;
-  function load(){
-    if(!document.getElementById('mada-profile-polish-v2-css')){
-      var l=document.createElement('link');l.id='mada-profile-polish-v2-css';l.rel='stylesheet';l.href='mada-profile-polish-v2.css?v20260906-2';document.head.appendChild(l);
-    }
-    if(!document.getElementById('mada-real-profile-header')){
-      var js=document.createElement('script');js.id='mada-real-profile-header';js.src='mada-profile-real-header-v1.js?v20260907-2';document.body.appendChild(js);
-    }
-  }
   function style(){
     if(document.getElementById('mada-profile-polish-v1-style'))return;
-    var s=document.createElement('style');s.id='mada-profile-polish-v1-style';s.textContent='#modal .profile-page{background:#fff!important;color:#172033!important;border-radius:22px!important;overflow:hidden!important}#modal .profile-page .profile-main{background:#fff!important}#modal .profile-page .profile-tabs{background:#fff!important}';document.head.appendChild(s);
+    var s=document.createElement('style');s.id='mada-profile-polish-v1-style';s.textContent='#modal .profile-page{background:#fff!important;color:#172033!important;border-radius:22px!important;overflow:hidden!important}#modal .profile-page .profile-main{background:#fff!important}#modal .profile-page .profile-tabs{background:#fff!important}.mada-profile-meta-real{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:2px auto 10px;min-height:20px;font-size:13px;font-weight:650;color:#697586}.mada-profile-username-real{direction:ltr}.mada-profile-city-real{white-space:nowrap}.mada-profile-verified-badge{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#1683ea;color:#fff;font-size:13px;font-weight:900;vertical-align:middle;margin-inline-start:4px;box-shadow:0 2px 6px rgba(22,131,234,.25)}.profile-actions{display:flex;flex-wrap:wrap;gap:7px}.profile-actions button{min-height:42px!important;border-radius:12px!important;font-weight:800!important}.edit-profile{display:flex;flex-direction:column;gap:10px}.edit-profile input,.edit-profile textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid rgba(120,140,170,.28);border-radius:12px;font:inherit}.edit-profile textarea{min-height:90px;resize:vertical}';document.head.appendChild(s)
   }
-  function boot(){style();load();var m=document.getElementById('modal');if(m&&!m.dataset.madaProfilePolishWatch){m.dataset.madaProfilePolishWatch='1';new MutationObserver(load).observe(m,{childList:true,subtree:true})}}
+  function boot(){style();const m=document.getElementById('modal');if(m&&!m.dataset.madaProfilePolishWatch){m.dataset.madaProfilePolishWatch='1';new MutationObserver(style).observe(m,{childList:true,subtree:true)}}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
