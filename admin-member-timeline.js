@@ -1,0 +1,49 @@
+(()=>{
+  if(window.__madaMemberTimelineLoaded)return;window.__madaMemberTimelineLoaded=true;
+  const client=window.supabase?.createClient&&window.MADA_SUPABASE_URL?window.supabase.createClient(window.MADA_SUPABASE_URL,window.MADA_SUPABASE_KEY):null;if(!client)return;
+  const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+  const fmt=x=>x?new Date(x).toLocaleString('ar-EG'):'—';
+  const css=`<style id="madaMemberTimelineCss">#madaMemberTimeline{margin-top:14px}.mt-item{display:flex;gap:10px;padding:11px 4px;border-top:1px solid #edf0f5;align-items:flex-start}.mt-icon{font-size:20px;min-width:28px}.mt-main{flex:1}.mt-main b{display:block}.mt-main small{color:#718096}.mt-filter{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}.mt-filter select,.mt-filter input{padding:9px;border:1px solid #dbe2ec;border-radius:10px;background:#fff}.mt-empty{padding:14px;color:#64748b}.mt-count{font-size:12px;color:#64748b}`;if(!document.getElementById('madaMemberTimelineCss'))document.head.insertAdjacentHTML('beforeend',css);
+  async function load(id){
+    const [p,c,w,n,s,a]=await Promise.all([
+      client.from('posts').select('id,body,created_at').eq('author_id',id).order('created_at',{ascending:false}).limit(40),
+      client.from('comments').select('id,body,created_at,post_id').eq('author_id',id).order('created_at',{ascending:false}).limit(40),
+      client.from('member_warnings').select('id,level,reason,created_at').eq('user_id',id).order('created_at',{ascending:false}).limit(40),
+      client.from('admin_member_notes').select('id,note,created_at').eq('user_id',id).order('created_at',{ascending:false}).limit(40),
+      client.from('account_sessions').select('id,session_label,last_seen_at,created_at,revoked_at').eq('user_id',id).order('last_seen_at',{ascending:false}).limit(30),
+      client.from('admin_audit_log').select('id,action,details,created_at').eq('target_type','member').eq('target_id',id).order('created_at',{ascending:false}).limit(50)
+    ]);
+    const events=[];
+    (p.data||[]).forEach(x=>events.push({at:x.created_at,icon:'📝',type:'post',title:'منشور',text:x.body||'منشور بدون نص'}));
+    (c.data||[]).forEach(x=>events.push({at:x.created_at,icon:'💬',type:'comment',title:'تعليق',text:x.body||'تعليق'}));
+    (w.data||[]).forEach(x=>events.push({at:x.created_at,icon:'⚠️',type:'warning',title:'إنذار مستوى '+x.level,text:x.reason||'—'}));
+    (n.data||[]).forEach(x=>events.push({at:x.created_at,icon:'📝',type:'note',title:'ملاحظة أدمن',text:x.note||'—'}));
+    (s.data||[]).forEach(x=>events.push({at:x.last_seen_at||x.created_at,icon:x.revoked_at?'🚪':'📱',type:'session',title:x.revoked_at?'جلسة أُلغيت':'جلسة/جهاز',text:(x.session_label||'جهاز غير مسمى')+(x.revoked_at?' · تم تسجيل الخروج':' · آخر نشاط')}));
+    (a.data||[]).forEach(x=>events.push({at:x.created_at,icon:'🛡️',type:'admin',title:'إجراء أدمن: '+x.action,text:x.details?JSON.stringify(x.details):'—'}));
+    events.sort((x,y)=>new Date(y.at)-new Date(x.at));return events;
+  }
+  function mount(){
+    const title=document.querySelector('.admin-title h2');if(!title||!title.textContent.includes('إدارة العضو'))return;
+    if(document.getElementById('madaMemberTimeline'))return;
+    const card=document.createElement('div');card.id='madaMemberTimeline';card.className='card';card.innerHTML='<h3>🕒 السجل الزمني الكامل <span class="mt-count">جاري التحميل…</span></h3><div class="mt-filter"><input id="mtSearch" placeholder="بحث داخل السجل"><select id="mtType"><option value="all">كل الأحداث</option><option value="post">المنشورات</option><option value="comment">التعليقات</option><option value="warning">الإنذارات</option><option value="note">ملاحظات الأدمن</option><option value="session">الأجهزة والجلسات</option><option value="admin">إجراءات الأدمن</option></select></div><div id="mtEvents"></div>';
+    document.getElementById('content')?.appendChild(card);const id=(location.hash.match(/[0-9a-f-]{20,}/)||[])[0]||null;
+    let target=id; if(!target){const btn=document.querySelector('#memberBackBtn');const text=document.querySelector('.admin-title small')?.textContent||'';const m=text.match(/@/);if(btn){} }
+    const manage=window.madaOpenMember; if(!manage)return;
+    const original=manage;
+  }
+  async function inject(){
+    const content=document.getElementById('content');if(!content||!content.querySelector('.admin-title h2')?.textContent.includes('إدارة العضو'))return;
+    if(document.getElementById('madaMemberTimeline'))return;
+    const memberButton=content.querySelector('#memberBackBtn');
+    let uid=null; const candidates=[...content.querySelectorAll('button[onclick]')];
+    candidates.forEach(b=>{const m=b.getAttribute('onclick')?.match(/madaRevokeSession\('([^']+)'/);if(m&&!uid){} });
+    const manageSource=content.innerHTML.match(/madaRevokeSession\\?\('([^']+)'/); if(manageSource)uid=manageSource[1];
+    if(!uid){const back=memberButton;}
+    // Robustly recover the member id from session/revoke buttons or page's management controls.
+    const html=content.innerHTML;const ms=html.match(/madaRevokeSession\(['\"]([^'\"]+)['\"]|madaRevokeSession\\\(['\"]([^'\"]+)['\"]/);if(ms)uid=ms[1]||ms[2];
+    if(!uid)return;
+    const card=document.createElement('div');card.id='madaMemberTimeline';card.className='card';card.innerHTML='<h3>🕒 السجل الزمني الكامل <span class="mt-count">جاري التحميل…</span></h3><div class="mt-filter"><input id="mtSearch" placeholder="بحث داخل السجل"><select id="mtType"><option value="all">كل الأحداث</option><option value="post">المنشورات</option><option value="comment">التعليقات</option><option value="warning">الإنذارات</option><option value="note">ملاحظات الأدمن</option><option value="session">الأجهزة والجلسات</option><option value="admin">إجراءات الأدمن</option></select></div><div id="mtEvents"></div>';content.appendChild(card);
+    const events=await load(uid);const render=()=>{const q=document.getElementById('mtSearch').value.trim().toLowerCase(),t=document.getElementById('mtType').value;const rows=events.filter(e=>(t==='all'||e.type===t)&&(!q||(e.title+' '+e.text).toLowerCase().includes(q)));document.querySelector('.mt-count').textContent=rows.length+' حدث';document.getElementById('mtEvents').innerHTML=rows.length?rows.map(e=>`<div class="mt-item"><span class="mt-icon">${e.icon}</span><div class="mt-main"><b>${esc(e.title)}</b><div>${esc(e.text).slice(0,500)}</div><small>${fmt(e.at)}</small></div></div>`).join(''):'<div class="mt-empty">لا توجد أحداث مطابقة.</div>'};document.getElementById('mtSearch').oninput=render;document.getElementById('mtType').onchange=render;render();
+  }
+  const obs=new MutationObserver(()=>setTimeout(inject,50));obs.observe(document.getElementById('content')||document.body,{childList:true,subtree:true});setTimeout(inject,300);
+})();
