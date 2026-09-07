@@ -9,11 +9,12 @@
   async function getUser(id){const{data,error}=await client.from('profiles').select('id,username,display_name,role,is_banned,is_verified,is_premium,created_at,city').eq('id',id).single();return error?null:data}
   async function audit(action,id,details={}){try{const aid=await adminId();if(aid)await client.from('admin_audit_log').insert({admin_id:aid,action,target_type:'member',target_id:id,details})}catch(e){}}
   async function openMember(id){
+    window.madaCurrentMemberId=id;
     const u=await getUser(id);if(!u){alert('تعذر تحميل بيانات العضو');return}
     const [cr,wr,nr,sr]=await Promise.all([
       client.from('member_controls').select('*').eq('user_id',id).maybeSingle(),
       client.from('member_warnings').select('id,level,reason,created_at,admin_id').eq('user_id',id).order('created_at',{ascending:false}).limit(30),
-      client.from('admin_member_notes').select('id,note,created_at,admin_id').eq('user_id',id).order('created_at',{ascending:false}).limit(30),
+      client.from('admin_member_notes').select('id,note,created_at,admin_id').eq('user_id',id).order('created_at',{ascending:false).limit(30),
       client.from('account_sessions').select('id,session_label,last_seen_at,created_at,revoked_at').eq('user_id',id).order('last_seen_at',{ascending:false}).limit(20)
     ]);
     const c=cr.data||{},warnings=wr.data||[],notes=nr.data||[],sessions=sr.data||[];
