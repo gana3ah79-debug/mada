@@ -40,4 +40,5 @@ window.MADA_SUPABASE_CLIENT = window.supabase.createClient(SUPABASE_URL, SUPABAS
   load('mada-profile-root-fix-v4.js?v20260907-3','data-mada-profile-root-fix-v4');
   load('mada-profile-actions-v2.js?v20260907-1','data-mada-profile-actions-v2');
   load('mada-profile-edit-final-v1.js?v20260907-6','data-mada-profile-edit-final-v1');
+  load('mada-profile-header-v4.js?v20260907-2','data-mada-profile-header-v4');
 })();
