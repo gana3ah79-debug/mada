@@ -1,14 +1,21 @@
-/* Mada comments v5 - comments are created immediately, then hydrated from Supabase. */
+/* Mada comments v6 — standalone comments routing. */
 (function(){
-'use strict';
-const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
-const emojis=['😀','😂','😍','🥰','😘','😎','😭','😡','😮','😢','👏','🔥','❤️','👍','🙏','🎉','💯','✨'];
-function makeBox(article){let box=article.querySelector('.comments');if(box)return box;const id=article.id.replace(/^post-/,'');if(!id)return null;box=document.createElement('div');box.className='comments mada-comments-collapsed';box.dataset.madaCommentsV2='1';box.innerHTML=`<div class="mada-comments-list"><div class="mada-comments-empty">لا توجد تعليقات بعد. كن أول من يعلق 👋</div></div><div class="comment-box"><input data-comment="${esc(id)}" class="mada-comment-input" placeholder="اكتب تعليقًا…" autocomplete="off"><button type="button" data-send="${esc(id)}" class="mada-comment-send">إرسال</button></div>`;article.appendChild(box);return box}
-async function loadRows(article){const box=makeBox(article);if(!box||box.dataset.loaded)return;box.dataset.loaded='loading';const sb=window.sb;if(!sb){box.dataset.loaded='error';return}const id=article.id.slice(5);try{const r=await sb.from('comments').select('id,author_id,body,created_at').eq('post_id',id).order('created_at',{ascending:true}).limit(100);if(r.error)throw r.error;const rows=r.data||[],ids=[...new Set(rows.map(x=>x.author_id).filter(Boolean))];let pm=new Map();if(ids.length){const p=await sb.from('profiles').select('id,display_name').in('id',ids);pm=new Map((p.data||[]).map(x=>[x.id,x]))}const list=box.querySelector('.mada-comments-list');list.innerHTML=rows.length?rows.map(c=>{const n=pm.get(c.author_id)?.display_name||'مستخدم';return `<div class="comment mada-comment-v2" data-comment-id="${esc(c.id)}"><b><span class="mada-comment-avatar">${esc(n.trim().charAt(0)||'م')}</span>${esc(n)}</b><div class="mada-comment-body">${esc(c.body)}</div><small>${new Date(c.created_at).toLocaleString('ar-EG')}</small><div class="mada-comment-tools"><button type="button" data-comment-reply>رد</button><button type="button" data-comment-like>♡</button></div></div>`}).join(''):'<div class="mada-comments-empty">لا توجد تعليقات بعد. كن أول من يعلق 👋</div>';box.dataset.loaded='1';const counter=article.querySelector('[data-comments-open]');if(counter)counter.textContent=`${rows.length} تعليق`}catch(e){box.dataset.loaded='error'}}
-function emoji(box,input){if(box.querySelector('.mada-emoji-picker'))return;const bar=document.createElement('div');bar.className='mada-comment-emoji-bar';bar.innerHTML='<button type="button" class="mada-emoji-toggle">😊</button><div class="mada-emoji-picker" hidden>'+emojis.map(x=>`<button type="button" data-emoji="${x}">${x}</button>`).join('')+'</div>';box.querySelector('.comment-box')?.before(bar);const t=bar.querySelector('.mada-emoji-toggle'),p=bar.querySelector('.mada-emoji-picker');t.onclick=()=>p.hidden=!p.hidden;p.onclick=e=>{const b=e.target.closest('[data-emoji]');if(!b)return;input.value+=b.dataset.emoji;input.focus();p.hidden=true}}
-function open(article){const box=makeBox(article);if(!box)return;box.classList.remove('mada-comments-collapsed');article.classList.add('mada-comments-open');loadRows(article);box.querySelector('[data-comment]')?.focus()}
-function enhance(article){const box=makeBox(article);if(!box)return;const input=box.querySelector('[data-comment]'),send=box.querySelector('[data-send]');if(input&&!input.dataset.bound){input.dataset.bound='1';input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();window.addComment?.(article.id.slice(5))}});emoji(box,input)}if(send&&!send.dataset.bound){send.dataset.bound='1';send.addEventListener('click',e=>{e.preventDefault();window.addComment?.(article.id.slice(5))})}const toggle=article.querySelector('[data-comment-toggle]');if(toggle&&!toggle.dataset.bound){toggle.dataset.bound='1';toggle.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();open(article)})}const meta=article.querySelector('[data-comments-open]');if(meta&&!meta.dataset.bound){meta.dataset.bound='1';meta.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();open(article)})}if(!box.dataset.tools){box.dataset.tools='1';box.addEventListener('click',e=>{const r=e.target.closest('[data-comment-reply]');if(r){const i=box.querySelector('[data-comment]');if(i){i.focus();i.placeholder='اكتب ردك…'}}const l=e.target.closest('[data-comment-like]');if(l){l.classList.toggle('active');l.textContent=l.classList.contains('active')?'♥':'♡'}})}}
-function scan(){document.querySelectorAll('#feed article.post').forEach(enhance)}
-function boot(){const feed=document.getElementById('feed');if(!feed)return;scan();let t;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(scan,80)}).observe(feed,{childList:true,subtree:true})}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  'use strict';
+  if(window.__MADA_COMMENTS_V6)return;window.__MADA_COMMENTS_V6=true;
+  const getId=el=>el?.closest?.('article.post')?.id?.replace(/^post-/,'')||el?.dataset?.postId||null;
+  const open=id=>{if(!id)return;sessionStorage.setItem('mada-comments-return',location.href);location.href='comments.html?post='+encodeURIComponent(id)};
+  function bind(){
+    document.querySelectorAll('#feed article.post').forEach(article=>{
+      if(article.dataset.madaCommentsRouteBound)return;
+      article.dataset.madaCommentsRouteBound='1';
+      article.querySelectorAll('[data-comment-toggle],[data-comments-open]').forEach(btn=>{
+        btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();open(getId(btn))},true);
+      });
+    });
+  }
+  const style=document.createElement('style');
+  style.textContent='.feed article.post .comments{display:none!important;max-height:0!important;height:0!important;overflow:hidden!important;margin:0!important;padding:0!important;visibility:hidden!important}.feed article.post .comment-box{display:none!important}';
+  document.head.appendChild(style);
+  function boot(){const feed=document.getElementById('feed');if(!feed)return;bind();new MutationObserver(bind).observe(feed,{childList:true,subtree:true})}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
