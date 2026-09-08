@@ -1,0 +1,10 @@
+/* Mada comments menu v1 — safe UI layer for menu, sort and refresh. */
+(()=>{'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function close(){const m=$('#commentsMenu'),b=$('#commentsMenuBtn');if(m)m.hidden=true;if(b)b.setAttribute('aria-expanded','false')}
+function open(){const m=$('#commentsMenu'),b=$('#commentsMenuBtn');if(m)m.hidden=false;if(b)b.setAttribute('aria-expanded','true')}
+function toast(t){const e=$('#toast');if(!e)return;e.textContent=t;e.hidden=false;clearTimeout(window.__madaMenuToast);window.__madaMenuToast=setTimeout(()=>e.hidden=true,1800)}
+function apply(mode){const list=$('#commentsList');if(!list)return;const rows=$$('.comment').filter(x=>x.parentElement===list);if(rows.length>1){const frag=document.createDocumentFragment();const ordered=mode==='old'?rows.reverse():rows;ordered.forEach(x=>frag.appendChild(x));list.appendChild(frag)}localStorage.setItem('mada-comments-sort',mode);const s=$('#sortBtn');if(s)s.textContent=mode==='old'?'الأقدم أولاً⌄':'الأحدث أولاً⌄';$$('[data-menu-sort]').forEach(x=>x.classList.toggle('selected',x.dataset.menuSort===mode));close()}
+function bind(){const b=$('#commentsMenuBtn');if(b)b.addEventListener('click',e=>{e.stopPropagation();const m=$('#commentsMenu');m?.hidden?open():close()});document.addEventListener('click',e=>{const m=$('#commentsMenu');if(m&&!m.hidden&&!e.target.closest('#commentsMenu')&&!e.target.closest('#commentsMenuBtn'))close();const x=e.target.closest('[data-menu-sort]');if(x){e.preventDefault();apply(x.dataset.menuSort==='old'?'old':'new');return}if(e.target.closest('[data-menu-refresh]')){close();location.reload();return}const s=e.target.closest('#sortBtn');if(s){apply((localStorage.getItem('mada-comments-sort')||'new')==='new'?'old':'new')}};window.setTimeout(()=>apply(localStorage.getItem('mada-comments-sort')||'new'),900)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+})();
