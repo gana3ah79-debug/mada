@@ -1,70 +1,9 @@
-/* Mada Verification Identity v7 — keep membership badge with the profile identity only. */
-
-/* The real membership/verification badge beside the profile owner's name stays visible. */
-.mada-fb-profile .fb-title h2 .mada-h4-badge{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  width:22px!important;
-  height:22px!important;
-  visibility:visible!important;
-  opacity:1!important;
-  pointer-events:none!important;
-  vertical-align:middle!important;
-}
-.mada-fb-profile .fb-title h2 .mada-h4-badge svg{
-  width:22px!important;
-  height:22px!important;
-  display:block!important;
-}
-
-/* Do not show verification badges on any friend card/mini-friend area. */
-.mada-fb-profile .fb-friend-grid .mada-h4-badge,
-.mada-fb-profile .fb-friend-grid .mada-home-verified-badge,
-.mada-fb-profile .fb-mini-friends .mada-h4-badge,
-.mada-fb-profile .fb-mini-friends .mada-home-verified-badge,
-.mada-fb-profile .fb-friend-card .mada-h4-badge,
-.mada-fb-profile .fb-friend-card .mada-home-verified-badge{
-  display:none!important;
-  visibility:hidden!important;
-  opacity:0!important;
-  width:0!important;
-  height:0!important;
-  pointer-events:none!important;
-}
-
-/* Hide the stray badge rendered outside the profile identity area (including the
-   old floating/bottom badge). Do not affect the real badge beside the profile name. */
-body > .mada-h4-badge,
-body > .mada-home-verified-badge,
-body > .mada-verified-badge.admin,
-body > .mada-home-verified-badge.mada-legacy,
-.mada-fb-profile > .mada-h4-badge,
-.mada-fb-profile > .mada-home-verified-badge,
-.mada-fb-profile .mada-profile-floating-badge,
-.mada-fb-profile .mada-profile-bottom-badge{
-  display:none!important;
-  visibility:hidden!important;
-  opacity:0!important;
-  width:0!important;
-  height:0!important;
-  pointer-events:none!important;
-}
-
-/* Legacy verification badge classes must never appear in the friends portion. */
-.mada-fb-profile .friends-title ~ .fb-friend-grid .mada-verified-badge,
-.mada-fb-profile .friends-title ~ .fb-friend-grid .mada-verified-badge.admin{
-  display:none!important;
-}
-
-/* Keep duplicate/legacy feed badges suppressed; the home verification bridge owns
-   the single membership-linked feed identity badge. */
-.feed .mada-verified-badge.admin,
-.feed .mada-h4-badge{
-  display:none!important;
-  width:0!important;
-  height:0!important;
-  visibility:hidden!important;
-  opacity:0!important;
-  pointer-events:none!important;
-}
+/* Mada Verification Identity v8 — keep membership badge with the profile identity only. */
+.mada-fb-profile .fb-title h2 .mada-h4-badge{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:22px!important;height:22px!important;visibility:visible!important;opacity:1!important;pointer-events:none!important;vertical-align:middle!important}
+.mada-fb-profile .fb-title h2 .mada-h4-badge svg{width:22px!important;height:22px!important;display:block!important}
+.mada-fb-profile .fb-friend-grid .mada-h4-badge,.mada-fb-profile .fb-friend-grid .mada-home-verified-badge,.mada-fb-profile .fb-mini-friends .mada-h4-badge,.mada-fb-profile .fb-mini-friends .mada-home-verified-badge,.mada-fb-profile .fb-friend-card .mada-h4-badge,.mada-fb-profile .fb-friend-card .mada-home-verified-badge{display:none!important;visibility:hidden!important;opacity:0!important;width:0!important;height:0!important;pointer-events:none!important}
+/* Friends hub: remove only the stray badge between friend rows. */
+.mf7-wrap .mada-h4-badge,.mf7-wrap .mada-home-verified-badge,.mf7-wrap .mada-verified-badge,.mf7-wrap .mada-verified-badge.admin{display:none!important;visibility:hidden!important;opacity:0!important;width:0!important;height:0!important;pointer-events:none!important}
+body > .mada-h4-badge,body > .mada-home-verified-badge,body > .mada-verified-badge.admin,body > .mada-home-verified-badge.mada-legacy,.mada-fb-profile > .mada-h4-badge,.mada-fb-profile > .mada-home-verified-badge,.mada-fb-profile .mada-profile-floating-badge,.mada-fb-profile .mada-profile-bottom-badge{display:none!important;visibility:hidden!important;opacity:0!important;width:0!important;height:0!important;pointer-events:none!important}
+.mada-fb-profile .friends-title ~ .fb-friend-grid .mada-verified-badge,.mada-fb-profile .friends-title ~ .fb-friend-grid .mada-verified-badge.admin{display:none!important}
+.feed .mada-verified-badge.admin,.feed .mada-h4-badge{display:none!important;width:0!important;height:0!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
