@@ -1,0 +1,13 @@
+/* Mada Profile Media Full Preview v1 — show the whole avatar source inside the circle without black letterboxing. */
+.mmp-avatar-card .mmp-stage{
+  background:#eef2f7!important;
+}
+.mmp-avatar-card .mmp-stage img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  background:transparent!important;
+}
+@media(max-width:560px){
+  .mmp-avatar-card .mmp-stage img{object-fit:contain!important}
+}
