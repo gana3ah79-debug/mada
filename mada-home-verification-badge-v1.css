@@ -1,0 +1,5 @@
+/* Mada Home Verification Badge v1 */
+.mada-home-verified-badge{display:inline-flex!important;align-items:center;justify-content:center;width:20px;height:20px;margin-inline-start:4px;vertical-align:-4px;pointer-events:none;flex:0 0 auto}
+.mada-home-verified-badge svg{width:20px;height:20px;display:block}
+.mada-home-verified-badge .badge-shape{fill:#1683e8}
+.mada-home-verified-badge .badge-check{fill:none;stroke:#fff;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}
