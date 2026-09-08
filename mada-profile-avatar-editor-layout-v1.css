@@ -1,0 +1,91 @@
+/* Mada Avatar Editor Layout v1 — keep the crop circle centered on mobile and desktop. */
+#madaMediaPreview .mmp-avatar-card .mmp-editor.avatar{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  direction:ltr!important;
+  padding:0!important;
+}
+#madaMediaPreview .mmp-avatar-card .mmp-stage{
+  display:block!important;
+  width:min(430px,72vw)!important;
+  height:min(430px,72vw)!important;
+  aspect-ratio:1/1!important;
+  margin:4px auto 0!important;
+  flex:none!important;
+}
+#madaMediaPreview .mmp-avatar-card .mmp-tools-left{
+  position:absolute!important;
+  left:0!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  z-index:5!important;
+}
+#madaMediaPreview .mmp-avatar-card .mmp-tools-right{
+  position:static!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:12px!important;
+  margin:18px auto 0!important;
+  padding-bottom:8px!important;
+}
+#madaMediaPreview .mmp-avatar-card .mmp-tools-right .mmp-tool{
+  position:relative!important;
+  flex:0 0 48px!important;
+}
+#madaMediaPreview .mmp-avatar-card .mmp-tools-right .mmp-tool small{
+  position:absolute!important;
+  top:54px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  color:#172033!important;
+  font-size:11px!important;
+}
+#madaMediaPreview .mmp-avatar-card .mmp-actions{
+  position:relative!important;
+  z-index:2!important;
+  margin-top:26px!important;
+}
+@media(max-width:560px){
+  #madaMediaPreview{padding:8px!important;}
+  #madaMediaPreview .mmp-avatar-card{
+    width:min(94vw,520px)!important;
+    max-height:96vh!important;
+    padding:16px!important;
+    overflow-x:hidden!important;
+  }
+  #madaMediaPreview .mmp-avatar-card .mmp-title{padding-left:48px!important;}
+  #madaMediaPreview .mmp-avatar-card .mmp-help{margin-bottom:12px!important;}
+  #madaMediaPreview .mmp-avatar-card .mmp-stage{
+    width:min(76vw,340px)!important;
+    height:min(76vw,340px)!important;
+    margin:0 auto!important;
+  }
+  #madaMediaPreview .mmp-avatar-card .mmp-tools-left{
+    left:0!important;
+  }
+  #madaMediaPreview .mmp-avatar-card .mmp-tools-left .mmp-tool{
+    width:40px!important;
+    height:40px!important;
+  }
+  #madaMediaPreview .mmp-avatar-card .mmp-zoom-track{height:120px!important;}
+  #madaMediaPreview .mmp-avatar-card .mmp-tools-right{
+    gap:9px!important;
+    margin-top:16px!important;
+    padding-bottom:12px!important;
+  }
+  #madaMediaPreview .mmp-avatar-card .mmp-tools-right .mmp-tool{
+    width:40px!important;
+    height:40px!important;
+    flex-basis:40px!important;
+    font-size:21px!important;
+  }
+  #madaMediaPreview .mmp-avatar-card .mmp-tools-right .mmp-tool small{
+    top:45px!important;
+    font-size:10px!important;
+  }
+  #madaMediaPreview .mmp-avatar-card .mmp-actions{margin-top:24px!important;}
+}
