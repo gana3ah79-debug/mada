@@ -1,0 +1,11 @@
+/* Mada Home Verification Badge v1 — one verified identity across profile and home feed. */
+(function(){'use strict';
+if(window.__MADA_HOME_VERIFICATION_BADGE_V1)return;window.__MADA_HOME_VERIFICATION_BADGE_V1=true;
+const sb=()=>window.MADA_SUPABASE_CLIENT||window.sb;
+const verified=p=>{const role=String(p?.role||'').toLowerCase();if(role==='admin'||role==='super_admin')return true;if(!p?.is_verified)return false;return !(String(p.verification_type||'').toLowerCase()==='premium'&&p.verification_expires_at&&new Date(p.verification_expires_at)<=new Date())};
+const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#039;'}[c]));
+const badge='<span class="mada-home-verified-badge" aria-label="حساب موثق"><svg viewBox="0 0 24 24"><path class="badge-shape" d="M12 2l2 2 3-.5.7 2.8 2.6 1.4-1.2 2.7 1.2 2.7-2.6 1.4-.7 2.8-3-.5-2 2-2-2-3 .5-.7-2.8-2.6-1.4 1.2-2.7-1.2-2.7 2.6-1.4.7-2.8 3 .5z"/><path class="badge-check" d="M7.2 12.2l3.1 3.1 6.5-7"/></svg></span>';
+async function apply(){const feed=document.getElementById('feed');if(!feed||!sb())return;const nodes=[...feed.querySelectorAll('.post[data-author-id]')];const ids=[...new Set(nodes.map(n=>n.dataset.authorId).filter(Boolean))].filter(id=>!feed.querySelector(`.mada-home-verified-badge[data-author="${CSS.escape(id)}"]`));if(!ids.length)return;const r=await sb().from('profiles').select('id,role,is_verified,verification_type,verification_expires_at').in('id',ids);if(r.error)return;const map=new Map((r.data||[]).map(p=>[p.id,p]));nodes.forEach(post=>{const id=post.dataset.authorId,p=map.get(id);if(!p||!verified(p))return;const name=post.querySelector('.post-head .post-name');if(!name||name.querySelector('.mada-home-verified-badge'))return;const wrap=document.createElement('span');wrap.innerHTML=badge;const b=wrap.firstElementChild;b.dataset.author=id;name.appendChild(document.createTextNode(' '));name.appendChild(b);});}
+function boot(){apply();const feed=document.getElementById('feed');if(!feed)return;new MutationObserver(()=>apply()).observe(feed,{childList:true,subtree:true});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
