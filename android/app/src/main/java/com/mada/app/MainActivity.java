@@ -4,6 +4,7 @@ package com.mada.app;
 import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
@@ -17,6 +18,7 @@ public class MainActivity extends Activity {
     ValueCallback<Uri[]> fileCallback;
     SharedPreferences sp;
     String pendingSender;
+    PermissionRequest pendingMicRequest;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -64,8 +66,8 @@ public class MainActivity extends Activity {
                             if (Build.VERSION.SDK_INT < 23 || checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                                 request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
                             } else {
+                                pendingMicRequest = request;
                                 requestMicPermission();
-                                request.deny();
                             }
                             return;
                         }
@@ -75,7 +77,7 @@ public class MainActivity extends Activity {
             }
         });
         setContentView(web);
-        web.loadUrl(URL + "?apk=2.3&v=" + System.currentTimeMillis());
+        web.loadUrl(URL + "?apk=2.4&v=" + System.currentTimeMillis());
     }
 
     @Override protected void onNewIntent(Intent in) {
@@ -119,11 +121,7 @@ public class MainActivity extends Activity {
                 Object raw = new org.json.JSONTokener(v).nextValue();
                 if (!(raw instanceof String)) return;
                 org.json.JSONObject o = new org.json.JSONObject((String) raw);
-                sp.edit()
-                        .putString("access", o.getString("access_token"))
-                        .putString("refresh", o.optString("refresh_token"))
-                        .putString("uid", o.getString("user_id"))
-                        .apply();
+                sp.edit().putString("access", o.getString("access_token")).putString("refresh", o.optString("refresh_token")).putString("uid", o.getString("user_id")).apply();
                 startBuzzService();
             } catch (Exception ignored) {}
         });
@@ -137,41 +135,36 @@ public class MainActivity extends Activity {
                 "window.MadaMessenger.openFriend(" + id + ");return true}" +
                 "return false" +
                 "}catch(e){return false}})()";
-        web.postDelayed(() -> web.evaluateJavascript(js, v -> {
-            if (v != null && v.contains("true")) pendingSender = null;
-        }), 700);
+        web.postDelayed(() -> web.evaluateJavascript(js, v -> { if (v != null && v.contains("true")) pendingSender = null; }), 700);
     }
 
     void startBuzzService() {
         if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(this)) {
-            try {
-                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:" + getPackageName())));
-            } catch (Exception ignored) {}
+            try { startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()))); } catch (Exception ignored) {}
             return;
         }
         Intent i = new Intent(this, BuzzService.class);
-        if (Build.VERSION.SDK_INT >= 26) startForegroundService(i);
-        else startService(i);
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
     }
 
     void requestMicPermission() {
-        if (Build.VERSION.SDK_INT < 23) {
-            notifyMicResult(true);
-            return;
-        }
-        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            notifyMicResult(true);
-            return;
-        }
+        if (Build.VERSION.SDK_INT < 23) { grantPendingMic(true); return; }
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) { grantPendingMic(true); return; }
         boolean requestedBefore = sp.getBoolean("mic_permission_requested", false);
-        if (requestedBefore) {
-            openAppSettings();
-            notifyMicResult(false);
-            return;
-        }
+        if (requestedBefore) { openAppSettings(); notifyMicResult(false); return; }
         sp.edit().putBoolean("mic_permission_requested", true).apply();
         requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+    }
+
+    void grantPendingMic(boolean granted) {
+        PermissionRequest r = pendingMicRequest;
+        pendingMicRequest = null;
+        if (granted && r != null) {
+            try { r.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE}); } catch (Exception ignored) {}
+        } else if (r != null) {
+            try { r.deny(); } catch (Exception ignored) {}
+        }
+        notifyMicResult(granted);
     }
 
     void notifyMicResult(boolean granted) {
@@ -191,10 +184,7 @@ public class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == MIC_REQUEST) {
             boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
-            notifyMicResult(granted);
-            if (!granted && Build.VERSION.SDK_INT >= 23 && !shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)) {
-                // Permanently denied: the next tap will open the app settings directly.
-            }
+            grantPendingMic(granted);
         }
     }
 
@@ -212,8 +202,5 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override public void onBackPressed() {
-        if (web.canGoBack()) web.goBack();
-        else super.onBackPressed();
-    }
+    @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
 }
