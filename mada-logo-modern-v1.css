@@ -38,3 +38,17 @@
 @media(prefers-reduced-motion:reduce){.auth-card .mada-brand .mada-brand-mark i:after,.auth-card .mada-brand .mada-brand-word:after,.auth-card .mada-brand-stack:after,#auth.auth-screen:before,#auth.auth-screen:after{animation:none}}
 body.dark .mada-brand .mada-brand-word{background:linear-gradient(100deg,#59cfff,#72a8ff 52%,#dc75ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 body.dark .mada-brand .mada-brand-sub{color:#8f9db3}
+
+/* Mada premium full wordmark v2 — CSS only, no image asset. */
+.auth-card .mada-brand-stack{position:relative;align-items:center;gap:8px;padding:22px 28px 17px;margin:0 auto 13px;border:1px solid rgba(91,139,255,.22);border-radius:30px;background:linear-gradient(145deg,rgba(8,16,39,.72),rgba(16,22,55,.42));box-shadow:0 18px 55px rgba(0,0,0,.26),0 0 34px rgba(35,111,255,.11);overflow:visible}
+.auth-card .mada-brand-stack:before{content:'';position:absolute;inset:-1px;border-radius:30px;padding:1px;background:linear-gradient(135deg,rgba(17,207,255,.75),rgba(76,101,255,.2),rgba(198,44,255,.75));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:.75}
+.auth-card .mada-brand-stack .mada-brand-mark{width:104px;height:104px;flex-basis:104px;border-radius:30px;background:linear-gradient(135deg,#09d8ff 0%,#275cff 48%,#b82cff 100%);box-shadow:0 18px 42px rgba(45,104,244,.36),0 0 32px rgba(17,207,255,.2)}
+.auth-card .mada-brand-stack .mada-brand-mark:before,.auth-card .mada-brand-stack .mada-brand-mark:after{width:34px;height:78px;border-radius:18px}
+.auth-card .mada-brand-stack .mada-brand-mark:before{left:20px;top:12px}.auth-card .mada-brand-stack .mada-brand-mark:after{right:19px;top:12px}
+.auth-card .mada-brand-stack .mada-brand-mark i{width:21px;height:66px;border-radius:13px}
+.auth-card .mada-brand-stack .mada-brand-sub{font-size:0;line-height:1;margin-top:2px;letter-spacing:0;font-weight:950;direction:rtl;background:linear-gradient(100deg,#f5fbff 0%,#d8eaff 45%,#e6a7ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 7px 25px rgba(86,126,255,.2);white-space:nowrap}
+.auth-card .mada-brand-stack .mada-brand-sub:before{content:'مَدَىٓ';font-size:48px;line-height:1;display:block}
+.auth-card .mada-brand-stack .mada-brand-sub:after{content:'MADĀ';font-family:Arial,sans-serif;font-size:26px;font-weight:950;letter-spacing:8px;line-height:1.05;display:block;margin-top:10px;direction:ltr;background:linear-gradient(100deg,#f6fbff 0%,#b9d8ff 48%,#e6a7ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.auth-card .mada-brand-stack:after{width:150px;height:4px;margin:7px auto 0}
+.auth-card>p{margin-top:2px;letter-spacing:.3px}
+@media(max-width:520px){.auth-card .mada-brand-stack{padding:18px 20px 14px;border-radius:25px}.auth-card .mada-brand-stack:before{border-radius:25px}.auth-card .mada-brand-stack .mada-brand-mark{width:88px;height:88px;flex-basis:88px;border-radius:26px}.auth-card .mada-brand-stack .mada-brand-mark:before,.auth-card .mada-brand-stack .mada-brand-mark:after{width:29px;height:66px}.auth-card .mada-brand-stack .mada-brand-mark:before{left:17px;top:10px}.auth-card .mada-brand-stack .mada-brand-mark:after{right:16px;top:10px}.auth-card .mada-brand-stack .mada-brand-mark i{width:18px;height:56px}.auth-card .mada-brand-stack .mada-brand-sub:before{font-size:42px}.auth-card .mada-brand-stack .mada-brand-sub:after{font-size:23px;letter-spacing:6px}}
