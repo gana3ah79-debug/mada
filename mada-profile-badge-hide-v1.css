@@ -1,5 +1,15 @@
-/* Mada Profile Badge Hide v3 — only the profile-name badge is allowed. */
-/* Hide every verification badge rendered anywhere else in the profile UI. */
+/* Mada Profile Badge Hide v4 — keep one membership verification badge per member. */
+/* The feed must use the same verification badge that is linked to the member profile. */
+.feed .mada-verified-badge.admin,
+.feed .mada-h4-badge[aria-label="حساب إداري موثق"]{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+/* Hide legacy duplicate verification badges in profile UI. */
 .mada-fb-profile .mada-h4-badge,
 .mada-fb-profile [aria-label="حساب موثق"],
 body .mada-h4-badge,
