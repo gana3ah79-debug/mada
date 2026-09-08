@@ -1,10 +1,9 @@
-/* Mada Profile Badge Hide v2 — keep the verified badge beside the profile name only. */
-/* Hide badges from friend cards and stray bottom/body overlays. */
-.mada-fb-profile .fb-friend-card .mada-h4-badge,
-.mada-fb-profile .fb-mini-friends .mada-h4-badge,
-.mada-fb-profile .fb-post .mada-h4-badge,
-body > .mada-h4-badge,
-body > [aria-label="حساب موثق"]{
+/* Mada Profile Badge Hide v3 — only the profile-name badge is allowed. */
+/* Hide every verification badge rendered anywhere else in the profile UI. */
+.mada-fb-profile .mada-h4-badge,
+.mada-fb-profile [aria-label="حساب موثق"],
+body .mada-h4-badge,
+body [aria-label="حساب موثق"]{
   display:none!important;
   width:0!important;
   height:0!important;
@@ -12,8 +11,9 @@ body > [aria-label="حساب موثق"]{
   opacity:0!important;
   pointer-events:none!important;
 }
-/* Explicitly preserve the badge beside the current profile name. */
-.mada-fb-profile .fb-title h2 .mada-h4-badge{
+/* Restore ONLY the badge immediately beside the profile name. */
+.mada-fb-profile .fb-title h2 .mada-h4-badge,
+.mada-fb-profile .fb-title h2 [aria-label="حساب موثق"]{
   display:inline-flex!important;
   width:22px!important;
   height:22px!important;
