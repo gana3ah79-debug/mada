@@ -1,7 +1,29 @@
-/* Mada Profile Badge Hide v5 — remove the separate home-feed badge only. */
-/* Keep the verification badge that is part of the member's profile identity. */
-.feed .mada-home-verified-badge,
+/* Mada Verification Identity v6 — one membership-linked badge, no duplicate badges. */
+/* The member's verification state is supplied by the same profile membership fields. */
+
+/* Keep the real profile identity badge beside the member name. */
+.mada-fb-profile .fb-title h2 .mada-h4-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:22px!important;
+  height:22px!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:none!important;
+  vertical-align:middle!important;
+}
+.mada-fb-profile .fb-title h2 .mada-h4-badge svg{
+  width:22px!important;
+  height:22px!important;
+  display:block!important;
+}
+
+/* Hide legacy/duplicate badges inside the home post header; the home identity badge
+   is provided by mada-home-verification-badge-v1.js and uses the same membership state. */
 .feed .mada-verified-badge.admin,
+.feed .mada-h4-badge,
+.feed .mada-h4-badge[aria-label="حساب موثق"],
 .feed .mada-h4-badge[aria-label="حساب إداري موثق"]{
   display:none!important;
   width:0!important;
@@ -10,22 +32,21 @@
   opacity:0!important;
   pointer-events:none!important;
 }
-/* Hide only legacy badge markup; do not hide the real profile verification badge. */
-body .mada-h4-badge{
+
+/* Never show a verification badge on the friends mini-cards. */
+.fb-friend-card .mada-h4-badge,
+.fb-mini-friends .mada-h4-badge{
+  display:none!important;
+}
+
+/* Remove only the old standalone bottom/legacy badge. */
+body > .mada-h4-badge,
+body > .mada-verified-badge.admin,
+body > .mada-home-verified-badge.mada-legacy{
   display:none!important;
   width:0!important;
   height:0!important;
   visibility:hidden!important;
   opacity:0!important;
   pointer-events:none!important;
-}
-/* The real .mada-verified-badge remains available beside the profile name. */
-.mada-fb-profile .fb-title h2 .mada-verified-badge{
-  display:inline-flex!important;
-  width:22px!important;
-  height:22px!important;
-  visibility:visible!important;
-  opacity:1!important;
-  pointer-events:none!important;
-  vertical-align:middle!important;
 }
