@@ -1,3 +1,7 @@
+import groovy.json.JsonSlurper
+import java.net.HttpURLConnection
+import java.net.URL
+
 plugins {
     id 'com.android.application'
 }
@@ -5,9 +9,60 @@ plugins {
 android {
     namespace 'com.mada.app'
     compileSdk 35
-    defaultConfig { applicationId 'com.mada.app'; minSdk 23; targetSdk 35; versionCode 13; versionName '1.12' }
+    defaultConfig { applicationId 'com.mada.app'; minSdk 23; targetSdk 35; versionCode 14; versionName '1.13' }
     signingConfigs { release { def p=System.getenv(); if(p.MADA_KEYSTORE_PATH&&p.MADA_KEYSTORE_PASSWORD&&p.MADA_KEY_ALIAS&&p.MADA_KEY_PASSWORD){storeFile file(p.MADA_KEYSTORE_PATH);storePassword p.MADA_KEYSTORE_PASSWORD;keyAlias p.MADA_KEY_ALIAS;keyPassword p.MADA_KEY_PASSWORD} } }
     buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),'proguard-rules.pro' } }
 }
 
-dependencies { implementation 'com.squareup.okhttp3:okhttp:4.12.0' }
+def madaWebDir = file("$projectDir/src/main/assets/mada_web")
+def madaWebSync = tasks.register('syncMadaWeb') {
+    doLast {
+        madaWebDir.mkdirs()
+        def api = new URL('https://api.github.com/repos/gana3ah79-debug/mada/git/trees/main?recursive=1')
+        HttpURLConnection apiConn = (HttpURLConnection) api.openConnection()
+        apiConn.setRequestProperty('Accept','application/vnd.github+json')
+        apiConn.setRequestProperty('User-Agent','Mada-Android-Build')
+        apiConn.setConnectTimeout(30000); apiConn.setReadTimeout(60000)
+        if(apiConn.responseCode != 200) throw new GradleException("Unable to read Mada web tree: HTTP ${apiConn.responseCode}")
+        def tree = new JsonSlurper().parseText(apiConn.inputStream.getText('UTF-8')).tree
+        def exts = ['html','htm','css','js','mjs','json','svg','png','jpg','jpeg','webp','gif','ico','woff','woff2','ttf','otf'] as Set
+        tree.findAll { e ->
+            e.type == 'blob' && !e.path.startsWith('android/') && !e.path.startsWith('.github/') &&
+            exts.contains(e.path.tokenize('.').last().toLowerCase())
+        }.each { e ->
+            File out = new File(madaWebDir, e.path)
+            out.parentFile.mkdirs()
+            URL u = new URL('https://raw.githubusercontent.com/gana3ah79-debug/mada/main/' + e.path.split('/').collect { URLEncoder.encode(it,'UTF-8') }.join('/'))
+            HttpURLConnection c = (HttpURLConnection) u.openConnection()
+            c.setRequestProperty('User-Agent','Mada-Android-Build')
+            c.setConnectTimeout(30000); c.setReadTimeout(60000)
+            if(c.responseCode != 200) throw new GradleException("Unable to download ${e.path}: HTTP ${c.responseCode}")
+            out.bytes = c.inputStream.bytes
+            c.disconnect()
+        }
+        File index = new File(madaWebDir,'index.html')
+        if(!index.exists()) throw new GradleException('Mada index.html was not bundled')
+        String html = index.getText('UTF-8')
+        String cdn = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+        if(html.contains(cdn)) {
+            File supa = new File(madaWebDir,'supabase-js.js')
+            URL su = new URL(cdn)
+            HttpURLConnection sc = (HttpURLConnection) su.openConnection()
+            sc.setRequestProperty('User-Agent','Mada-Android-Build')
+            sc.setConnectTimeout(30000); sc.setReadTimeout(120000)
+            if(sc.responseCode != 200) throw new GradleException("Unable to download Supabase JS: HTTP ${sc.responseCode}")
+            supa.bytes = sc.inputStream.bytes
+            sc.disconnect()
+            html = html.replace(cdn,'supabase-js.js')
+            index.setText(html,'UTF-8')
+        }
+        println("Mada web assets bundled into APK: ${madaWebDir}")
+    }
+}
+
+tasks.named('preBuild').configure { dependsOn(madaWebSync) }
+
+dependencies {
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'androidx.webkit:webkit:1.15.0'
+}
