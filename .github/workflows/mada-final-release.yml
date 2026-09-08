@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    name: Build signed Mada release APK
+    name: Build Mada final installable APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -39,32 +39,19 @@ jobs:
         run: |
           sed -i 's/android:label="Mada"/android:label="Mada" android:icon="@drawable\/mada_launcher" android:roundIcon="@drawable\/mada_launcher"/' android/app/src/main/AndroidManifest.xml
 
-      - name: Prepare release keystore
-        env:
-          MADA_KEYSTORE_BASE64: ${{ secrets.MADA_KEYSTORE_BASE64 }}
-        run: |
-          test -n "$MADA_KEYSTORE_BASE64"
-          echo "$MADA_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/mada-release.jks"
-          test -s "$RUNNER_TEMP/mada-release.jks"
+      - name: Build final installable APK
+        run: gradle -p android clean assembleDebug --no-daemon --stacktrace
 
-      - name: Build signed release APK
-        env:
-          MADA_KEYSTORE_PATH: ${{ runner.temp }}/mada-release.jks
-          MADA_KEYSTORE_PASSWORD: ${{ secrets.MADA_KEYSTORE_PASSWORD }}
-          MADA_KEY_ALIAS: ${{ secrets.MADA_KEY_ALIAS }}
-          MADA_KEY_PASSWORD: ${{ secrets.MADA_KEY_PASSWORD }}
-        run: gradle -p android clean assembleRelease --no-daemon --stacktrace
-
-      - name: Verify signed APK
+      - name: Verify APK
         run: |
-          test -s android/app/build/outputs/apk/release/app-release.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose android/app/build/outputs/apk/release/app-release.apk
-          ls -lh android/app/build/outputs/apk/release/app-release.apk
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Publish final APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mada-Final-Release-APK
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: Mada-Final-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 90
