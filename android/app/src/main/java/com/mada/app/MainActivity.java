@@ -3,6 +3,7 @@ package com.mada.app;
 // APK cache-bust: always load the newest Mada web app/profile code.
 import android.app.*;
 import android.content.*;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
@@ -11,6 +12,7 @@ import android.webkit.*;
 public class MainActivity extends Activity {
     private static final String URL = "https://mada-3g8.pages.dev";
     private static final int FILE_REQUEST = 1001;
+    private static final int MIC_REQUEST = 1002;
     WebView web;
     ValueCallback<Uri[]> fileCallback;
     SharedPreferences sp;
@@ -54,9 +56,26 @@ public class MainActivity extends Activity {
                     return false;
                 }
             }
+            @Override public void onPermissionRequest(PermissionRequest request) {
+                runOnUiThread(() -> {
+                    String[] resources = request.getResources();
+                    for (String r : resources) {
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)) {
+                            if (Build.VERSION.SDK_INT < 23 || checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                            } else {
+                                requestMicPermission();
+                                request.deny();
+                            }
+                            return;
+                        }
+                    }
+                    request.deny();
+                });
+            }
         });
         setContentView(web);
-        web.loadUrl(URL + "?apk=2.2&v=" + System.currentTimeMillis());
+        web.loadUrl(URL + "?apk=2.3&v=" + System.currentTimeMillis());
     }
 
     @Override protected void onNewIntent(Intent in) {
@@ -136,8 +155,53 @@ public class MainActivity extends Activity {
         else startService(i);
     }
 
+    void requestMicPermission() {
+        if (Build.VERSION.SDK_INT < 23) {
+            notifyMicResult(true);
+            return;
+        }
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            notifyMicResult(true);
+            return;
+        }
+        boolean requestedBefore = sp.getBoolean("mic_permission_requested", false);
+        if (requestedBefore) {
+            openAppSettings();
+            notifyMicResult(false);
+            return;
+        }
+        sp.edit().putBoolean("mic_permission_requested", true).apply();
+        requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, MIC_REQUEST);
+    }
+
+    void notifyMicResult(boolean granted) {
+        if (web == null) return;
+        web.post(() -> web.evaluateJavascript("window.MadaNativePermissionResult&&window.MadaNativePermissionResult('microphone'," + granted + ")", null));
+    }
+
+    void openAppSettings() {
+        try {
+            Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            i.setData(Uri.parse("package:" + getPackageName()));
+            startActivity(i);
+        } catch (Exception ignored) {}
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == MIC_REQUEST) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            notifyMicResult(granted);
+            if (!granted && Build.VERSION.SDK_INT >= 23 && !shouldShowRequestPermissionRationale(android.Manifest.permission.RECORD_AUDIO)) {
+                // Permanently denied: the next tap will open the app settings directly.
+            }
+        }
+    }
+
     class Bridge {
         @JavascriptInterface public void startOverlay() { startBuzzService(); }
+        @JavascriptInterface public void requestMicrophonePermission() { runOnUiThread(MainActivity.this::requestMicPermission); }
+        @JavascriptInterface public void openAppSettings() { runOnUiThread(MainActivity.this::openAppSettings); }
     }
 
     @Override public void onActivityResult(int r, int c, Intent d) {
