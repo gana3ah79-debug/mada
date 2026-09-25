@@ -14,10 +14,12 @@ public class MainActivity extends Activity {
     private static final String LOCAL_URL = "https://appassets.androidplatform.net/assets/mada_web/index.html";
     private static final int FILE_REQUEST = 1001;
     private static final int MIC_REQUEST = 1002;
+    private static final int NOTIFY_REQUEST = 1003;
     WebView web;
     ValueCallback<Uri[]> fileCallback;
     SharedPreferences sp;
     String pendingSender;
+    String pendingCallMessageId;
     PermissionRequest pendingMicRequest;
     AudioManager audioManager;
     WebViewAssetLoader assetLoader;
@@ -27,8 +29,10 @@ public class MainActivity extends Activity {
         sp = getSharedPreferences("mada", 0);
         audioManager = (AudioManager)getSystemService(AUDIO_SERVICE);
         pendingSender = b != null ? b.getString("pending_sender", null) : null;
+        pendingCallMessageId = b != null ? b.getString("pending_call_message_id", null) : null;
         Intent in = getIntent();
         if (in != null && in.hasExtra("sender_id")) pendingSender = in.getStringExtra("sender_id");
+        if (in != null && in.hasExtra("call_message_id")) pendingCallMessageId = in.getStringExtra("call_message_id");
 
         assetLoader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
@@ -59,6 +63,8 @@ public class MainActivity extends Activity {
             @Override public void onPageFinished(WebView v, String u) {
                 syncSession();
                 openPendingChat();
+                requestNotificationPermission();
+                openPendingCall();
             }
         });
 
@@ -103,10 +109,15 @@ public class MainActivity extends Activity {
             pendingSender = in.getStringExtra("sender_id");
             openPendingChat();
         }
+        if (in != null && in.hasExtra("call_message_id")) {
+            pendingCallMessageId = in.getStringExtra("call_message_id");
+            openPendingCall();
+        }
     }
 
     @Override protected void onSaveInstanceState(Bundle out) {
         out.putString("pending_sender", pendingSender);
+        out.putString("pending_call_message_id", pendingCallMessageId);
         super.onSaveInstanceState(out);
     }
 
@@ -147,14 +158,25 @@ public class MainActivity extends Activity {
     }
 
     void startBuzzService() {
-        if (Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(this)) {
-            try {
-                startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
-            } catch (Exception ignored) {}
-            return;
-        }
         Intent i = new Intent(this, BuzzService.class);
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
+        Intent callService = new Intent(this, CallNotificationService.class);
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(callService); else startService(callService);
+    }
+
+    void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, NOTIFY_REQUEST);
+        }
+    }
+
+    void openPendingCall() {
+        if (pendingCallMessageId == null || pendingCallMessageId.isEmpty() || web == null) return;
+        String id = org.json.JSONObject.quote(pendingCallMessageId);
+        web.postDelayed(() -> {
+            String js = "window.MadaNativePendingCallId=" + id + ";window.MadaVoice&&window.MadaVoice.handlePendingCall&&window.MadaVoice.handlePendingCall(" + id + ")";
+            web.evaluateJavascript(js, v -> pendingCallMessageId = null);
+        }, 1200);
     }
 
     void requestMicPermission() {
@@ -208,6 +230,9 @@ public class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == MIC_REQUEST) grantPendingMic(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED);
+        if (requestCode == NOTIFY_REQUEST && grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            android.util.Log.w("Mada", "POST_NOTIFICATIONS denied");
+        }
     }
 
     class Bridge {

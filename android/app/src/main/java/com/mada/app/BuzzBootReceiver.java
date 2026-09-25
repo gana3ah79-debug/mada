@@ -16,6 +16,9 @@ public class BuzzBootReceiver extends BroadcastReceiver {
             Intent service = new Intent(context, BuzzService.class);
             if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(service);
             else context.startService(service);
+            Intent calls = new Intent(context, CallNotificationService.class);
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(calls);
+            else context.startService(calls);
         } catch (Exception ignored) {}
     }
 }
