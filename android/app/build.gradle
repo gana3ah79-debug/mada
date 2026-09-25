@@ -33,3 +33,4 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'androidx.webkit:webkit:1.15.0'
 }
+// release-build trigger 2026-09-25
