@@ -160,6 +160,8 @@ public class MainActivity extends Activity {
     void startBuzzService() {
         Intent i = new Intent(this, BuzzService.class);
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
+        Intent callService = new Intent(this, CallNotificationService.class);
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(callService); else startService(callService);
     }
 
     void requestNotificationPermission() {
