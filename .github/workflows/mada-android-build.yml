@@ -31,8 +31,25 @@ jobs:
       - name: Fix Android notification channel constant
         run: sed -i 's/new NotificationChannel("mada_bg","Mada Buzz","LOW")/new NotificationChannel("mada_bg","Mada Buzz",NotificationManager.IMPORTANCE_LOW)/' android/app/src/main/java/com/mada/app/BuzzService.java
 
-      - name: Build release APK
-        run: gradle -p android :app:assembleRelease --stacktrace
+      - name: Prepare Mada production signing
+        env:
+          MADA_KEYSTORE_BASE64: ${{ secrets.MADA_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$MADA_KEYSTORE_BASE64" || { echo "Missing MADA_KEYSTORE_BASE64 secret"; exit 1; }
+          echo "$MADA_KEYSTORE_BASE64" | base64 --decode > /tmp/mada-release.jks
+          test -s /tmp/mada-release.jks
+
+      - name: Build signed release APK
+        env:
+          MADA_KEYSTORE_PATH: /tmp/mada-release.jks
+          MADA_KEYSTORE_PASSWORD: ${{ secrets.MADA_KEYSTORE_PASSWORD }}
+          MADA_KEY_ALIAS: ${{ secrets.MADA_KEY_ALIAS }}
+          MADA_KEY_PASSWORD: ${{ secrets.MADA_KEY_PASSWORD }}
+        run: |
+          test -n "$MADA_KEYSTORE_PASSWORD" || { echo "Missing MADA_KEYSTORE_PASSWORD secret"; exit 1; }
+          test -n "$MADA_KEY_ALIAS" || { echo "Missing MADA_KEY_ALIAS secret"; exit 1; }
+          test -n "$MADA_KEY_PASSWORD" || { echo "Missing MADA_KEY_PASSWORD secret"; exit 1; }
+          gradle -p android :app:assembleRelease --stacktrace
 
       - name: Verify APK
         run: |
