@@ -29,6 +29,7 @@ public class MainActivity extends Activity {
         sp = getSharedPreferences("mada", 0);
         audioManager = (AudioManager)getSystemService(AUDIO_SERVICE);
         pendingSender = b != null ? b.getString("pending_sender", null) : null;
+        pendingCallMessageId = b != null ? b.getString("pending_call_message_id", null) : null;
         Intent in = getIntent();
         if (in != null && in.hasExtra("sender_id")) pendingSender = in.getStringExtra("sender_id");
         if (in != null && in.hasExtra("call_message_id")) pendingCallMessageId = in.getStringExtra("call_message_id");
