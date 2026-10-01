@@ -34,43 +34,31 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Reconstruct Wanas V7 project
+      - name: Prepare Wanas V7 project
         run: |
           set -euo pipefail
-          test -f wanas-v7-ci/Wanas-Native-V7-Whole-App-FIXED.zip
-          unzip -t wanas-v7-ci/Wanas-Native-V7-Whole-App-FIXED.zip | tail -n 3
+          test -f wanas-v7-src/settings.gradle
+          test -f wanas-v7-src/build.gradle
+          test -f wanas-v7-src/app/build.gradle
+          test -f wanas-v7-src/app/src/main/java/com/wanas/nativeapp/MainActivity.kt
+          test -f wanas-v7-src/app/src/main/java/com/wanas/nativeapp/VoiceEngine.kt
+          test -f wanas-v7-src/app/src/main/java/com/wanas/nativeapp/realtime/SupabaseRealtime.kt
           rm -rf android
-          mkdir -p android
-          unzip -q wanas-v7-ci/Wanas-Native-V7-Whole-App-FIXED.zip -d android
-          test -f android/settings.gradle
-          test -f android/build.gradle
-          test -f android/app/build.gradle
+          cp -a wanas-v7-src android
           test -f android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt
 
       - name: Configure AndroidX
         run: |
           printf '%s\n' 'android.useAndroidX=true' 'android.enableJetifier=true' 'org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8' > android/gradle.properties
 
-      - name: Patch V7 Kotlin/WebRTC compile issues
+      - name: Verify V7 Kotlin/WebRTC source
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          
-          main = Path("android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt")
-          s = main.read_text(encoding="utf-8")
-          if "import okhttp3.MediaType.Companion.toMediaType" not in s:
-              marker = "import okhttp3.*"
-              s = s.replace(marker, marker + "\nimport okhttp3.MediaType.Companion.toMediaType\nimport okhttp3.RequestBody.Companion.toRequestBody", 1)
-          main.write_text(s, encoding="utf-8")
-          assert "import okhttp3.MediaType.Companion.toMediaType" in s
-          assert "import okhttp3.RequestBody.Companion.toRequestBody" in s
-          
-          voice = Path("android/app/src/main/java/com/wanas/nativeapp/VoiceEngine.kt")
-          s = voice.read_text(encoding="utf-8")
-          s = s.replace("abstract class SdpObserverBase : org.webrtc.SdpObserver", "open class SdpObserverBase : org.webrtc.SdpObserver")
-          s = s.replace("            override fun onIceCandidateError(e: PeerConnection.IceCandidateErrorEvent?) {}\n", "")
-          voice.write_text(s, encoding="utf-8")
-          PY
+          set -euo pipefail
+          grep -n 'import okhttp3.MediaType.Companion.toMediaType' android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt
+          grep -n 'import okhttp3.RequestBody.Companion.toRequestBody' android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt
+          grep -n 'open class SdpObserverBase' android/app/src/main/java/com/wanas/nativeapp/VoiceEngine.kt
+          ! grep -n 'onIceCandidateError' android/app/src/main/java/com/wanas/nativeapp/VoiceEngine.kt
+
       - name: Build debug APK
         run: gradle -p android :app:assembleDebug --stacktrace
 
