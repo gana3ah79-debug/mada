@@ -73,6 +73,10 @@ jobs:
           test -f android/app/build.gradle
           test -f android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt
 
+      - name: Configure AndroidX
+        run: |
+          printf '%s\n' 'android.useAndroidX=true' 'android.enableJetifier=true' 'org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8' > android/gradle.properties
+
       - name: Build debug APK
         run: gradle -p android :app:assembleDebug --stacktrace
 
