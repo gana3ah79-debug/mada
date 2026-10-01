@@ -41,6 +41,10 @@ jobs:
           test -f build_src/app/build.gradle
           test -f build_src/app/src/main/java/com/wanas/nativeapp/MainActivity.kt
 
+      - name: Configure AndroidX
+        run: |
+          printf '%s\n' 'android.useAndroidX=true' 'android.enableJetifier=true' 'org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8' > wanas-v7-ci/build_src/gradle.properties
+
       - name: Build release APK
         working-directory: wanas-v7-ci/build_src
         run: gradle :app:assembleRelease --stacktrace
