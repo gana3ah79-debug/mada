@@ -1,4 +1,8 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.wanas.nativeapp
+
+import androidx.compose.material3.ExperimentalMaterial3Api
 
 import android.Manifest
 import android.content.Context
