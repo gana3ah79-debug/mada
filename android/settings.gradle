@@ -1,4 +1,67 @@
-pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-rootProject.name='MadaAndroid'
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+import java.util.zip.ZipInputStream
+import java.io.ByteArrayInputStream
+
+def generatedDir = file('generated')
+if (generatedDir.exists()) generatedDir.deleteDir()
+generatedDir.mkdirs()
+
+def partFiles = [
+    '../wanas-v7-ci/source.part0.fix.a.b64',
+    '../wanas-v7-ci/source.part0.fix.b.b64',
+    '../wanas-v7-ci/source.part0.fixc.a.b64',
+    '../wanas-v7-ci/source.part0.fixc.b.b64',
+    '../wanas-v7-ci/source.part0.fixc.c.b64',
+    '../wanas-v7-ci/source.part0.fixc.e.b64',
+    '../wanas-v7-ci/source.part0.fix1.a.b64',
+    '../wanas-v7-ci/source.part0.fix1.b.b64',
+    '../wanas-v7-ci/source.part0.fix1.c.b64',
+    '../wanas-v7-ci/source.part0.fix1.d.b64',
+    '../wanas-v7-ci/source.part0.02.b64',
+    '../wanas-v7-ci/source.part0.03.b64',
+    '../wanas-v7-ci/source.part1.b64',
+    '../wanas-v7-ci/source.part2.b64',
+    '../wanas-v7-ci/source.part3.b64'
+]
+
+def sourceB64 = partFiles.collect { file(it).getText('UTF-8').trim() }.join('')
+def zipBytes = sourceB64.decodeBase64()
+
+def zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))
+def buffer = new byte[8192]
+def entry
+while ((entry = zis.nextEntry) != null) {
+    def out = new File(generatedDir, entry.name)
+    if (entry.isDirectory()) {
+        out.mkdirs()
+    } else {
+        out.parentFile.mkdirs()
+        out.withOutputStream { os ->
+            int n
+            while ((n = zis.read(buffer)) > 0) {
+                os.write(buffer, 0, n)
+            }
+        }
+    }
+    zis.closeEntry()
+}
+zis.close()
+
+rootProject.name = 'WanasNative'
 include ':app'
+project(':app').projectDir = new File(generatedDir, 'app')
