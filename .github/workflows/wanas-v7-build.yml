@@ -1,6 +1,7 @@
 name: Build Wanas V7 APK
 
 on:
+  pull_request:
   push:
     branches:
       - wanas-v7-apk-build
