@@ -77,6 +77,24 @@ jobs:
         run: |
           printf '%s\n' 'android.useAndroidX=true' 'android.enableJetifier=true' 'org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8' > android/gradle.properties
 
+      - name: Patch V7 Kotlin/WebRTC compile issues
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          
+          main = Path("android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt")
+          s = main.read_text(encoding="utf-8")
+          if "import okhttp3.MediaType.Companion.toMediaType" not in s:
+              marker = "import okhttp3.Request"
+              s = s.replace(marker, marker + "\nimport okhttp3.MediaType.Companion.toMediaType\nimport okhttp3.RequestBody.Companion.toRequestBody", 1)
+          main.write_text(s, encoding="utf-8")
+          
+          voice = Path("android/app/src/main/java/com/wanas/nativeapp/VoiceEngine.kt")
+          s = voice.read_text(encoding="utf-8")
+          s = s.replace("abstract class SdpObserverBase : org.webrtc.SdpObserver", "open class SdpObserverBase : org.webrtc.SdpObserver")
+          s = s.replace("            override fun onIceCandidateError(e: PeerConnection.IceCandidateErrorEvent?) {}\n", "")
+          voice.write_text(s, encoding="utf-8")
+          PY
       - name: Build debug APK
         run: gradle -p android :app:assembleDebug --stacktrace
 
