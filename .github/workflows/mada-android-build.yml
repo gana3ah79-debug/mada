@@ -37,37 +37,11 @@ jobs:
       - name: Reconstruct Wanas V7 project
         run: |
           set -euo pipefail
-          cat \
-            wanas-v7-ci/source.part0.fix.a.b64 \
-            wanas-v7-ci/source.part0.fix.b.b64 \
-            wanas-v7-ci/source.part0.fixc.a.b64 \
-            wanas-v7-ci/source.part0.fixc.b.b64 \
-            wanas-v7-ci/source.part0.fixc.c.b64 \
-            wanas-v7-ci/source.part0.fixc.e.b64 \
-            wanas-v7-ci/source.part0.fixd.a.b64 \
-            wanas-v7-ci/source.part0.fixd.b.b64 \
-            wanas-v7-ci/source.part0.fixd.c2.b64 \
-            wanas-v7-ci/source.part0.fixd.d.b64 \
-            wanas-v7-ci/source.part0.fix1.a.b64 \
-            wanas-v7-ci/source.part0.fix1.b.b64 \
-            wanas-v7-ci/source.part0.fix1.c.b64 \
-            wanas-v7-ci/source.part0.fix1.d.b64 \
-            wanas-v7-ci/source.part0.02.b64 \
-            wanas-v7-ci/source.part0.03.b64 \
-            wanas-v7-ci/source.part1.b64 \
-            wanas-v7-ci/source.part2.b64 \
-            wanas-v7-ci/source.part3.b64 > /tmp/wanas-v7.b64
-
-          echo "Base64 characters: $(wc -c < /tmp/wanas-v7.b64)"
-          test "$(wc -c < /tmp/wanas-v7.b64)" -eq 22356
-
-          base64 -d /tmp/wanas-v7.b64 > /tmp/Wanas-Native-V7.zip
-          unzip -t /tmp/Wanas-Native-V7.zip | tail -n 3
-
+          test -f wanas-v7-ci/Wanas-Native-V7-Whole-App-FIXED.zip
+          unzip -t wanas-v7-ci/Wanas-Native-V7-Whole-App-FIXED.zip | tail -n 3
           rm -rf android
           mkdir -p android
-          unzip -q /tmp/Wanas-Native-V7.zip -d android
-
+          unzip -q wanas-v7-ci/Wanas-Native-V7-Whole-App-FIXED.zip -d android
           test -f android/settings.gradle
           test -f android/build.gradle
           test -f android/app/build.gradle
