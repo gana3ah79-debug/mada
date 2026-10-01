@@ -85,9 +85,11 @@ jobs:
           main = Path("android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt")
           s = main.read_text(encoding="utf-8")
           if "import okhttp3.MediaType.Companion.toMediaType" not in s:
-              marker = "import okhttp3.Request"
+              marker = "import okhttp3.*"
               s = s.replace(marker, marker + "\nimport okhttp3.MediaType.Companion.toMediaType\nimport okhttp3.RequestBody.Companion.toRequestBody", 1)
           main.write_text(s, encoding="utf-8")
+          assert "import okhttp3.MediaType.Companion.toMediaType" in s
+          assert "import okhttp3.RequestBody.Companion.toRequestBody" in s
           
           voice = Path("android/app/src/main/java/com/wanas/nativeapp/VoiceEngine.kt")
           s = voice.read_text(encoding="utf-8")
