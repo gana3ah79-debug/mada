@@ -1,11 +1,17 @@
-name: Build Mada Android APK
+name: Build Wanas V7 APK
 
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - wanas-v7-apk-build
     paths:
       - 'android/**'
+      - 'wanas-v7-ci/**'
       - '.github/workflows/mada-android-build.yml'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,13 +29,30 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
+      - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Fix Android notification channel constant
-        run: sed -i 's/new NotificationChannel("mada_bg","Mada Buzz","LOW")/new NotificationChannel("mada_bg","Mada Buzz",NotificationManager.IMPORTANCE_LOW)/' android/app/src/main/java/com/mada/app/BuzzService.java
+      - name: Reconstruct Wanas V7 project
+        run: |
+          set -euo pipefail
+          cat             wanas-v7-ci/source.part0.fix.a.b64             wanas-v7-ci/source.part0.fix.b.b64             wanas-v7-ci/source.part0.fixc.a.b64             wanas-v7-ci/source.part0.fixc.b.b64             wanas-v7-ci/source.part0.fixc.c.b64             wanas-v7-ci/source.part0.fixc.e.b64             wanas-v7-ci/source.part0.fix1.a.b64             wanas-v7-ci/source.part0.fix1.b.b64             wanas-v7-ci/source.part0.fix1.c.b64             wanas-v7-ci/source.part0.fix1.d.b64             wanas-v7-ci/source.part0.02.b64             wanas-v7-ci/source.part0.03.b64             wanas-v7-ci/source.part1.b64             wanas-v7-ci/source.part2.b64             wanas-v7-ci/source.part3.b64 > /tmp/wanas-v7.b64
+
+          echo "Base64 characters: $(wc -c < /tmp/wanas-v7.b64)"
+          test "$(wc -c < /tmp/wanas-v7.b64)" -eq 22356
+
+          base64 -d /tmp/wanas-v7.b64 > /tmp/Wanas-Native-V7.zip
+          unzip -t /tmp/Wanas-Native-V7.zip | tail -n 3
+
+          rm -rf android
+          mkdir -p android
+          unzip -q /tmp/Wanas-Native-V7.zip -d android
+
+          test -f android/settings.gradle
+          test -f android/build.gradle
+          test -f android/app/build.gradle
+          test -f android/app/src/main/java/com/wanas/nativeapp/MainActivity.kt
 
       - name: Build debug APK
         run: gradle -p android :app:assembleDebug --stacktrace
@@ -38,12 +61,12 @@ jobs:
         run: |
           test -f android/app/build/outputs/apk/debug/app-debug.apk
           ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+          file android/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: mada-android-debug-apk
+          name: wanas-v7-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-
-# Fresh APK build trigger after the latest Mada profile update.
