@@ -1,6 +1,8 @@
 name: Mawja V25 Release APK
 
 on:
+  push:
+    branches: [mawja-v25-build]
   workflow_dispatch:
 
 permissions:
@@ -14,6 +16,17 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Unpack Mawja V25 source
+        shell: bash
+        run: |
+          ZIP=$(find . -maxdepth 3 -type f -name 'Mawja-Native-V25-Deep-Review-Source.zip' | head -n 1)
+          if [ -n "$ZIP" ]; then
+            unzip -q -o "$ZIP" -d ./mawja-source
+            cp -a ./mawja-source/. ./
+          fi
+          test -f settings.gradle.kts
+          test -f app/build.gradle.kts
 
       - name: Setup Java 21
         uses: actions/setup-java@v4
