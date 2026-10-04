@@ -3,8 +3,6 @@ name: Mawja V25 Release APK
 on:
   push:
     branches: [mawja-v25-build]
-    paths:
-      - '.mawja-trigger'
   workflow_dispatch:
 
 permissions:
