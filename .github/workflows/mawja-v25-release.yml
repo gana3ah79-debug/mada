@@ -3,6 +3,8 @@ name: Mawja V25 Release APK
 on:
   push:
     branches: [mawja-v25-build]
+    paths:
+      - '.mawja-trigger'
   workflow_dispatch:
 
 permissions:
@@ -13,18 +15,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Mawja source
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
-      - name: Unpack Mawja V25 source
+      - name: Reconstruct Mawja V25 source ZIP
         shell: bash
         run: |
-          ZIP=$(find . -maxdepth 3 -type f -name 'Mawja-Native-V25-Deep-Review-Source.zip' | head -n 1)
-          if [ -n "$ZIP" ]; then
-            unzip -q -o "$ZIP" -d ./mawja-source
-            cp -a ./mawja-source/. ./
-          fi
+          set -euo pipefail
+          test -d .mawja-parts
+          ls .mawja-parts/part*.hex >/dev/null
+          cat .mawja-parts/part*.hex | tr -d '\n\r\t ' | xxd -r -p > Mawja-Native-V25-Deep-Review-Source.zip
+          unzip -tq Mawja-Native-V25-Deep-Review-Source.zip
+          unzip -q -o Mawja-Native-V25-Deep-Review-Source.zip -d ./mawja-source
+          cp -a ./mawja-source/. ./
           test -f settings.gradle.kts
           test -f app/build.gradle.kts
 
@@ -35,19 +37,20 @@ jobs:
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@017a9effdb900e5b5b2fddfb590a105619dca3c3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
 
       - name: Build release APK
         run: gradle --no-daemon --stacktrace assembleRelease
 
-      - name: Locate APK
+      - name: Locate and verify APK
         id: apk
         shell: bash
         run: |
           APK=$(find . -type f -path '*/build/outputs/apk/release/*.apk' | head -n 1)
           test -n "$APK"
+          test -s "$APK"
           echo "path=$APK" >> "$GITHUB_OUTPUT"
           sha256sum "$APK"
 
