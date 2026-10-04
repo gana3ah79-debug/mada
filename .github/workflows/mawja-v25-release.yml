@@ -22,8 +22,8 @@ jobs:
         run: |
           set -euo pipefail
           test -d .mawja-parts
-          ls .mawja-parts/part*.hex >/dev/null
-          cat .mawja-parts/part*.hex | tr -d '\n\r\t ' | xxd -r -p > Mawja-Native-V25-Deep-Review-Source.zip
+          ls .mawja-parts/part*.b64 >/dev/null
+          cat .mawja-parts/part*.b64 | tr -d '\n\r\t ' | base64 -d > Mawja-Native-V25-Deep-Review-Source.zip
           unzip -tq Mawja-Native-V25-Deep-Review-Source.zip
           unzip -q -o Mawja-Native-V25-Deep-Review-Source.zip -d ./mawja-source
           cp -a ./mawja-source/. ./
