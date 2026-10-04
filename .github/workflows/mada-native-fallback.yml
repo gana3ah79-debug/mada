@@ -17,10 +17,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="${ANDROID_HOME}/cmdline-tools/16.0/bin/sdkmanager"
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
@@ -28,7 +33,7 @@ jobs:
       - run: |
           APK=$(find android/app/build/outputs/apk/release -type f -name '*.apk' | head -n1)
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$APK"
+          "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify "$APK"
           sha256sum "$APK"
       - uses: actions/upload-artifact@v4
         with:
