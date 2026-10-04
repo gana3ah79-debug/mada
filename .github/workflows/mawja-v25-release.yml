@@ -24,13 +24,11 @@ jobs:
           test -d .mawja-parts
           mapfile -t PARTS < <(find .mawja-parts -maxdepth 1 -type f -name 'part*.b64' -printf '%f\n' | LC_ALL=C sort -V)
           test "${#PARTS[@]}" -gt 0
-          printf '%s\n' "${PARTS[@]}"
           : > Mawja-Native-V25-Deep-Review-Source.b64
           for f in "${PARTS[@]}"; do cat ".mawja-parts/$f" >> Mawja-Native-V25-Deep-Review-Source.b64; done
           python3 - <<'PY'
           import hashlib
-          p="Mawja-Native-V25-Deep-Review-Source.b64"
-          s=open(p,"rb").read()
+          s=open("Mawja-Native-V25-Deep-Review-Source.b64","rb").read()
           expected=[
           "6dfc53651cca3eb5504d84c85633a5f3d1205208613c0354393502183f319cc7",
           "00e36a9895bda32f0dc19063c7a826a0cbc95c9690ac578ef9d8770235433240",
@@ -56,25 +54,39 @@ jobs:
           "eb966d120fcab104f37c0d42c2218ebc75b4c202cabd7407e957a7f49d4ca97d",
           "9bee65ab87cb48a23874f64dd36b9377a47b0ac810d607b7024dea2202823e76",
           "a6c88a77f5429dd03081ba108f87f771f67e79b1fd03a4b2567ac2f2bfab5dfd"]
-          assert len(s)==46252, len(s)
+          assert len(s)==46252
           for i,h in enumerate(expected):
               c=s[i*2000:(i+1)*2000] if i<23 else s[46000:]
               got=hashlib.sha256(c).hexdigest()
-              print(f"chunk {i}: {got}")
-              assert got==h, f"chunk {i} mismatch"
+              assert got==h, f"chunk {i} mismatch: {got}"
           print("BASE64_CHECK=PASS")
           PY
           tr -d '\n\r\t ' < Mawja-Native-V25-Deep-Review-Source.b64 | base64 -d > Mawja-Native-V25-Deep-Review-Source.zip
-          echo "BASE64_BYTES=$(wc -c < Mawja-Native-V25-Deep-Review-Source.b64)"
-          echo "ZIP_BYTES=$(wc -c < Mawja-Native-V25-Deep-Review-Source.zip)"
-          sha256sum Mawja-Native-V25-Deep-Review-Source.b64
-          sha256sum Mawja-Native-V25-Deep-Review-Source.zip
           test "$(sha256sum Mawja-Native-V25-Deep-Review-Source.zip | awk '{print $1}')" = "41d0352980313a932652af1d1d13243ca52fd26a29ad9c8ad15a7e4e810f5bc6"
           unzip -tq Mawja-Native-V25-Deep-Review-Source.zip
           unzip -q -o Mawja-Native-V25-Deep-Review-Source.zip -d ./mawja-source
           cp -a ./mawja-source/. ./
           test -f settings.gradle.kts
           test -f app/build.gradle.kts
+
+      - name: Prepare Android SDK 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="${ANDROID_SDK_ROOT:-$ANDROID_HOME}/cmdline-tools/bin/sdkmanager"
+          fi
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Upgrade compileSdk for current dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/compileSdk = 35/compileSdk = 36/' app/build.gradle.kts
+          grep -n 'compileSdk' app/build.gradle.kts
 
       - name: Setup Java 21
         uses: actions/setup-java@v4
