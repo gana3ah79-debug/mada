@@ -1,0 +1,37 @@
+name: Mada Native Fallback APK
+
+on:
+  push:
+    branches: [mawja-v25-build]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - run: gradle -p android clean assembleRelease --no-daemon --stacktrace
+      - run: |
+          APK=$(find android/app/build/outputs/apk/release -type f -name '*.apk' | head -n1)
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$APK"
+          sha256sum "$APK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mada-Native-Fallback-Release
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
