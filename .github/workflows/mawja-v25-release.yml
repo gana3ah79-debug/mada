@@ -22,8 +22,17 @@ jobs:
         run: |
           set -euo pipefail
           test -d .mawja-parts
-          ls .mawja-parts/part*.b64 >/dev/null
-          cat .mawja-parts/part*.b64 | tr -d '\n\r\t ' | base64 -d > Mawja-Native-V25-Deep-Review-Source.zip
+          mapfile -t PARTS < <(find .mawja-parts -maxdepth 1 -type f -name 'part*.b64' -printf '%f\n' | LC_ALL=C sort -V)
+          test "${#PARTS[@]}" -gt 0
+          printf '%s\n' "${PARTS[@]}"
+          : > Mawja-Native-V25-Deep-Review-Source.b64
+          for f in "${PARTS[@]}"; do cat ".mawja-parts/$f" >> Mawja-Native-V25-Deep-Review-Source.b64; done
+          tr -d '\n\r\t ' < Mawja-Native-V25-Deep-Review-Source.b64 | base64 -d > Mawja-Native-V25-Deep-Review-Source.zip
+          echo "BASE64_BYTES=$(wc -c < Mawja-Native-V25-Deep-Review-Source.b64)"
+          echo "ZIP_BYTES=$(wc -c < Mawja-Native-V25-Deep-Review-Source.zip)"
+          sha256sum Mawja-Native-V25-Deep-Review-Source.b64
+          sha256sum Mawja-Native-V25-Deep-Review-Source.zip
+          test "$(sha256sum Mawja-Native-V25-Deep-Review-Source.zip | awk '{print $1}')" = "41d0352980313a932652af1d1d13243ca52fd26a29ad9c8ad15a7e4e810f5bc6"
           unzip -tq Mawja-Native-V25-Deep-Review-Source.zip
           unzip -q -o Mawja-Native-V25-Deep-Review-Source.zip -d ./mawja-source
           cp -a ./mawja-source/. ./
