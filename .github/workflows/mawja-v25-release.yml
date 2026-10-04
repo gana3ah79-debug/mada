@@ -27,6 +27,43 @@ jobs:
           printf '%s\n' "${PARTS[@]}"
           : > Mawja-Native-V25-Deep-Review-Source.b64
           for f in "${PARTS[@]}"; do cat ".mawja-parts/$f" >> Mawja-Native-V25-Deep-Review-Source.b64; done
+          python3 - <<'PY'
+          import hashlib
+          p="Mawja-Native-V25-Deep-Review-Source.b64"
+          s=open(p,"rb").read()
+          expected=[
+          "6dfc53651cca3eb5504d84c85633a5f3d1205208613c0354393502183f319cc7",
+          "00e36a9895bda32f0dc19063c7a826a0cbc95c9690ac578ef9d8770235433240",
+          "bfab275a1d322edd8058f3e1acf0d9a9500b9a1cd7f85ab0c714d1e9efa5d922",
+          "0699be06eaa0ddd011f6e2a6f25452fb98de9ab01bbcb63c7f163c2c45350a68",
+          "445951feaee3214aef5f5b5f992c49ad1aff2ec278e2b5d5719ae0c0608c9a5c",
+          "ac0baea5424d96d8ebb764bd3b3ea05ab460df23b22326f3fe3dd89df0a06dd8",
+          "f1bc7d52c0209f04f3ad69522022422f20172d80ce9ee21b93106f8ea541325a",
+          "8d8724f3e116afc0b895e64eab307b09b31b79e9fa952a581fbac015af21b5d5",
+          "4652b44709adcd5784215b2f3bddf54181d8d05d556cb4247b5bc9b6bd0cd5f6",
+          "28202f08ed1d6bac54f12cc1cc7883d48616fdc3fbaf43322128e868d017ca56",
+          "ac682531d02507161d448c906671686d02802ce1b24e459a20dc478194269e39",
+          "abcb1bce1bbd128b58daaa67b784ef29f568a9a3c19cfa4886ac158f65efe76b",
+          "e29d111b2cbfa3452fd2af98368b4ea3ebeb4ae4d66b3af24f3be4eefdcd2c74",
+          "8108051edfc218792b6a73aa87ee50e59858adc0f25c3ba813b0c654cf4478dc",
+          "841c8bea2c0566c2157fd7cadc38ebfccaadb5af1946e2d6407ad44f8c6c9d68",
+          "d3b089789648f2c44e067edc6c4e2d68d775d1d829a2fd8e9d081ca9c37ee747",
+          "91e5b11dd2f11f2870b3e4719570b754b2ddc2234793e968d8ba40153de78297",
+          "ec9da4daad44fbea2580049a22147a19a7f745b991449d4c937f1c7e01906bb0",
+          "454b4ca4eca3c9fc1f7f2912f7d1300f2b704119982916d9b0ae21df31548e9a",
+          "96e2581522826eb12931a533e1b38424293fa22097e37a8feb7697112f16c85b",
+          "def0e8711294f199f5fced344c4535eb4fa3bd0f7230fe8e2ae16927d5bf051e",
+          "eb966d120fcab104f37c0d42c2218ebc75b4c202cabd7407e957a7f49d4ca97d",
+          "9bee65ab87cb48a23874f64dd36b9377a47b0ac810d607b7024dea2202823e76",
+          "a6c88a77f5429dd03081ba108f87f771f67e79b1fd03a4b2567ac2f2bfab5dfd"]
+          assert len(s)==46252, len(s)
+          for i,h in enumerate(expected):
+              c=s[i*2000:(i+1)*2000] if i<23 else s[46000:]
+              got=hashlib.sha256(c).hexdigest()
+              print(f"chunk {i}: {got}")
+              assert got==h, f"chunk {i} mismatch"
+          print("BASE64_CHECK=PASS")
+          PY
           tr -d '\n\r\t ' < Mawja-Native-V25-Deep-Review-Source.b64 | base64 -d > Mawja-Native-V25-Deep-Review-Source.zip
           echo "BASE64_BYTES=$(wc -c < Mawja-Native-V25-Deep-Review-Source.b64)"
           echo "ZIP_BYTES=$(wc -c < Mawja-Native-V25-Deep-Review-Source.zip)"
